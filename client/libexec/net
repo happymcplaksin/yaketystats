@@ -1,0 +1,392 @@
+#!/usr/bin/perl
+
+$|=1;
+use strict;
+use warnings;
+use Cwd 'realpath';
+our $g_dir = __FILE__;
+$g_dir =~ s/\/[^\/]+$//;
+$g_dir = realpath("$g_dir/..");
+require "$g_dir/lib/include";
+
+my (@data, $line);
+
+# These are the defaults.  They could be semi-overridden by specifying a
+# different interval in the client config file, but the RRD file would still have
+# space for updates every $interval as defined below.
+my $rrd_type = "DERIVE";
+my $rrd_interval;
+my $do_multicast = 0;
+if ( basename ($0) =~ /multicast/ ) {
+  $do_multicast = 1;
+}
+our ($g_exit, $g_os, $g_default_timeout, $g_host, $g_sep, $g_collector);
+$main::g_host = get_hostname ();
+$main::g_collector = 'net';
+
+# If we haven't loaded subs.pl, then we've been run from the command-line.  That
+# means we're in test mode.  So load include, define $g_host, and print results.
+if (! defined (@ARGV) || (! defined ($ARGV[1]) && $ARGV[1] eq "calledfromcollect") ) {
+  # TODO: There must be a better way to get this path!  I think the better
+  # way is called "perl module" :)
+  local $main::g_fileit_mode = "test";
+  # Silence warning
+  $main::g_fileit_mode = $main::g_fileit_mode;
+  get_ignores ();
+  $rrd_interval = 60;
+  fileit ("You ran $g_collector manually; setting interval to $rrd_interval.");
+  @data = doit ();
+  foreach my $line (@data) {
+    print "$line";
+  }
+  print "\n";
+} else {
+  if ( defined ($ARGV[0]) && $ARGV[0] =~ /^\d+$/ ) {
+    $rrd_interval = $ARGV[0];
+  } else {
+    fileit ("Ack!  No interval for $g_collector.  Bailing.");
+    exit ();
+  }
+  get_ignores ();
+  @data = doit ();
+  if ( defined ($data[0]) ) {
+    bivalve (@data);
+  } else {
+    fileit ("Warning:  No data for $g_collector");
+  }
+}
+
+sub doit {
+  my ($time, @return);
+
+  $g_collector = 'net';
+  $time = time ();
+  if ( $g_os eq "linux" ) {
+    @return = net_linux ($time);
+  } elsif ( $g_os eq "hpux" ) {
+    @return = net_hpux ($time);
+  } elsif ( $g_os eq "solaris" ) {
+    @return = net_solaris ($time);
+  }
+  return (@return);
+}
+
+# Linux:
+#  Get interface stats
+sub net_linux {
+  my ($time) = @_;
+
+  my ($cmd, $status, @data, $line, @ifaces, $iface, @return, $rxb, $rxe,
+      $txb, $txe);
+
+  $cmd = get_path ('netstat');
+
+  # Match letters followed by 0 or more numbers at the beginning of the line,
+  # and no colons allowed because those are IP aliases.
+  @ifaces  = parse_cmd ("$cmd -i", $g_default_timeout, '^[a-z]+[0-9]+[.]*[0-9]*\s',
+                        undef, '\s+', undef, 0, (0));#'
+  LOOP: foreach $iface (@ifaces) {
+      if ( ignoreit ('net', $iface) ) {
+	next LOOP;
+      }
+    # eth1      Link encap:Ethernet  HWaddr 00:B0:D0:01:8C:2A  
+    #           inet addr:168.24.82.53  Bcast:168.24.82.255  Mask:255.255.255.0
+    #           inet6 addr: fe80::2b0:d0ff:fe01:8c2a/64 Scope:Link
+    #           UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+    #           RX packets:5589860 errors:0 dropped:0 overruns:0 frame:0
+    #           TX packets:10927907 errors:0 dropped:0 overruns:0 carrier:6020112
+    #           collisions:75068 txqueuelen:1000 
+    #           RX bytes:528155529 (503.6 MiB)  TX bytes:1899273597 (1.7 GiB)
+    #           Interrupt:9 Base address:0xf400 
+    #
+    # TODO:  It would be cool to use parse_cmd for this too
+    $cmd = get_path ('ifconfig');
+    $cmd = "$cmd $iface";
+    ($status, @data) = run_prg ($cmd, $g_default_timeout);
+    if ( $status != 0 ) {
+      fileit ("Bad status for $cmd:  $status.  Output was:  @data\n");
+      exit (39);
+    }
+    # Looking for RX, TX bytes, Errors
+    #           RX packets:5589860 errors:0 dropped:0 overruns:0 frame:0
+    #           TX packets:10927907 errors:0 dropped:0 overruns:0 carrier:6020112
+    #           RX bytes:528155529 (503.6 MiB)  TX bytes:1899273597 (1.7 GiB)
+    #           UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+    foreach $line (@data) {
+      chomp ($line);
+      if ( $line =~ /RX packets/ ) {
+        $rxe = (split (/\s+/, $line))[3];
+        $rxe =~ s/.*://;
+      }
+      if ( $line =~ /TX packets/ ) {
+        ($txe) = (split (/\s+/, $line))[3];
+        $txe =~ s/.*://;
+      }
+      if ( $line =~ /RX bytes:/ ) {
+        ($rxb, $txb) = (split (/\s+/, $line))[2,6];
+        $rxb =~ s/.*://;
+        $txb =~ s/.*://;
+      }
+    }
+    check_vars ($g_exit,
+                $rxb, "$iface:rxb", $rxe, "$iface:rxe",
+                $txb, "$iface:txb", $txe, "$iface:txe");
+    # Bytes -> bits
+    $rxb *= 8;
+    $txb *= 8;
+    push (@return, "p=/$main::g_host/net/$iface/tx_bits${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$txb\n");
+    push (@return, "p=/$main::g_host/net/$iface/rx_bits${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$rxb\n");
+    push (@return, "p=/$main::g_host/net/$iface/rx_err${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$rxe\n");
+    push (@return, "p=/$main::g_host/net/$iface/tx_err${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$txe\n");
+  }
+  return (@return);
+}
+
+# HP-UX:
+#  Get interface stats
+sub net_hpux {
+  my ($time) = @_;
+
+  my ($cmd, $status, @data, $line, %ifaces, $iface, $ppa, @return, $rxb, $rxe,
+      $txb, $txe, $up, $speed);
+
+  # Get list of interfaces and PPA numbers from lanscan.  Note that this skips
+  # loopback but I don't see how to get good loopback stats anyhow.
+  #
+  # Hardware Station        Crd Hdw   Net-Interface  NM  MAC       HP-DLPI DLPI
+  # Path     Address        In# State NamePPA        ID  Type      Support Mjr#
+  # 0/0/0/0  0x00306E0C2B68 0   UP    lan0 snap0     1   ETHER     Yes     119
+  # 0/6/2/0  0x001083F67FE8 1   UP    lan1 snap1     2   ETHER     Yes     119
+  $cmd = get_path ('lanscan');
+  ($status, @data) = run_prg ($cmd, $g_default_timeout);
+  if ( $status != 0 ) {
+    fileit ("Bad status for $cmd:  $status.  Output was:  @data\n");
+    exit (41);
+  }
+  foreach $line (@data) {
+    if ( $line =~ /^[0-9]/ ) {
+      ($ppa, $iface) = (split (/\s+/, $line))[2,4];
+      $ifaces{$iface}{'ppa'} = $ppa;
+    }
+  }
+
+  # Next, get stats from lanadmin
+  # 
+  #                       LAN INTERFACE STATUS DISPLAY
+  #                        Wed, Jan 26,2005  14:26:14
+  # 
+  # PPA Number                      = 0
+  # Description                     = lan0 Hewlett-Packard 10/100 TX Full-Duplex  TT = 150
+  # 0                                                                                    
+  # Type (value)                    = ethernet-csmacd(6)
+  # MTU Size                        = 1500
+  # Speed                           = 100000000
+  # Station Address                 = 0x306e0c2b68
+  # Administration Status (value)   = up(1)
+  # Operation Status (value)        = up(1)
+  # Last Change                     = 760
+  # Inbound Octets                  = 1392630819
+  # Inbound Unicast Packets         = 20581833
+  # Inbound Non-Unicast Packets     = 320769
+  # Inbound Discards                = 100
+  # Inbound Errors                  = 0
+  # Inbound Unknown Protocols       = 48
+  # Outbound Octets                 = 1899911312
+  # Outbound Unicast Packets        = 42642397
+  # Outbound Non-Unicast Packets    = 100
+  # Outbound Discards               = 0
+  # Outbound Errors                 = 0
+  # Outbound Queue Length           = 0
+  # Specific                        = 655367
+  # 
+  # Ethernet-like Statistics Group
+  # 
+  # Index                           = 1
+  # Alignment Errors                = 0
+  # FCS Errors                      = 0
+  # Single Collision Frames         = 0
+  # Multiple Collision Frames       = 0
+  # Deferred Transmissions          = 0
+  # Late Collisions                 = 0
+  # Excessive Collisions            = 0
+  # Internal MAC Transmit Errors    = 0
+  # Carrier Sense Errors            = 0
+  # Frames Too Long                 = 0
+  # Internal MAC Receive Errors     = 0
+  # 
+
+  # Just get the following:
+  # Skip if both not up:
+  # Administration Status (value)   = up(1)
+  # Operation Status (value)        = up(1)
+  # Inbound Octets                  = 1392630819
+  # Inbound Errors                  = 0
+  # Outbound Octets                 = 1899911312
+  # Outbound Errors                 = 0
+ LOOP: foreach $iface (keys (%ifaces)) {
+    # Skip ignored interfaces
+    if ( ignoreit ('net', $iface) ) {
+      next LOOP;
+    }
+
+    # TODO:  It would be cool to use parse_cmd for this too
+    $cmd = get_path ('lanadmin');
+    $cmd = "$cmd -g mibstats $ifaces{$iface}{ppa}";
+    ($status, @data) = run_prg ($cmd, $g_default_timeout);
+    if ( $status != 0 ) {
+      fileit ("Bad status for $cmd:  $status.  Output was:  @data\n");
+      exit (43);
+    }
+    # Assume iface is down
+    $up = 0;
+    foreach $line (@data) {
+      chomp ($line);
+      if ( $line =~ /Administration Status.*=.*up/ ) {
+        $up++;
+      }
+      if ( $line =~ /Operation Status.*=.*up/ ) {
+        $up++;
+      }
+      if ( $line =~ /Inbound Octets/ ) {
+        $rxb = (split (/\s+/, $line))[3];
+      }
+      if ( $line =~ /Inbound Errors/ ) {
+        $rxe = (split (/\s+/, $line))[3];
+      }
+      if ( $line =~ /Outbound Octets/ ) {
+        $txb = (split (/\s+/, $line))[3];
+      }
+      if ( $line =~ /Outbound Errors/ ) {
+        $txe = (split (/\s+/, $line))[3];
+      }
+      if ( $line =~ /Speed\s/ ) {
+        $speed = (split (/\s+/, $line))[2];
+      }
+    }
+    # Only record stats for interfaces that are up
+    if ($up == 2) {
+      check_vars ($g_exit,
+                  $rxb, "$iface:rxb", $rxe, "$iface:rxe",
+                  $txb, "$iface:txb", $txe, "$iface:txe");
+      $rxb *= 8; # -> bits
+      $txb *= 8; # -> bits
+
+      push (@return, "p=/$main::g_host/net/$iface/tx_bits${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$txb\n");
+      push (@return, "p=/$main::g_host/net/$iface/rx_bits${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$rxb\n");
+      push (@return, "p=/$main::g_host/net/$iface/rx_err${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$rxe\n");
+      push (@return, "p=/$main::g_host/net/$iface/tx_err${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$txe\n");
+      push (@return, "p=/$main::g_host/net/$iface/speed${g_sep}t=GAUGE${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$speed\n");
+    }
+  }
+  return (@return);
+}
+
+# Solaris:
+#  Get interface stats
+sub net_solaris {
+  my ($time) = @_;
+
+  my ($cmd, $status, @data, $line, @ifaces, $iface, @return, $rxb, $rxe,
+      $txb, $txe, $class, $instance, $multi_col, $multi_rcv, $multi_xmt,
+      $speed);
+
+  # Get list of interfaces via netstat -i
+  $cmd = get_path ('netstat');
+  # Match letters followed by 0 or more numbers at the beginning of the line,
+  # and no colons allowed because those are IP aliases.
+  @ifaces  = parse_cmd ("$cmd -i", $g_default_timeout, '^[a-z]+[0-9]*\s', undef,
+                        '\s+', undef, 0, (0));#'
+
+ LOOP: foreach $iface (@ifaces) {
+    # Skip ignored interfaces
+    if ( ignoreit ('net', $iface) ) {
+      next LOOP;
+    }
+
+    # kstat -p eri:0|egrep -i '[io]err|[ir]bytes'
+    # eri:0:eri0:ierrors      0
+    # eri:0:eri0:oerrors      3
+    # eri:0:eri0:rbytes       201526839
+    # eri:0:eri0:rbytes64     201526839
+    # So that's kstat -p $CLASS:$INSTANCE:${CLASS}{INSTANCE}:STAT
+    # It's fastest to run kstat once and parse the output so we'll just use
+    # kstat -p $CLASS:$INSTANCE:${CLASS}{INSTANCE}
+    #
+    # How best to split eri0 into eri and 0?
+    # There must be a one-liner...
+    $class = $iface;
+    $class =~ s/[0-9]*//g;
+    $instance = $iface;
+    $instance =~ s/$class//;
+
+    $cmd = get_path ('kstat');
+    $cmd = "$cmd -p $class:$instance:$iface";
+
+    ($status, @data) = run_prg ($cmd, $g_default_timeout);
+    if ( $status != 0 ) {
+      fileit ("Bad status for $cmd:  $status.  Output was:  @data\n");
+      exit (39);
+    }
+    # eri:0:eri0:ierrors      0
+    # eri:0:eri0:oerrors      3
+    # eri:0:eri0:rbytes       201526839
+    # eri:0:eri0:obytes       1372783328
+    # bge:0:bge0:multi_collisions     0
+    # bge:0:bge0:multircv     2
+    # bge:0:bge0:multixmt     9
+    #
+    foreach $line (@data) {
+      chomp ($line);
+      if ( $line =~ /:ierrors\s+/ ) {
+        $rxe = (split (/\s+/, $line))[1];
+      }
+      if ( $line =~ /:oerrors\s+/ ) {
+        $txe = (split (/\s+/, $line))[1];
+      }
+      if ( $line =~ /:rbytes\s+/ ) {
+        $rxb = (split (/\s+/, $line))[1];
+      }
+      if ( $line =~ /:obytes\s+/ ) {
+        $txb = (split (/\s+/, $line))[1];
+      }
+      if ( $line =~ /:speed\s/ ||
+	   $line =~ /:ifspeed\s/ ) {
+        $speed = (split (/\s+/, $line))[1];
+      }
+      if ( $do_multicast == 1 ) {
+	if ( $line =~ /:multi_collisions\s+/ ) {
+	  $multi_col = (split (/\s+/, $line))[1];
+	}
+	if ( $line =~ /:multircv\s+/ ) {
+	  $multi_rcv = (split (/\s+/, $line))[1];
+	}
+	if ( $line =~ /:multixmt\s+/ ) {
+	  $multi_xmt = (split (/\s+/, $line))[1];
+	}
+      }
+    }
+
+    check_vars ($g_exit,
+                $rxb, "$iface:rxb", $rxe, "$iface:rxe",
+                $txb, "$iface:txb", $txe, "$iface:txe");
+    # Bytes -> bits
+    $rxb *= 8;
+    $txb *= 8;
+    push (@return, "p=/$main::g_host/net/$iface/tx_bits${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$txb\n");
+    push (@return, "p=/$main::g_host/net/$iface/rx_bits${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$rxb\n");
+    push (@return, "p=/$main::g_host/net/$iface/rx_err${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$rxe\n");
+    push (@return, "p=/$main::g_host/net/$iface/tx_err${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$txe\n");
+    push (@return, "p=/$main::g_host/net/$iface/speed${g_sep}t=GAUGE${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$speed\n");
+
+    if ( defined ($multi_col) && $multi_col ne "" ) {
+      push (@return, "p=/$main::g_host/net/$iface/multi/coll${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$multi_col\n");
+    }
+    if ( defined ($multi_xmt) && $multi_xmt ne "" ) {
+      push (@return, "p=/$main::g_host/net/$iface/multi/xmt_pkt${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$multi_rcv\n");
+    }
+    if ( defined ($multi_rcv) && $multi_rcv ne "" ) {
+      push (@return, "p=/$main::g_host/net/$iface/multi/rcv_pkt${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$multi_xmt\n");
+    }
+  }
+  return (@return);
+}

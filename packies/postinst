@@ -1,0 +1,258 @@
+#!/bin/sh
+
+# post-install for stats
+#
+# - figure out FQDN
+# - add logcheck entries
+# - install default crontab
+# - install default config file
+
+
+NAME=yaketystats
+status=0
+OUR_USER=stats
+OUR_GROUP=stats
+OUR_GID=11994
+OUR_UID=11994
+
+CHROOT=""
+ROOTDIR=/
+uname=`uname`
+
+if [ "$uname" = SunOS ]
+  then
+  if [ ! -z "${PKG_INSTALL_ROOT}"  ]
+    then
+    ROOTDIR="${PKG_INSTALL_ROOT}/"
+    CHROOT="/usr/sbin/chroot ${ROOTDIR}"
+  fi
+fi
+
+if [ "$uname" = Linux ]; then
+  CP=$ROOTDIR/bin/cp
+  SU=$ROOTDIR/bin/su
+  GREP=$ROOTDIR/bin/grep
+  CAT=$ROOTDIR/bin/cat
+  CHMOD=$ROOTDIR/bin/chmod
+  CHOWN=$ROOTDIR/bin/chown
+  MKDIR=$ROOTDIR/bin/mkdir
+else
+  CP=$ROOTDIR/usr/bin/cp
+  SU=$ROOTDIR/usr/bin/su
+  GREP=$ROOTDIR/usr/bin/grep
+  CAT=$ROOTDIR/usr/bin/cat
+  CHMOD=$ROOTDIR/usr/bin/chmod
+  CHOWN=$ROOTDIR/usr/bin/chown
+  MKDIR=$ROOTDIR/usr/bin/mkdir
+fi
+
+# Maybe append to logcheck.ignore and logcheck.violation.ignore
+#
+# First try to find it
+ignore_file=$ROOTDIR/etc/logcheck/ignore.d.server/local
+if [ ! -f $ignore_file ]
+then
+  ignore_file=$ROOTDIR/etc/logcheck.ignore
+  if [ ! -f $ignore_file ]
+  then
+    ignore_file=$ROOTDIR/usr/local/etc/logcheck.ignore
+    if [ ! -f $ignore_file ]
+    then
+      echo "I can't find logcheck.ignore.  Update it yourself."
+      ignore=_file""
+    fi
+  fi
+fi
+if [ "$ignore_file" != "" ]
+then
+  ignore_line="JJStats"
+  grep "$ignore_line" $ignore_file > /dev/null
+  if [ $? != 0 ]
+  then
+    echo "Appending this to $ignore_file:"
+    echo "$ignore_line"
+    echo "$ignore_line" >> $ignore_file
+  fi
+fi
+
+ignore_file=$ROOTDIR/etc/logcheck/violations.ignore.d/local
+if [ ! -f $ignore_file ]
+then
+  ignore_file=$ROOTDIR/etc/logcheck.violations.ignore
+  if [ ! -f $ignore_file ]
+  then
+    ignore_file=$ROOTDIR/usr/local/etc/logcheck.violations.ignore
+    if [ ! -f $ignore_file ]
+    then
+      echo "I can't find logcheck.violations.ignore.  Update it yourself."
+      ignore=_file""
+    fi
+  fi
+fi
+if [ "$ignore_file" != "" ]
+then
+  ignore_line="JJStats"
+  grep "$ignore_line" $ignore_file > /dev/null
+  if [ $? != 0 ]
+  then
+    echo "Appending this to $ignore_file:"
+    echo "$ignore_line"
+    echo "$ignore_line" >> $ignore_file
+  fi
+fi
+
+# The only place the poor stats user can write
+$MKDIR -p $ROOTDIR/var/$NAME
+touch $ROOTDIR/var/$NAME/messages
+$CHOWN -R $OUR_UID:$OUR_GID $ROOTDIR/var/$NAME
+for dir in incoming outgoing outgoing/uploads locks tmp
+do
+  if [ ! -d $ROOTDIR/var/$NAME/$dir ]
+    then
+    $MKDIR -p $ROOTDIR/var/$NAME/$dir
+  fi
+done
+$CHOWN -R $OUR_UID:$OUR_GID $ROOTDIR/var/$NAME
+
+ROOTDIR=/
+CHROOT=""
+
+if [ "`uname`" = SunOS ]
+  then
+  if [ ! -z "${PKG_INSTALL_ROOT}"  ]
+    then
+    ROOTDIR="${PKG_INSTALL_ROOT}/"
+    CHROOT="/usr/sbin/chroot ${ROOTDIR}"
+  fi
+fi
+
+MYHOME=$ROOTDIR/usr/local/$NAME
+
+CRONTAB_FILE="$ROOTDIR/var/spool/cron/crontabs/$OUR_USER"
+DEFAULT_CONF="$MYHOME/etc/stats.conf.default"
+# These are used after chroot
+CRONTAB="/usr/bin/crontab"
+DEFAULT_CRONTAB="/usr/local/$NAME/etc/crontab"
+
+status=0
+uname=`uname`
+DEBIAN=""
+DEBIAN_VERSION="/etc/debian_version"
+
+if [ "$uname" = Linux ]; then
+  CP=$ROOTDIR/bin/cp
+  # This is used after chroot
+  SU=/bin/su
+  GREP=$ROOTDIR/bin/grep
+  CAT=$ROOTDIR/bin/cat
+  CHMOD=$ROOTDIR/bin/chmod
+  CHOWN=$ROOTDIR/bin/chown
+  MKDIR=$ROOTDIR/bin/mkdir
+  CRONTAB_ALLOW=$ROOTDIR/etc/cron.d/cron.allow
+  CRONTAB_DENY=$ROOTDIR/etc/cron.d/cron.deny
+  if [ -f $DEBIAN_VERSION ]; then
+    DEBIAN=1
+  fi
+else
+  CP=$ROOTDIR/usr/bin/cp
+  # This is used after chroot
+  SU=/usr/bin/su
+  GREP=$ROOTDIR/usr/bin/grep
+  CAT=$ROOTDIR/usr/bin/cat
+  CHMOD=$ROOTDIR/usr/bin/chmod
+  CHOWN=$ROOTDIR/usr/bin/chown
+  MKDIR=$ROOTDIR/usr/bin/mkdir
+  if [ "$uname" = "SunOS" ]; then
+    CRONTAB_ALLOW=$ROOTDIR/etc/cron.d/cron.allow
+    CRONTAB_DENY=$ROOTDIR/etc/cron.d/cron.deny
+  else
+  # Assume HP-UX
+    CRONTAB_ALLOW=$ROOTDIR/var/adm/cron/cron.allow
+    CRONTAB_DENY=$ROOTDIR/var/adm/cron/cron.deny
+  fi
+fi
+
+# If the crontab looks like it has our stuff in it, do nothing
+$GREP collect $CRONTAB_FILE > /dev/null 2>&1
+status=$?
+
+if [ $status != 0 ]; then
+  # - If cron.allow exists, make sure stats is in it. That's all.
+  if [ -f $CRONTAB_ALLOW ]; then
+    $GREP $OUR_USER $CRONTAB_ALLOW > /dev/null
+    if [ $? != 0 ]; then
+      echo $OUR_USER >> $CRONTAB_ALLOW
+    fi
+  else
+    # - If cron.deny exists and cron.allow does not exist, make sure
+    #   stats is not in cron.deny. That's all.
+    if [ -f $CRONTAB_DENY ]; then
+      $GREP $OUR_USER $CRONTAB_DENY > /dev/null
+      if [ $? = 0 ]; then
+	echo "Ack!  $OUR_USER is explicitly denied access to cron.  Bailing."
+	exit 7
+      fi
+    else
+      # - If neither exists, then if you're not on Debian, create
+      #   cron.allow and put stats in it.
+      if [ "$DEBIAN" = "" ]; then
+	echo $OUR_USER >> $CRONTAB_ALLOW
+      fi
+    fi
+  fi
+  $CHROOT $SU $OUR_USER -c "$CRONTAB $DEFAULT_CRONTAB"
+fi
+
+# For Solaris, put 'NP' into stats' password field in /etc/shadow
+if [ "$uname" = SunOS ]
+then
+  $GREP "^$OUR_USER:" $ROOTDIR/etc/shadow > /dev/null
+  if [ $? != 0 ]
+  then
+    echo "Gack!  $OUR_USER is not in $ROOTDIR/etc/shadow.  I am helpless!"
+    exit 4
+  fi
+  $GREP "^$OUR_USER:NP:" $ROOTDIR/etc/shadow > /dev/null
+  if [ $? != 0 ]
+  then
+    OUMASK=`umask`
+    umask 077
+    TMP="$ROOTDIR/var/$NAME/tmp/shadow"
+    SHADOW="$ROOTDIR/etc/shadow"
+    echo "Hmm, bad-looking password field for $OUR_USER in $SHADOW.  Making it be 'NP'"
+    cp $SHADOW $TMP.bk
+    if [ $? != 0 ]
+    then
+      echo "Ack!  Backup of $SHADOW failed.  Bailing."
+      rm -f $TMP*
+      exit 6
+    fi
+    sed "s/^$OUR_USER:[^:]*:/$OUR_USER:NP:/" $SHADOW > $TMP
+    if [ $? != 0 ]
+    then
+      echo "Ack!  sed failed.  Bailing."
+      rm -f $TMP*
+      exit 5
+    fi
+    cp $TMP $SHADOW
+    if [ $? != 0 ]
+    then
+      echo "Ack ack ack!  Copying $TMP to $SHADOW failed!!  HELP!!  Orig shadow file is $TMP.bk.  Bailing."
+      rm -f $TMP*
+      exit 7
+    fi
+    rm -f $TMP*
+    umask $OUMASK
+  fi
+fi
+
+#CONF="$MYHOME/etc/`$CAT $FQDN`.conf"
+CONF="$MYHOME/etc/stats.conf"
+if [ ! -s $CONF ]; then
+  echo "Creating conf file based on $DEFAULT_CONF"
+  $CP $DEFAULT_CONF $CONF
+else
+  echo "$CONF exists.  Not touching it."
+fi
+
+exit 0

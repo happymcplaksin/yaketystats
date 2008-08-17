@@ -1,0 +1,17 @@
+# Comments must have # in first column.
+#
+# Format:
+# COLLECTOR:IGNORE_REGEXP
+#
+# There's an implicit ^ at the beginning of REGEXP but there's no way to
+# specify an explicit $.  Sorry.
+#
+# Examples:
+# load:15-minute
+# net:lan0
+# io:c0t0d0
+# disk:/home
+
+# Ignore loopback by default
+net:lo
+net:ppp

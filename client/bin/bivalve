@@ -1,0 +1,32 @@
+#!/usr/bin/perl
+
+# Each collector script calls bivalve to write its data to the incoming directory.
+# bivalve does locking so each script doesn't have to.
+#
+# Usage: bivalve TIMESTAMP STATNAME HOSTNAME
+
+use strict;
+use warnings;
+use Fcntl ':flock'; # get LOCK_*
+
+use Cwd 'realpath';
+our $g_dir = __FILE__;
+$g_dir =~ s/\/[^\/]+$//;
+$g_dir = realpath("$g_dir/..");
+require "$g_dir/lib/include";
+
+our ($g_collector, $g_host);
+get_config ("client");
+
+if ( @ARGV < 2 ) {
+  usage ();
+} else {
+  $g_collector = $ARGV[0];
+  $g_host = $ARGV[1];
+  bivalve ();
+}
+
+sub usage {
+  print "Usage: bivalve STATNAME HOSTNAME\n";
+  exit (1);
+}

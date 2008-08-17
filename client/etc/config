@@ -1,0 +1,47 @@
+# Comment lines start with #
+# Paths
+path:   hpux:    bdf:           /usr/bin/bdf
+path:   hpux:    bivalve:       /usr/local/yaketystats/bin/bivalve
+path:   hpux:    lanadmin:      /usr/sbin/lanadmin
+path:   hpux:    lanscan:       /usr/sbin/lanscan
+path:   hpux:    logger:        /usr/bin/logger
+path:   hpux:    logtail:       /usr/local/bin/logtail
+path:   hpux:    mount:         /usr/sbin/mount
+path:   hpux:    netstat:       /usr/bin/netstat
+path:   hpux:    RAMsize:       /usr/local/bin/RAMsize
+path:   hpux:    sar:           /usr/sbin/sar
+path:   hpux:    uptime:        /usr/bin/uptime
+path:   hpux:    vgdisplay:     /usr/sbin/vgdisplay
+path:   hpux:    vmstat:        /usr/bin/vmstat
+
+path:   linux:   bivalve:       /usr/local/yaketystats/bin/bivalve
+path:   linux:   curl:          /usr/bin/curl
+path:   linux:   df:            /bin/df
+path:   linux:   find:          /usr/bin/find
+path:   linux:   free:          /usr/bin/free
+path:   linux:   ifconfig:      /sbin/ifconfig
+path:   linux:   logger:        /usr/bin/logger
+path:   linux:   logtail:       /usr/sbin/logtail
+path:   linux:   ls:            /bin/ls
+path:   linux:   mount:         /bin/mount
+path:   linux:   netstat:       /bin/netstat
+path:   linux:   sar:           /usr/bin/sar
+path:   linux:   snmpget:       /usr/bin/snmpget
+path:   linux:   uptime:        /usr/bin/uptime
+path:   linux:   vmstat:        /usr/bin/vmstat
+
+path:   solaris: bivalve:       /usr/local/yaketystats/bin/bivalve
+path:   solaris: df:            /usr/bin/df
+path:   solaris: kstat:         /usr/bin/kstat
+path:   solaris: logger:        /usr/bin/logger
+path:   solaris: logtail:       /usr/local/sbin/logtail
+path:   solaris: ls: 		/usr/bin/ls
+path:   solaris: mount:         /usr/sbin/mount
+path:   solaris: netstat:       /usr/bin/netstat
+path:   solaris: prtconf:       /usr/sbin/prtconf
+path:   solaris: ps:            /usr/bin/ps
+path:   solaris: sar:           /usr/sbin/sar
+path:   solaris: swap:          /usr/sbin/swap
+path:   solaris: uptime:        /bin/uptime
+path:   solaris: vmstat:        /usr/bin/vmstat
+
