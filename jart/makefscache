@@ -1,0 +1,5 @@
+#!/bin/sh
+
+rrddir=/rrd
+
+find $rrddir -follow > fscache

@@ -1,0 +1,271 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+    <title>Image Maptastic</title>
+    <script>
+    function centerOn(int){
+        alert("I will center on " + int );
+    }
+    </script>
+
+    <style type="text/css">
+    <!--
+    dl#graph0map{
+        margin: 0;
+        padding: 0;
+        background: transparent url(example-graph.png) top left no-repeat;
+        height: 226px;
+        width: 480px;
+        position: relative;
+    }
+    dt{ margin: 0; padding: 0; position: absolute; font-size: 85%; display: none; }
+    dd{ margin: 0; padding: 0; position: absolute;  font-size: 85%; }
+    dl#graph0map dt.title{
+        color: red;
+        display: block;
+        font-size: 75%;
+        padding: 1px 0 0 5px;
+    }
+
+    dd#graph0map1Def{
+        top: 22px;
+        right: 390px;
+    }
+    dd#graph0map1Def a{
+        absolute;
+        width: 73px;
+        height: 50px;
+        text-decoration: none;
+        border: 1px solid #ddd;
+    }
+
+    dd#graph0map2Def{
+        top: 22px;
+        right: 365px;
+    }
+    dd#graph0map2Def a{
+        absolute;
+        width: 73px;
+        height: 50px;
+        text-decoration: none;
+        border: 1px solid #ddd;
+    }
+
+    dd#graph0map3Def{
+        top: 22px;
+        right: 340px;
+    }
+    dd#graph0map3Def a{
+        absolute;
+        width: 73px;
+        height: 50px;
+        text-decoration: none;
+        border: 1px solid #ddd;
+    }
+
+    dd#graph0map4Def{
+        top: 22px;
+        right: 315px;
+    }
+    dd#graph0map4Def a{
+        absolute;
+        width: 73px;
+        height: 50px;
+        text-decoration: none;
+        border: 1px solid #ddd;
+    }
+
+    dd#graph0map5Def{
+        top: 22px;
+        right: 290px;
+    }
+    dd#graph0map5Def a{
+        absolute;
+        width: 73px;
+        height: 50px;
+        text-decoration: none;
+        border: 1px solid #ddd;
+    }
+
+    dd#graph0map6Def{
+        top: 22px;
+        right: 265px;
+    }
+    dd#graph0map6Def a{
+        absolute;
+        width: 73px;
+        height: 50px;
+        text-decoration: none;
+        border: 1px solid #ddd;
+    }
+
+    dd#graph0map7Def{
+        top: 22px;
+        right: 240px;
+    }
+    dd#graph0map7Def a{
+        absolute;
+        width: 73px;
+        height: 50px;
+        text-decoration: none;
+        border: 1px solid #ddd;
+    }
+
+    dd#graph0map8Def{
+        top: 22px;
+        right: 215px;
+    }
+    dd#graph0map8Def a{
+        absolute;
+        width: 73px;
+        height: 50px;
+        text-decoration: none;
+        border: 1px solid #ddd;
+    }
+
+    dd#graph0map9Def{
+        top: 22px;
+        right: 190px;
+    }
+    dd#graph0map9Def a{
+        absolute;
+        width: 73px;
+        height: 50px;
+        text-decoration: none;
+        border: 1px solid #ddd;
+    }
+
+    dd#graph0map10Def{
+        top: 22px;
+        right: 165px;
+    }
+    dd#graph0map10Def a{
+        absolute;
+        width: 73px;
+        height: 50px;
+        text-decoration: none;
+        border: 1px solid #ddd;
+    }
+
+    dd#graph0map11Def{
+        top: 22px;
+        right: 140px;
+    }
+    dd#graph0map11Def a{
+        absolute;
+        width: 73px;
+        height: 50px;
+        text-decoration: none;
+        border: 1px solid #ddd;
+    }
+
+    dd#graph0map12Def{
+        top: 22px;
+        right: 115px;
+    }
+    dd#graph0map12Def a{
+        absolute;
+        width: 73px;
+        height: 50px;
+        text-decoration: none;
+        border: 1px solid #ddd;
+    }
+
+    dd#graph0map13Def{
+        top: 22px;
+        right: 90px;
+    }
+    dd#graph0map13Def a{
+        absolute;
+        width: 73px;
+        height: 50px;
+        text-decoration: none;
+        border: 1px solid #ddd;
+    }
+
+    dd#graph0map14Def{
+        top: 22px;
+        right: 65px;
+    }
+    dd#graph0map14Def a{
+        absolute;
+        width: 73px;
+        height: 50px;
+        text-decoration: none;
+        border: 1px solid #ddd;
+    }
+
+    dd#graph0map15Def{
+        top: 22px;
+        right: 40px;
+    }
+    dd#graph0map15Def a{
+        absolute;
+        width: 73px;
+        height: 50px;
+        text-decoration: none;
+        border: 1px solid #ddd;
+    }
+
+    dd#graph0map16Def{
+        top: 22px;
+        right: 15px;
+    }
+    dd#graph0map16Def a{
+        absolute;
+        width: 73px;
+        height: 50px;
+        text-decoration: none;
+        border: 1px solid #ddd;
+    }
+    -->
+    </style>
+</head>
+<body>
+<p>
+So the difficult part of this is that every graph is differently sized, so it's impossible, basically.
+</p>
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<dl id="graph0map">
+    <dt class="title">This is a title</dt>
+    <dt id="graph0map1">does this text matter?</dt>
+    <dd id="graph0map1Def"><a href="#" onClick="centerOn(1); return false;">^</a></dd>
+    <dt id="graph0map2">does this text matter?</dt>
+    <dd id="graph0map2Def"><a href="#" onClick="centerOn(2); return false;">^</a></dd>
+    <dt id="graph0map3">does this text matter?</dt>
+    <dd id="graph0map3Def"><a href="#" onClick="centerOn(3); return false;">^</a></dd>
+    <dt id="graph0map4">does this text matter?</dt>
+    <dd id="graph0map4Def"><a href="#" onClick="centerOn(4); return false;">^</a></dd>
+    <dt id="graph0map5">does this text matter?</dt>
+    <dd id="graph0map5Def"><a href="#" onClick="centerOn(5); return false;">^</a></dd>
+    <dt id="graph0map6">does this text matter?</dt>
+    <dd id="graph0map6Def"><a href="#" onClick="centerOn(6); return false;">^</a></dd>
+    <dt id="graph0map7">does this text matter?</dt>
+    <dd id="graph0map7Def"><a href="#" onClick="centerOn(7); return false;">^</a></dd>
+    <dt id="graph0map8">does this text matter?</dt>
+    <dd id="graph0map8Def"><a href="#" onClick="centerOn(8); return false;">^</a></dd>
+    <dt id="graph0map9">does this text matter?</dt>
+    <dd id="graph0map9Def"><a href="#" onClick="centerOn(9); return false;">^</a></dd>
+    <dt id="graph0map10">does this text matter?</dt>
+    <dd id="graph0map10Def"><a href="#" onClick="centerOn(10); return false;">^</a></dd>
+    <dt id="graph0map11">does this text matter?</dt>
+    <dd id="graph0map11Def"><a href="#" onClick="centerOn(11); return false;">^</a></dd>
+    <dt id="graph0map12">does this text matter?</dt>
+    <dd id="graph0map12Def"><a href="#" onClick="centerOn(12); return false;">^</a></dd>
+    <dt id="graph0map13">does this text matter?</dt>
+    <dd id="graph0map13Def"><a href="#" onClick="centerOn(13); return false;">^</a></dd>
+    <dt id="graph0map14">does this text matter?</dt>
+    <dd id="graph0map14Def"><a href="#" onClick="centerOn(14); return false;">^</a></dd>
+    <dt id="graph0map15">does this text matter?</dt>
+    <dd id="graph0map15Def"><a href="#" onClick="centerOn(15); return false;">^</a></dd>
+    <dt id="graph0map16">does this text matter?</dt>
+    <dd id="graph0map16Def"><a href="#" onClick="centerOn(16); return false;">^</a></dd>
+</dl>
+</body>
+</html>

@@ -1,0 +1,260 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title></title>
+<script type="text/javascript" src="js/prototype.js"></script>
+<script type="text/javascript" src="js/scriptaculous.js?load=effects,dragdrop"></script>
+<script type="text/javascript">
+//<![CDATA[
+
+var G = (function() {
+    var cg = 0;
+    var whatclick = 0;
+    function buildList() {
+            var ul = document.createElement("ul");
+            ul.id = "ul" + G.cg;
+
+            var li = null;
+            for (var i = 0; i < 5; ++i) {
+                    li = document.createElement("li");
+                    li.id = "li" + G.cg + "_" + i;
+                    li.appendChild(document.createTextNode("List " + G.cg + "Item " +  i));
+                    ul.appendChild(li);
+            }
+            document.body.appendChild(ul);
+
+            Sortable.create('ul' + G.cg, {onUpdate:function(el){reorderPaths(Sortable.serialize(el))}} );
+
+    }
+    function reorderPaths(str){
+        alert('I think I am working with ' + str );
+    }
+
+    function init(){
+        //var i = 0;
+        //for(i=0;i<3;i++){
+            //G.cg=i;
+            //buildList();
+        //}
+        //var stupid = $('taco');
+        //Event.observe(stupid,'mouseover',moh);
+        //Event.observe(stupid,'mouseout',mouth);
+        //var dummber = $('childoftaco');
+        //Event.observe(stupid,'mouseover',sonofmoh);
+        //Event.observe(stupid,'mouseout',sonofmouth);
+        var hili = $('hilee');
+        Event.observe(hili,'mousedown',um);
+    }
+    function isMouseLeaveOrEnter(e, handler) { 
+        if (e.type != 'mouseout' && e.type != 'mouseover') return false;
+        var reltg = e.relatedTarget ? e.relatedTarget:
+        e.type == 'mouseout' ? e.toElement:
+        e.fromElement; while (reltg && reltg != handler) reltg = reltg.parentNode;
+        return (reltg != handler);
+    }
+    function sonofmouth(e){
+        if ( ! isMouseLeaveOrEnter(e, this) ){
+            return;
+        }
+    }
+    function mouth(e){
+        if ( ! isMouseLeaveOrEnter(e, this) ){
+            return;
+        }
+    }
+    function sonofmoh(e){
+        console.log('son of Called');
+        if ( ! isMouseLeaveOrEnter(e, this) ){
+            return;
+        }
+        console.log('son of made it in');
+    }
+    function moh(e){
+        //console.log('Called');
+        if ( ! isMouseLeaveOrEnter(e, this) ){
+            return;
+        }
+        //console.log('I am about to make some elements baby');
+        return;
+        var t = $('taco');
+        var d = document.createElement('div');
+        d.id  = 'gcot';
+        var i = document.createElement('img');
+        i.src = 'img/scanner-transparent-back.gif';
+        d.appendChild(i);
+        t.appendChild(d);
+    }
+    var umarray = new Array();
+    function um(e){
+        //console.log(e);
+        var ox = Event.pointerX(e);
+        var oy = Event.pointerY(e);
+        var g  = $('overlaycontainerfor-0');
+        var ol = g.offsetLeft;
+        var ot = g.offsetTop;
+        //console.log(ol);
+        x = ox - 60;
+        y = oy - 35;
+        //console.log(x);
+        //console.log(y);
+        if ( whatclick == 0 ){
+            var n = document.getElementsByClassName('o0N','graph-0');
+            n = n[0];
+            //console.log(n);
+            n.style.height = y + 'px';
+            umarray[0] = ot + y;
+            //console.log(ot + y);
+            var w = document.getElementsByClassName('o0W','graph-0');
+            w = w[0];
+            //console.log(w);
+            w.style.width = x + 'px';
+            w.style.top   = (oy - 13) + 'px';
+            w.style.height = (100 - umarray[0] + ot) + 'px';
+            umarray[1] = ol + x;
+            whatclick = 1;
+        }else{
+            var ea = document.getElementsByClassName('o0E','graph-0');
+            ea = ea[0];
+            ea.style.left = (ox - 10 ) + 'px';
+            ea.style.width = (400 - x) + 'px';
+            ea.style.top   = umarray[0] + 'px';
+            ea.style.height = (100 - umarray[0] + ot) + 'px';
+            umarray[2] = ox - 10;
+            var s = document.getElementsByClassName('o0S','graph-0');
+            s = s[0];
+            s.style.top = (oy - 12 ) + 'px';
+            s.style.left = umarray[1] + 'px';
+            s.style.width = ( umarray[2] - umarray[1] ) + 'px';
+            s.style.height = (100 - y) + 'px';
+            umarray[3] = y;
+            whatclick = 0;
+        }
+    }
+    return{
+        'init':init,'cg':cg
+    }
+})();
+    function addLoadEvent(func) {
+        var oldonload = window.onload;
+        if (typeof window.onload != 'function') {
+            window.onload = func;
+        } else {
+            window.onload = function() {
+                oldonload();
+                func();
+            }
+        }
+    }
+    addLoadEvent(G.init);
+
+//]]>
+</script>
+<style type="text/css">
+body {
+        position:relative;
+        color: black;
+        background-color: white;
+        font-size: small;
+}
+#taco{
+    width: 500px;
+    height: 500px;
+    background-color: #ddd;
+    position: relative;
+}
+#childoftaco{
+    width: 250px;
+    height: 250px;
+    background-color: #ccc;
+    position: absolute;
+    top: 100px;
+}
+#gcot{
+    width: 100px;
+    height: 100px;
+    background-color: #aaa;
+    position: absolute;
+    left: 100px;
+}
+.graph{
+    position: relative;
+}
+.overlay{
+    position: relative;
+    top: 22px;
+    left: 51px;
+    height: 100px;
+    max-height: 100px;
+    width: 400px;
+    max-width: 400px;
+    z-index: 2;
+    overflow: hidden;
+}
+.underlay{
+    position: relative;
+    top: -22px;
+    left: -51px;
+    z-index: 1;
+    width: 481px;
+}
+.fl {
+    float: left;
+}
+.o0N{
+    position: absolute;
+    left:51px;
+    top: 22px;
+    width: 400px;
+    height: 0px;
+    background-color: #000;
+    opacity: 0.5;
+}
+.o0E{
+    position: absolute;
+    left:51px;
+    top: 22px;
+    width: 0px;
+    height: 100px;
+    background-color: #000;
+    opacity: 0.5;
+}
+.o0S{
+    position: absolute;
+    left:51px;
+    top: 22px;
+    width: 400px;
+    height: 0px;
+    background-color: #000;
+    opacity: 0.5;
+}
+.o0W{
+    position: absolute;
+    left:51px;
+    top: 22px;
+    width: 0px;
+    height: 100px;
+    background-color: #000;
+    opacity: 0.5;
+}
+li {margin: 2px; padding: 2px .5em; list-style-type:none;border:1px solid;cursor:move;}
+#ul1 li {background-color: #dbb;}
+#ul2 li {background-color: #bdb;}
+#ul3 li {background-color: #bbd;}
+</style>
+</head>
+<body>
+<div id="graph-0" class="graph">
+    <div id="overlaycontainerfor-0" class="overlay">
+        <div class="underlay">
+            <img src="graphs/sam-0.png" id="hilee" />
+            <div class="o0N"></div>
+            <div class="o0E"></div>
+            <div class="o0S"></div>
+            <div class="o0W"></div>
+        </div>
+    </div>
+    <img src="graphs/sam-0.png" />
+</div>
+</body>
+</html>
