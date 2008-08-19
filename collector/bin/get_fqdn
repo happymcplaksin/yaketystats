@@ -1,0 +1,28 @@
+#!/bin/sh
+
+# Assume a reasonable search path and complain if you don't get good results.
+
+# For Solaris
+PATH="/usr/sbin:/usr/xpg4/bin:/usr/local/bin:$PATH"
+export PATH
+
+# For HP-UX
+nsquery=/usr/contrib/bin/nsquery
+
+hostname="`hostname`"
+
+if [ "`uname`" = "HP-UX" -a -x $nsquery ]; then
+  fqdn="`$nsquery hosts \"\$hostname\" | grep '^Hostname:' | awk '{print \$2}' | tr '[A-Z]' '[a-z]'`"
+else
+  fqdn="`nslookup \"\$hostname\" | egrep '^Name:|name =' | awk '{print \$NF}' | sed 's/[.]$//' | tr '[A-Z]' '[a-z]'`"
+fi
+
+# If there's no dot in the result, report badness on stderr
+echo "$fqdn" | grep '[.]' > /dev/null
+if [ $? != 0 ]
+then
+  echo "Did not get a useful FQDN:  $fqdn" 1>&2
+  exit 1
+else
+  echo "$fqdn"
+fi

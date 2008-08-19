@@ -1,0 +1,244 @@
+#!/usr/bin/perl
+
+$|=1;
+
+use strict;
+use warnings;
+use Cwd 'realpath';
+our $g_dir = __FILE__;
+$g_dir =~ s/\/[^\/]+$//;
+$g_dir = realpath("$g_dir/..");
+require "$g_dir/lib/include";
+
+my (@data, $line);
+
+# These are the defaults.  They could be semi-overridden by specifying a
+# different interval in the client config file, but the RRD file would still have
+# space for updates every $interval as defined below.
+my $rrd_type = "GAUGE";
+my $rrd_interval;
+
+our ($g_exit, $g_os, $g_default_timeout, $g_host, $g_sep, $g_collector);
+$main::g_host = get_hostname ();
+$main::g_collector = "memory";
+
+# If we haven't loaded subs.pl, then we've been run from the command-line.  That
+# means we're in test mode.  So load include, define $g_host, and print results.
+if (! defined (@ARGV) || (! defined ($ARGV[1]) && $ARGV[1] eq "calledfromcollect") ) {
+  # TODO: There must be a better way to get this path!  I think the better
+  # way is called "perl module" :)
+  local $main::g_fileit_mode = "test";
+  # Silence warning
+  $main::g_fileit_mode = $main::g_fileit_mode;
+  get_ignores ();
+  $rrd_interval = 60;
+  fileit ("You ran $g_collector manually; setting interval to $rrd_interval.");
+  @data = doit ();
+  foreach my $line (@data) {
+    print "$line";
+  }
+  print "\n";
+} else {
+  if ( defined ($ARGV[0]) && $ARGV[0] =~ /^\d+$/ ) {
+    $rrd_interval = $ARGV[0];
+  } else {
+    fileit ("Ack!  No interval for $g_collector.  Bailing.");
+    exit ();
+  }
+  get_ignores ();
+  @data = doit ();
+  if ( defined ($data[0]) ) {
+    bivalve (@data);
+  } else {
+    fileit ("Warning:  No data for $g_collector");
+  }
+}
+
+sub doit {
+  my ($time, @return);
+
+  $time = time ();
+  if ( $g_os eq "linux" ) {
+    @return = memory_linux ($time);
+  } elsif ( $g_os eq "hpux" ) {
+    @return = memory_hpux ($time);
+  } elsif ( $g_os eq "solaris" ) {
+    @return = memory_solaris ($time);
+  }
+  return (@return);
+}
+
+# Linux:
+#  Sample free output (all numbers are in k):
+#              total       used       free     shared    buffers     cached
+# Mem:        516588     479284      37304          0      73808     127212
+# -/+ buffers/cache:     278264     238324
+# Swap:      1028120        528    1027592
+sub memory_linux {
+  my ($time) = @_;
+
+  my ($cmd, $status, @data, $line, @loads, @return, $total, $used, $free, $buffers,
+      $cached);
+
+  $cmd = get_path ('free');
+  ($total, $used, $free, $buffers, $cached) =
+    parse_cmd ("$cmd -b", $g_default_timeout, 1, undef, '\s+',
+               'Unknown HZ value', 0, (1, 2, 3, 5, 6));
+  check_vars ($g_exit, $total, "total", $used, "used", $buffers, "buffers",
+              $cached, "$cached");
+
+  push (@return,
+        "p=/$main::g_host/memory/total${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$total\n");
+  push (@return,
+        "p=/$main::g_host/memory/used${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$used\n");
+  push (@return,
+        "p=/$main::g_host/memory/free${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$free\n");
+  push (@return,
+        "p=/$main::g_host/memory/buffers${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$buffers\n");
+  push (@return,
+        "p=/$main::g_host/memory/cached${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$cached\n");
+  return (@return);
+}
+
+
+# To do fancier memory stats for Solaris, read this:
+#   http://sunsolve.sun.com/search/document.do?assetkey=1-9-72971-1
+#
+# Happy says the following is sufficient for our needs:
+#   - Use prtconf to find physical RAM
+#   - Size of free list from vmstat
+#   - Use 'swap -l' to find swap space slices and files
+#   - Use 'swap -s' to find used swap.  For example, the "XYZk used" part of this swap -s output:
+#       total: 2082568k bytes allocated + 221536k reserved = 2304104k used, 8434056k available
+#   - 'sar -w' to get bswin bswo
+sub memory_solaris {
+  my ($time) = @_;
+
+  my ($cmd, $status, @data, $line, @return, $total_ram, $total_swap, $used_swap,
+      $free_list, $swap_bytes_in, $swap_bytes_out, @swap_spaces, $i);
+
+  # - 'prtconf | grep "^Memory size:" to get physical RAM
+  #   Output: "Memory size: 2048 Megabytes"
+  $cmd = get_path ('prtconf');
+
+  ($total_ram) = parse_cmd ($cmd, $g_default_timeout, "^Memory size:", undef,
+                            '\s+', undef, 0, (2));
+  check_vars ($g_exit, $total_ram, "total_ram");
+  # Convert from megabytes to bytes
+  $total_ram *= 1024*1024;
+
+  # - vmstat to get size of free list
+  #   Output:
+  #    vmstat 3 2
+  #     kthr      memory            page            disk          faults      cpu
+  #     r b w   swap  free  re  mf pi po fr de sr m0 m1 m1 m1   in   sy   cs us sy id
+  #     0 0 0 4944208 1137200 730 468 5159 19 18 0 0 66 1 0 0 1663 4787  424  7  5 88
+  #     0 0 0 4389104 622000 51 185 0  3  3  0  0  1  0  0  0  712 1816  296  1  0 99
+  $cmd = get_path ('vmstat');
+  ($free_list) = parse_cmd ("$cmd 3 2", $g_default_timeout, -1, undef, '\s+',
+                           undef, 0, (5));
+  check_vars ($g_exit, $free_list, "free_list");
+  # Convert from k to bytes
+  $free_list *= 1024;
+
+  # - Use 'swap -l' to find swap space slices and files
+  $cmd = get_path ('swap');
+  (@swap_spaces) = parse_cmd ("$cmd -l", $g_default_timeout, '.', undef, '\s+',
+			      "^swapfile", 0, (3));
+  foreach $i (@swap_spaces) {
+    $total_swap += $i;
+  }
+  # swap -l gives the number of 512-byte so multiple by 512 to get bytes
+  $total_swap *= 512;
+
+  # - 'swap -s' to get used swap
+  #   Output:
+  #   total: 1123256k bytes allocated + 187568k reserved = 1310824k used, 4384760k available
+  ($used_swap) = parse_cmd ("$cmd -s", $g_default_timeout, 0, undef,
+			    '\s+', undef, 0, (8));
+  check_vars ($g_exit, $used_swap, "used_swap");
+  $used_swap =~ s/k//;
+  # Convert from k to bytes
+  $used_swap *= 1024;
+
+  # - sar to get bswin bswo
+  #   Output:
+  #   hermes_0:~ $ sar -w 2
+  #
+  #   SunOS hermes 5.9 Generic_117171-12 sun4u    01/20/2005
+  #
+  #   12:42:28 swpin/s bswin/s swpot/s bswot/s pswch/s
+  #   12:42:30    0.00     0.0    0.00     0.0     306
+  $cmd = get_path ('sar');
+  ($swap_bytes_in, $swap_bytes_out) =
+    parse_cmd ("$cmd -w 2", $g_default_timeout, 4, undef, '\s+', undef, 0, (2, 4));
+  check_vars ($g_exit, $swap_bytes_in, "swap_bytes_in",
+              $swap_bytes_out, "swap_bytes_out");
+
+  push (@return,
+        "p=/$main::g_host/memory/total_ram${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$total_ram\n");
+  push (@return,
+        "p=/$main::g_host/memory/free_list${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$free_list\n");
+  push (@return,
+        "p=/$main::g_host/memory/total_swap${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$total_swap\n");
+  push (@return,
+        "p=/$main::g_host/memory/used_swap${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$used_swap\n");
+  push (@return,
+        "p=/$main::g_host/memory/swap_bytes_in${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$swap_bytes_in\n");
+  push (@return,
+        "p=/$main::g_host/memory/swap_bytes_out${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$swap_bytes_out\n");
+  return (@return);
+}
+
+# Michael's RAMsize gives this output:
+# Physical RAM: 2147483648 bytes = 2097152 Kbytes = 2048 Mbytes
+sub memory_hpux {
+  my ($time) = @_;
+
+  my ($cmd, $status, @data, $line, @return, $total_ram, $total_swap, $used_swap,
+      $free_ram, $swap_bytes_in, $swap_bytes_out);
+
+  # Michael's RAMsize gives this output:
+  # Physical RAM: 2147483648 bytes = 2097152 Kbytes = 2048 Mbytes
+  $cmd = get_path ('RAMsize');
+  ($total_ram) = parse_cmd ($cmd, $g_default_timeout, 0, undef, '\s+', undef,
+                            1, (2));
+  check_vars ($g_exit, $total_ram, "total_ram");
+
+  # - vmstat to get free phys
+  #   Output:
+  #    vmstat 3 2
+  #            procs           memory                   page                              faults       cpu
+  #       r     b     w      avm    free   re   at    pi   po    fr   de    sr     in     sy    cs  us sy id
+  #       0     1     0     2230  350953    7    6     0    0     9    0     0    427    238    36   0  0 100
+  #       0     1     0     1760  350898    3    3     0    0     2    0     0    414    166    32   0  0 100
+  $cmd = get_path ('vmstat');
+  ($free_ram) = parse_cmd ("$cmd 3 2", $g_default_timeout, 3, undef, '\s+', undef, 0, (5));
+  check_vars ($g_exit, $free_ram, "free_ram");
+  # *4k to get bytes
+  $free_ram *= 4*1024;
+
+  # - sar to get bswin bswo
+  #   Output:
+  #   mr_1:~/stats/lib $ sar -w 2
+  #   
+  #   HP-UX mr B.11.00 U 9000/800    01/20/05
+  #   
+  #   15:46:01 swpin/s bswin/s swpot/s bswot/s pswch/s
+  #   15:46:03    0.00     0.0    0.00     0.0      43
+  $cmd = get_path ('sar');
+  ($swap_bytes_in, $swap_bytes_out) =
+    parse_cmd ("$cmd -w 2", $g_default_timeout, 4, undef, '\s+', undef, 0, (2, 4));
+  check_vars ($g_exit, $swap_bytes_in, "swap_bytes_in",
+              $swap_bytes_out, "swap_bytes_out");
+
+  push (@return,
+"p=/$main::g_host/memory/total_ram${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$total_ram\n");
+  push (@return,
+"p=/$main::g_host/memory/free_ram${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$free_ram\n");
+  push (@return,
+"p=/$main::g_host/memory/swap_bytes_in${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$swap_bytes_in\n");
+  push (@return,
+"p=/$main::g_host/memory/swap_bytes_out${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$swap_bytes_out\n");
+  return (@return);
+}

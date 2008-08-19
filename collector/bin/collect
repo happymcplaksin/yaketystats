@@ -1,0 +1,245 @@
+#!/usr/bin/perl
+
+# If the minute is evenly divisible by 5 (TODO: make that configurable),
+# move stats from incoming dir to outgoing dir.  Also, add pusherman to the
+# list of collectors to be run.  pusherman is a special case collector
+# which sends data to the server.
+#
+# collect stats for the given interval.
+#
+# conf file determines which stats to collect in each interval.
+#
+# libexec/* provide the code to collect the stats.
+#
+# Each stat collector puts stats into $g_incoming (TODO: flesh this out)
+
+use strict;
+use warnings;
+use Cwd 'realpath';
+
+our $g_dir = __FILE__;
+$g_dir =~ s/\/[^\/]+$//;
+$g_dir = realpath("$g_dir/..");
+require "$g_dir/lib/include";
+
+# Redirect stdout and stderr ASAP
+our ($g_var);
+open STDOUT, ">>${g_var}/messages" or die "Can't redirect STDOUT: $!";
+open STDERR, ">&STDOUT" or die "Can't dup STDERR: $!";
+select STDERR; $| = 1;      # make unbuffered
+select STDOUT; $| = 1;      # make unbuffered
+
+use Fcntl ':flock'; # get LOCK_*
+use Data::Dumper;
+$Data::Dumper::Purity = 1;
+$Data::Dumper::Deepcopy = 1;
+use Getopt::Std;
+
+# TODO:  What the heck is this comment about?!?
+# Make LANG be empty so we don't get hosed.
+$ENV{'LANG'} = '';
+
+# Globals are from include
+our ($g_conf, $g_lock_dir,$g_incoming,$g_outgoing,$g_libexec,
+     $g_max_collectors, $g_debug, $g_debug_level, $collect_lock,
+     $collect_lock_fh);
+$g_conf = "$g_dir/etc/stats.conf";
+my %goldie_locks;
+my %config;
+my ($movie, $stat_checker, $status, $pid, $minute, %pids, @data, $seconds);
+our ($opt_p, $opt_d, $opt_l, $opt_o);
+# End globals.
+
+handle_args ();
+get_config ("client");
+
+# -o means "only run pusherman" so only read the config if that wasn't
+# specified.
+if ( ! defined ($opt_o) ) {
+  parse_config ();
+}
+
+if ( defined ($opt_o) || defined ($opt_p) ) {
+  debug ("Adding pusherman to 1-minute list.", 50);
+  push(@{ $config{1} },'pusherman');
+}
+
+# Lock so only one collect runs at a time
+$collect_lock = "$g_lock_dir/collect";
+$collect_lock_fh = return_fh ();
+open ($collect_lock_fh, ">$collect_lock") || die "Can't open $collect_lock: $!";
+if ( lock_fh ($collect_lock_fh) != 1 ) {
+  fileit ("Can't get lock ($collect_lock).  Bailing.");
+  exit (34);
+}
+
+# see if we need to move files to be combined and uploaded
+if ( minute_match(5) == 1 || $opt_p || $opt_o) {
+  # see if I/O is happening, if so wait for the lock
+  $goldie_locks{'outputfilelock'} = return_fh ();
+  if ( open ($goldie_locks{'outputfilelock'}, ">>$g_lock_dir/outputfilelock") ) {
+    # write the I/O lock
+    debug ("Locking all stats I/O", 40);
+    if ( lock_fh ($goldie_locks{'outputfilelock'}) == 1 ) {
+      # move the files into outgoing
+      debug ("Moving files from incoming ($g_incoming) to outgoing ($g_outgoing).", 50);
+      if ( opendir(DIR,$g_incoming) == 1 ) {
+	while ($movie = readdir(DIR)) {
+	  if ( $movie !~ /^[.]/ ) {
+	    debug ("Moving $g_incoming/$movie to $g_outgoing/$movie", 60);
+	    if ( rename("$g_incoming/$movie","$g_outgoing/$movie") != 1 ) {
+	      fileit ("Can't move $g_incoming/$movie to $g_outgoing/$movie: $!. Moving On.");
+	    }
+	  }
+	}
+	closedir(DIR);
+      } else {
+	fileit ("Can't open $g_incoming: $!. Moving On.");
+      }
+    }
+    # delete the I/O lock
+    debug ("Unlocking all stats I/O", 40);
+    unlock_fh ($goldie_locks{'outputfilelock'});
+  } else {
+    fileit ("Can't open $g_lock_dir/outputfilelock: $!. Moving On.");
+  }
+}
+
+# see what stats we're supposed to check right now
+foreach $minute (keys %config) {
+  $seconds = $minute * 60;
+  if ( minute_match ($minute) == 1 ) {
+    debug ("Doing minute $minute", 50);
+    # While there are stats to collect and/or pids that have not died,
+  OUTER: while ( @{ $config{$minute} } != 0 ||
+		 %pids ) {
+      # If collectors are running, wait for a collector to die,
+      if ( keys(%pids) > 0 ) {
+	# -1 means there are no processes left to wait for
+	if ( ($pid = wait) != -1 ) {
+	  debug ("pid=$pid has died.  R.I.P.", 40);
+	  # delete the lockfile of the current one
+	  unlock_fh($goldie_locks{$pids{$pid}});
+	  delete ($pids{$pid});
+	  debug (Data::Dumper->Dump ( [\%pids], ['*pids'] ), 100);
+	} else {
+	  fileit (sprintf ("wait returned -1.  So I will exit.  But it's weird.  The remaining pids are %s.\nThe remaining goldies are %s",
+			   keys (%pids), Data::Dumper->Dump ( [\%goldie_locks], ['*goldie_locks'] )));
+	  exit (0);
+	}
+      }
+
+      # Fork collectors until $g_max_collectors collectors are running or
+      # there are no more collectors to run
+    INNER: while ( keys (%pids) < $g_max_collectors &&
+		   @{ $config{$minute} } != 0 ) {
+	$stat_checker = pop (@{ $config{$minute} });
+	if ( ! defined ($stat_checker) ) {
+	  next OUTER;
+	}
+	if ( defined ($goldie_locks{$stat_checker}) ) {
+	  fileit ("Erm.  A goldie lock for $stat_checker already exists.  Badness.  Skipping.");
+	  next INNER;
+	}
+	if ( open ($goldie_locks{$stat_checker}, ">>$g_lock_dir/$stat_checker") ) {
+	  # write the I/O lock
+	  debug ("Locking $stat_checker", 40);
+	  if ( lock_fh ($goldie_locks{$stat_checker}) == 1 ) {
+	    # run it in the background
+	    debug ("Forking $stat_checker", 40);
+	    if ( ($pid = fork ())  == 0 ) {
+	      # Hi, I'm a child!
+	      if ( -x "$g_libexec/$stat_checker" ) {
+		debug ("Running $stat_checker inside the fork", 50);
+		($status,@data) = run_prg ("$g_libexec/$stat_checker $seconds calledfromcollect",($minute * 60) - 10);
+		if ( $status != 0 ) {
+		  fileit ("Bad Status was $status and the data was @data. Movin' on.");
+		  exit ($status);
+		} else {
+		  # If there was any output, log it
+		  if ( @data ) {
+		    fileit ("@data");
+		  }
+		  exit (0);
+		}
+	      } else {
+		fileit ("Where the hell is $g_libexec/$stat_checker and or why can't I execute it? Movin' on.");
+		exit ( 909 );
+	      }
+	    } else {
+	      # Hi, I'm the parent!
+	      debug ("Noting $pid for $stat_checker", 40);
+	      $pids{$pid} = $stat_checker;
+	    }
+	  } else {
+	    fileit ("Can't lock $stat_checker.  Skipping.");
+	  }
+	} else {
+	  fileit ("Can'topen $g_lock_dir/$stat_checker: $!.  Skipping.");
+	}
+      }
+    }
+  }
+}
+
+# exit
+close ($collect_lock_fh);
+exit (0);
+
+sub usage {
+  print "Usage: $0 interval\n";
+  exit (1);
+}
+
+sub minute_match{
+    my ($minute) = @_;
+    my $now = (localtime(time()))[1];
+    if ( $now % $minute == 0 ){
+        return 1;
+    }
+    return 0;
+}
+
+sub parse_config{
+  my ($line,$min,$list);
+  local *F;
+
+  if ( ! open (F, $g_conf) ) {
+    fileit ("Can't open $g_conf.  Exiting.");
+    print ("Can't open $g_conf.  Exiting.");
+    exit (50);
+  }
+
+  while ( <F> ) {
+    $line = $_;
+    chomp ($line);
+    if ( $line !~ /^#/ && $line !~ /^$/ ){
+      ($min,$list)=split(/:/,$line);
+      push (@{ $config{$min} }, split(/\s+/,$list));
+    }
+  }
+  close (F);
+  if ( ! defined ($opt_p) &&
+       ! defined ($opt_o) ) {
+    debug ("Adding pusherman to 5-minute list.", 50);
+  push(@{ $config{5} },'pusherman');
+  }
+}
+
+# -p force pusherman to run
+# -o *only* run pushman
+# -d turns on debugging
+# -l LEVEL sets debug level
+sub handle_args {
+  getopts('pdol:');  # -p, -d, and o are boolean; l takes an argument
+  # Sets $opt_* as a side effect.
+
+  if ( defined ($opt_d) ) {
+    $g_debug = 1;
+    debug ("Debug is ON!");
+  }
+  if ( defined ($opt_l) && $opt_l =~ /^\d+$/ ) {
+    $g_debug_level = $opt_l;
+    debug ("Debug level set to $g_debug_level");
+  }
+}

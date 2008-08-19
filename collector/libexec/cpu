@@ -1,0 +1,135 @@
+#!/usr/bin/perl
+
+$|=1;
+
+use strict;
+use warnings;
+use Cwd 'realpath';
+our $g_dir = __FILE__;
+$g_dir =~ s/\/[^\/]+$//;
+$g_dir = realpath("$g_dir/..");
+require "$g_dir/lib/include";
+
+my (@data, $line);
+
+# These are the defaults.  They could be semi-overridden by specifying a
+# different interval in the client config file, but the RRD file would still have
+# space for updates every $interval as defined below.
+my $rrd_type = "GAUGE";
+my $rrd_interval;
+
+our ($g_exit, $g_os, $g_default_timeout, $g_host, $g_sep, $g_collector);
+$main::g_host = get_hostname ();
+$main::g_collector = 'cpu';
+
+# If we haven't loaded subs.pl, then we've been run from the command-line.  That
+# means we're in test mode.  So load include, define $g_host, and print results.
+if (! defined (@ARGV) || (! defined ($ARGV[1]) && $ARGV[1] eq "calledfromcollect") ) {
+  # TODO: There must be a better way to get this path!  I think the better
+  # way is called "perl module" :)
+  local $main::g_fileit_mode = "test";
+  # Silence warning
+  $main::g_fileit_mode = $main::g_fileit_mode;
+  $rrd_interval = 60;
+  fileit ("You ran $g_collector manually; setting interval to $rrd_interval.");
+  @data = doit ();
+  foreach my $line (@data) {
+    print "$line";
+  }
+  print "\n";
+} else {
+  if ( defined ($ARGV[0]) && $ARGV[0] =~ /^\d+$/ ) {
+    $rrd_interval = $ARGV[0];
+  } else {
+    fileit ("Ack!  No interval for $g_collector.  Bailing.");
+    exit ();
+  }
+  @data = doit ();
+  if ( defined ($data[0]) ) {
+    bivalve (@data);
+  } else {
+    fileit ("Warning:  No data for $g_collector");
+  }
+}
+
+# Get CPU and I/O wait from sar.
+# Run 'sar -u 3 $count' where $count = 2 for now
+# Linux:
+#Linux 2.6.8-1-386 (water)       01/18/05
+#
+#16:10:38          CPU     %user     %nice   %system   %iowait     %idle
+#16:10:43          all      0.00      0.00      0.00      0.40     99.60
+#16:10:48          all      0.20      0.00      0.20      0.00     99.60
+#Average:          all      0.10      0.00      0.10      0.20     99.60
+#
+# HP-UX:
+# HP-UX mr B.11.00 U 9000/800    01/18/05
+# 
+# 16:11:26    %usr    %sys    %wio   %idle
+# 16:11:31       1       0       0      99
+# 16:11:36       0       0       0     100
+# 
+# Average        1       0       0      99
+#
+# Solaris:
+#
+# SunOS hermes 5.9 Generic_117171-12 sun4u    01/18/2005
+# 
+# 16:11:17    %usr    %sys    %wio   %idle
+# 16:11:22      20      13       5      62
+# 16:11:27      22      11       2      65
+# 
+# Average       21      12       4      63
+sub doit {
+  my ($cmd, $status, @data, $line, @return, $time, $user, $sys, $idle,
+      $iowait, $count, $u_col, $s_col, $id_col, $io_col, $ignore_ret);
+
+  $ignore_ret = 0;
+  $count = 2;
+  $cmd = get_path ('sar');
+  $cmd = "$cmd 3 $count";
+  $time = time ();
+
+  # For Linux,
+  if ( $g_os eq "linux" ) {
+    # TODO: HACK around Linux stupidness
+    $ignore_ret = 1;
+    # want third to last line and
+    $line = -2;
+    # the columns 2, 4, 5, 6 (counting from 0):
+    $u_col = 2;
+    $s_col = 4;
+    $io_col = 5;
+    $id_col = 6;
+  } else {
+    # HP-UX and Solaris are the same
+    if ( $g_os eq "hpux" || $g_os eq "solaris" ) {
+      $line = -2;
+      # Want columns 1, 2, 3, 4
+      $u_col = 1;
+      $s_col = 2;
+      $io_col = 3;
+      $id_col = 4;
+    }
+  }
+
+  ($user, $sys, $iowait, $idle) =
+    parse_cmd ($cmd, $g_default_timeout, $line, undef, '\s+',
+               '^Average|^$', $ignore_ret, ($u_col, $s_col, $io_col, $id_col));
+  check_vars ($g_exit, $user, "user", $sys, "sys", $iowait, "iowait",
+              $idle, "idle");
+
+  if ( ! ignoreit ('cpu', 'user') ) {
+    push (@return, "p=/$main::g_host/cpu/user${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$user\n");
+  }
+  if ( ! ignoreit ('cpu', 'sys') ) {
+    push (@return, "p=/$main::g_host/cpu/sys${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$sys\n");
+  }
+  if ( ! ignoreit ('cpu', 'iowait') ) {
+    push (@return, "p=/$main::g_host/cpu/iowait${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$iowait\n");
+  }
+  if ( ! ignoreit ('cpu', 'idle') ) {
+    push (@return, "p=/$main::g_host/cpu/idle${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$idle\n");
+  }
+  return (@return);
+}
