@@ -180,7 +180,7 @@ function createRrdCommandLine($graphnumber,$paths,$debuglog,$justgraph){
         $out[] = "crcl: Bad start or end time".$paths->start.' '.$paths->end;
         return $out;
     }
-    $args = "-i -W 'Yakety Stats' -E --font DEFAULT:8:$font -s $start -e $end --rigid ";
+    $args = "-i -W 'YaketyStats' -E --font DEFAULT:8:$font -s $start -e $end --rigid ";
     if ( $justgraph ){
         $args .= "--only-graph --rigid " . $args;
     }else{
