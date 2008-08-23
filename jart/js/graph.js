@@ -1094,6 +1094,7 @@ var G = (function() {
         var li         = document.createElement('li');
         li.className   = 'pathlist';
         li.id          = 'pathli-' + me + '_' + i;
+        li.style.whiteSpace = 'nowrap';
         var img        = document.createElement('img');
         img.src        = 'img/stock_stop-16.png';
         img.border     = '0';
@@ -1105,6 +1106,8 @@ var G = (function() {
         var txt        = document.createTextNode(' ' + path.name + ' ');
         span.appendChild(txt);
         li.appendChild(span);
+        // this span must be the previous sibling to the input for this
+        // to keep working.
         var einp       = document.createElement('input');
         einp.value     = path.name;
         einp.style.display = "none";
@@ -1113,9 +1116,12 @@ var G = (function() {
         var img        = document.createElement('img');
         // no the best image... get a better one
         img.src        = 'img/stock_text_underlined-16.png';
+        img.style.verticalAlign = 'middle';
         li.appendChild(img);
         Event.observe(img,'click',function(){Element.toggle(span);Element.toggle(einp);}.bindAsEventListener());
         Event.observe(einp,'change',function(e){updatePathLabel(e)}.bindAsEventListener());
+        var txt        = document.createTextNode(' ');
+        li.appendChild(txt);
 
         //COLOR SWATCH
         var inp        = document.createElement('input');
@@ -1183,6 +1189,11 @@ var G = (function() {
         var path = x.replace(/pathli-\d+_(\d+).*/,'$1');
         G.graphs[me].paths[path].name = s;
         var span = e.currentTarget.previousSibling;
+        // the ringer cannot look empty
+        if ( s == '' || s.match(/\s+/) ){
+            s = span.textContent;
+            e.currentTarget.value = span.textContent;
+        }
         span.innerHTML = ' ' + s + ' ';
         Element.toggle(ele);
         Element.toggle(span);
