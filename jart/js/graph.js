@@ -368,9 +368,6 @@ var G = (function() {
         });
     }
     function updateTimes(graph,start,end){
-        //console.log(graph);
-        //console.log(start);
-        //console.log(end);
         G.graphs[graph].start       = start;
         G.graphs[graph].end         = end;
         if ( $('controlsfor-' + graph) ){
