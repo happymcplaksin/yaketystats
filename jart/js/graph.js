@@ -53,6 +53,7 @@ var G = (function() {
         tpc.style.display = 'none';
 
         addGraph();
+        document.onkeypress = function(e){handleKeys(e)}.bindAsEventListener();
 
         var ngb = $('newgraphbutton');
         Event.observe(ngb,'click',addGraph.bindAsEventListener());
@@ -97,6 +98,30 @@ var G = (function() {
         slider = new Control.Slider('slidehandleforall','slidedivforall', {sliderValue: 50,range:$R(0,200),values:[0,50,100,150,200], onSlide: function(v){$('sizeindicatorforall').innerHTML = v}, onChange:function(v){G.setAllGraphSizes(v); Element.hide('containerforallgraphsizes');}});
     }
 
+    function handleKeys(e){
+        //console.log(e.target);
+        //console.log(e);
+        if ( e.keyCode != 13 ){
+            return;
+        }
+        switch(e.target.id){
+            case "allgraphstart":
+            case "allgraphend":
+                G.setAllGraphTimes(0,0);
+                break;
+            case "playlistname":
+                dsPicker.savePlaylist();
+                break;
+            case "regextext":
+                dsPicker.findMatches();
+                break;
+            case "regexsavename":
+                dsPicker.regexSavePlaylist();
+                break;
+            default:
+                return;
+        }
+    }
     function updateSelColor(color,me){
         G.selColor = color;
         var l = $('colorexampleCANVAS-sel');

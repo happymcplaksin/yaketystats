@@ -1738,7 +1738,7 @@ sajax_handle_client_request();
             G.closeAllGraphs(0);
         }
 
-        return{ 'navVis': navVis, 'initialPaths': initialPaths, 'init': init, 'toggleControl':toggleControl, 'savePlaylist':savePlaylist, 'loadPlaylist':loadPlaylist, 'handleError':handleError, 'newPlSub':newPlSub, 'help':help, 'hidehelp':hidehelp }
+        return{ 'navVis': navVis, 'initialPaths': initialPaths, 'init': init, 'toggleControl':toggleControl, 'savePlaylist':savePlaylist, 'loadPlaylist':loadPlaylist, 'handleError':handleError, 'newPlSub':newPlSub, 'help':help, 'hidehelp':hidehelp ,'findMatches':findMatches,'regexSavePlaylist':regexSavePlaylist}
     })();
 
 
@@ -1917,27 +1917,27 @@ sajax_handle_client_request();
                     </div>
                 </div>
                 <div id="errorspace"></div>
+                <div id="regexerout" style="display:none">
+                    <textarea id="regexerlist" cols="80" rows="30" disabled="true"></textarea>
+                </div>
+                <div id="regexersaver" style="display:none">
+                <img src="img/stock_unknown-24.png" id="regexsaver" class="helpbutton" />
+                    <form onSubmit="return false;">
+                        <label for="regextotal">Total<strong>s</strong></label>
+                        <input id="regextotal" type="checkbox" />
+                        <br />
+                        <label for="regexjusttotal">JUST Total<em>s</em></label>
+                        <input id="regexjusttotal" type="checkbox" />
+                        <br />
+                        <label for="regexonly">Regex ONLY</label>
+                        <input id="regexonly" type="checkbox" />
+                        <br />
+                        <label for="savename">Playlist Name</label>
+                        <input id="regexsavename" type="text" size="20" value="" />
+                        <input id="regexsaveit"   type="button" value="Save" />
+                    </form>
+                </div>
                 <div id="graphspace">
-                    <div id="regexerout" style="display:none">
-                        <textarea id="regexerlist" cols="80" rows="30" disabled="true"></textarea>
-                    </div>
-                    <div id="regexersaver" style="display:none">
-                    <img src="img/stock_unknown-24.png" id="regexsaver" class="helpbutton" />
-                        <form onSubmit="return false;">
-                            <label for="regextotal">Total<strong>s</strong></label>
-                            <input id="regextotal" type="checkbox" />
-                            <br />
-                            <label for="regexjusttotal">JUST Total<em>s</em></label>
-                            <input id="regexjusttotal" type="checkbox" />
-                            <br />
-                            <label for="regexonly">Regex ONLY</label>
-                            <input id="regexonly" type="checkbox" />
-                            <br />
-                            <label for="savename">Playlist Name</label>
-                            <input id="regexsavename" type="text" size="20" value="" />
-                            <input id="regexsaveit"   type="button" value="Save" />
-                        </form>
-                    </div>
                 </div>
             </div>
         </div>
