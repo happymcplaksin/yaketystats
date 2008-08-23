@@ -1190,7 +1190,7 @@ var G = (function() {
         G.graphs[me].paths[path].name = s;
         var span = e.currentTarget.previousSibling;
         // the ringer cannot look empty
-        if ( s == '' || s.match(/\s+/) ){
+        if ( s === '' || s.match(/^\s+$/) ){
             s = span.textContent;
             e.currentTarget.value = span.textContent;
         }

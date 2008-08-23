@@ -92,7 +92,7 @@ var txt=document.createTextNode(drawt);option.appendChild(txt);option.value=draw
 li.appendChild(dcb);Event.observe(dcb,'change',function(e){toggleDsDisplay(e)}.bindAsEventListener());return li;}
 function toggleDsDisplay(e){var me=e.currentTarget.id.replace(/display-(\d+).*/,'$1');var i=e.currentTarget.id.replace(/display-\d+_(\d+)/,'$1');if(e.currentTarget.checked==true){G.graphs[me].paths[i].display=1;}else{G.graphs[me].paths[i].display=0;}
 setCurrentGraph(me);createGraphImage(me,0);}
-function updatePathLabel(e){var ele=e.currentTarget;var s=e.currentTarget.value;var x=e.currentTarget.parentNode.id;var me=x.replace(/pathli-(\d+).*/,'$1');var path=x.replace(/pathli-\d+_(\d+).*/,'$1');G.graphs[me].paths[path].name=s;var span=e.currentTarget.previousSibling;if(s==''||s.match(/\s+/)){s=span.textContent;e.currentTarget.value=span.textContent;}
+function updatePathLabel(e){var ele=e.currentTarget;var s=e.currentTarget.value;var x=e.currentTarget.parentNode.id;var me=x.replace(/pathli-(\d+).*/,'$1');var path=x.replace(/pathli-\d+_(\d+).*/,'$1');G.graphs[me].paths[path].name=s;var span=e.currentTarget.previousSibling;if(s===''||s.match(/^\s+$/)){s=span.textContent;e.currentTarget.value=span.textContent;}
 span.innerHTML=' '+s+' ';Element.toggle(ele);Element.toggle(span);createGraphImage(me,0);}
 function tabControlDisplay(which,graph){['time','line','label','size'].each(function(tab){if(tab==which){Element.show(tab+'controlcontainerfor-'+graph);}else{Element.hide(tab+'controlcontainerfor-'+graph);}});}
 function setGraphLabel(me,e){G.graphs[me].graphlabel=e.target.value;G.createGraphImage(me,0);}
