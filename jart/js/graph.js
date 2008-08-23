@@ -329,25 +329,11 @@ var G = (function() {
         }
     }
     function closeAllGraphs(flc){
-        G.cg = 0;
-        var gs = $('graphspace');
-        if ( G.graphs ){
-            G.graphs.each(function(value,key){
-                var me = $('graph-' + key);
-                if ( me ){
-                    // wow so this is a tough one... if this code is uncommented, the app
-                    // is wicked slow at deleting all graphs to the point that FF issues
-                    // a warning dialog! With the mouse-over creation, the leak is minimized
-                    // but it is still there...
-                    //var list = $('pathul-' + key);
-                    //Sortable.destroy(list);
-                    gs.removeChild( me );
-                }
-            })
-        }
+        $('graphspace').innerHTML = '';
         G.graphs = new Array();
         resetSizeForAll();
         addGraph();
+        G.cg = 0;
         if ( ! flc ){
             $('playlistdisplay').innerHTML = '';
             Element.hide('playlistdisplay');
@@ -642,7 +628,19 @@ var G = (function() {
             }
             var ole = $('seldiv-' + graph);
             if ( ole ){
-                ole.style.height = parseInt(result[10]) + 'px';
+                var oldsize = ole.style.height;
+                var newsize = parseInt(result[10]) + 'px';
+                if ( oldsize != newsize ){
+                    ole.style.height = newsize;
+                }
+                oldsize = parseInt(oldsize.replace(/px$/,''));
+                newsize = parseInt(newsize.replace(/px$/,''));
+                var diff = newsize -oldsize;
+                var offset = parseInt(ole.style.left.replace(/px$/,''));
+                var newnew = Math.floor(offset + (diff * .70)) ;
+                //console.log(ole.style.left,newnew,diff);
+                // fix log
+                ole.style.left = newnew + 'px';
             }
         }
     }
@@ -723,7 +721,7 @@ var G = (function() {
         var txt            = document.createTextNode('Graph #' + me );
         span.appendChild(txt);
         titlebar.appendChild(span);
-        Event.observe(titlebar,'click',function(){setCurrentGraph(me)}.bindAsEventListener());
+        Event.observe(span,'click',function(){setCurrentGraph(me)}.bindAsEventListener());
         Event.observe(img,'click',function(){closeGraph(me)}.bindAsEventListener());
         contain.appendChild(titlebar);
 
