@@ -23,6 +23,16 @@ if ( ! is_executable($rrdtool) ){
     exit;
 }
 
+if ( ! is_dir("playlists") || ! is_writable("playlists") ){
+    print "Unable to find or write to the playlists directory. Please check permissions.\n";
+    exit;
+}
+
+if ( ! is_dir("graphs") || ! is_writable("graphs") ){
+    print "Unable to find or write to the graphs directory. Please check permissions.\n";
+    exit;
+}
+
 function cleanempty($a){
     if ( ! is_array($a) ){
         return FALSE;
@@ -222,6 +232,9 @@ function createRrdCommandLine($graphnumber,$paths,$debuglog,$justgraph){
     foreach ($paths->paths as $v) {
         $stack = '';
         $negative = 0;
+        if ( $v->display === 0 ){
+            continue;
+        }
         $color = preg_replace(':#:','',$v->color);
         $drawt = escapeshellcmd($v->drawtype);
         if ( $drawt{0} == '-' ){

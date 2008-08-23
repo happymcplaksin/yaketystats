@@ -23,6 +23,7 @@ var G = (function() {
         this.color    = '';
         this.name     = '';
         this.drawtype = defaultdrawtype;
+        this.display  = 1;
     }
     function Graph(){
         this.avg         = 0;
@@ -527,7 +528,12 @@ var G = (function() {
                 $A($(e).childNodes).each(function(f){
                     if ( f.tagName ){
                         if(f.tagName.toLowerCase() == 'input'){
-                            f.id = 'colorfor-' + mygraph + '_' + i;
+                            if ( f.className.match(/colorfor/) ){
+                                f.id = 'colorfor-' + mygraph + '_' + i;
+                            }
+                            if ( f.className.match(/display/) ){
+                                f.id = 'display-' + mygraph + '_' + i;
+                            }
                         }
                         if(f.tagName.toLowerCase() == 'label'){
                             f.id = 'colorexample' + mygraph + i;
@@ -1095,13 +1101,27 @@ var G = (function() {
         img.className  = 'removepath';
         li.appendChild(img);
         Event.observe(img,'click',function(e){removeGraphPath(me,e)}.bindAsEventListener());
+        var span       = document.createElement('span');
         var txt        = document.createTextNode(' ' + path.name + ' ');
-        li.appendChild(txt);
+        span.appendChild(txt);
+        li.appendChild(span);
+        var einp       = document.createElement('input');
+        einp.value     = path.name;
+        einp.style.display = "none";
+        einp.size      = '30';
+        li.appendChild(einp);
+        var img        = document.createElement('img');
+        // no the best image... get a better one
+        img.src        = 'img/stock_text_underlined-16.png';
+        li.appendChild(img);
+        Event.observe(img,'click',function(){Element.toggle(span);Element.toggle(einp);}.bindAsEventListener());
+        Event.observe(einp,'change',function(e){updatePathLabel(e)}.bindAsEventListener());
 
         //COLOR SWATCH
         var inp        = document.createElement('input');
         inp.style.display = 'none';
         inp.id         = 'colorfor-' + me + '_' + i;
+        inp.className  = 'colorfor';
         inp.value      = path.color.replace(/#/,'');
         var lab        = document.createElement('label');
         lab.className  = 'colorexample';
@@ -1131,7 +1151,42 @@ var G = (function() {
             select.appendChild(option);
         });
         li.appendChild(select);
+        var dcb       = document.createElement('input');
+        dcb.type      = 'checkbox';
+        dcb.title     = 'Display this DS';
+        dcb.id        = 'display-' + me + '_' + i;
+        dcb.className = 'display';
+        // the or is for old playlists that didn't have .display
+        if ( path.display == 1 || path.display === undefined ){
+            dcb.checked = true;
+        }
+        li.appendChild(dcb);
+        Event.observe(dcb,'change',function(e){toggleDsDisplay(e)}.bindAsEventListener());
         return li;
+    }
+    function toggleDsDisplay(e){
+        var me = e.currentTarget.id.replace(/display-(\d+).*/,'$1');
+        var i  = e.currentTarget.id.replace(/display-\d+_(\d+)/,'$1');
+        if ( e.currentTarget.checked == true ){
+            G.graphs[me].paths[i].display = 1;
+        }else{
+            G.graphs[me].paths[i].display = 0;
+        }
+        setCurrentGraph(me);
+        createGraphImage(me,0);
+    }
+    function updatePathLabel(e){
+        var ele  = e.currentTarget;
+        var s    = e.currentTarget.value;
+        var x    = e.currentTarget.parentNode.id;
+        var me   = x.replace(/pathli-(\d+).*/,'$1');
+        var path = x.replace(/pathli-\d+_(\d+).*/,'$1');
+        G.graphs[me].paths[path].name = s;
+        var span = e.currentTarget.previousSibling;
+        span.innerHTML = ' ' + s + ' ';
+        Element.toggle(ele);
+        Element.toggle(span);
+        createGraphImage(me,0);
     }
     function tabControlDisplay(which,graph){
         [ 'time','line','label','size' ].each(function(tab){
