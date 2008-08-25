@@ -17,14 +17,47 @@ Requirements:
            differs, some changes may be required. Documentation
            patches are welcome.
 
-   2. RRDTool 1.2.23 or newer
+   2. RRDTool 1.3 or newer
    3. Firefox or a derivative.
       1. There is currently no support for IE, Opera,
          Konqeror/Mac-browser. Feel free to submit patches.
 
 Installing:
 
-Unpack the tarball and edit the variables in conf.php-dist to match
-your installation. Save this edited file as conf.php. Change modes
-or ownership of the 'graphs' and 'playlists' subdirectories to allow
-your PHP installation to write to them.
+Jart requires Apache simple auth. Here's an example:
+
+<pre>
+<Files "*">
+  Authtype Basic
+  AuthUserFile /usr/local/etc/htpass
+  AuthName "Jart"
+  require user sam happy 
+</Files>
+
+<FilesMatch "^store.php$|^maintenance$">
+  Allow from .mydomain.com
+  Satisfy any
+</FilesMatch>
+</pre>
+
+[[Download]] Jart.
+
+Install Jart's files into your web tree. Copy the example config file and edit it:
+
+<pre>
+$ cp conf.php{-dist,}
+$ vi conf.php
+</pre>
+
+* Make sure that the font pointed to actually exists. 
+* Add any users to the list of admins that you want to be able to debug problems.
+* Set the value of $rrddir to the directory containing YaketyStats-created RRD files.
+* Allow the webserver user to write to graphs/ and playlists:
+
+<pre>
+# chown apache:apache graphs playlists
+</pre>
+
+This example assumes that 'apache' is the correct user. Debian derivatives use 'www-data' and your system may use something else entirely.
+
+You should now be able to use Jart!
