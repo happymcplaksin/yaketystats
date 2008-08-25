@@ -4,8 +4,9 @@ function Graph(){this.avg=0;this.bglastdrawn=0;this.canvas='FFFFFF';this.end=def
 function init(){var tpc=$('timepresetscontainer');tpc.style.display='none';addGraph();document.onkeypress=function(e){handleKeys(e)}.bindAsEventListener();var ngb=$('newgraphbutton');Event.observe(ngb,'click',addGraph.bindAsEventListener());var sat=$('setalltimesbutton');Event.observe(sat,'click',function(e){dsPicker.toggleControl(e,'containerforallgraphtimes')}.bindAsEventListener());var sas=$('setallsizesbutton');Event.observe(sas,'click',function(e){dsPicker.toggleControl(e,'containerforallgraphsizes')}.bindAsEventListener());var smile=$('smiley');Event.observe(smile,'click',showTimePresets.bindAsEventListener());var rel=$('reloadpresetbutton');Event.observe(rel,'click',createAllGraphImages.bindAsEventListener());var db=$('daybutton');Event.observe(db,'click',function(e){setAllGraphTimes('1 day ago','now')}.bindAsEventListener());var tdb=$('twodaysbutton');Event.observe(tdb,'click',function(e){setAllGraphTimes('2 days ago','now')}.bindAsEventListener());var wb=$('weekbutton');Event.observe(wb,'click',function(e){setAllGraphTimes('1 Week ago','now')}.bindAsEventListener());var mb=$('monthbutton');Event.observe(mb,'click',function(e){setAllGraphTimes('1 month ago','now')}.bindAsEventListener());var ts=$('autorefresh');Event.observe(ts,'change',autoRefresh.bindAsEventListener());var hti=$('seltoolicon');Event.observe(hti,'click',setTool.bindAsEventListener());var dti=$('dragtoolicon');Event.observe(dti,'click',setTool.bindAsEventListener());setOpacity(dti,3);var sci=$('selcolorinp');var ces=$('colorexampleCANVAS-sel');new Control.ColorPicker(sci,{'swatch':ces,'onUpdate':updateSelColor});slider=new Control.Slider('slidehandleforall','slidedivforall',{sliderValue:50,range:$R(0,200),values:[0,50,100,150,200],onSlide:function(v){$('sizeindicatorforall').innerHTML=v},onChange:function(v){G.setAllGraphSizes(v);Element.hide('containerforallgraphsizes');}});}
 function handleKeys(e){if(e.keyCode!=13){return;}
 switch(e.target.id){case"allgraphstart":case"allgraphend":G.setAllGraphTimes(0,0);break;case"playlistname":dsPicker.savePlaylist();break;case"regextext":dsPicker.findMatches();break;case"regexsavename":dsPicker.regexSavePlaylist();break;default:return;}}
-function updateSelColor(color,me){G.selColor=color;var l=$('colorexampleCANVAS-sel');l.style.backgroundColor=color;G.graphs.each(function(value,key){if(value){if($('graph-'+key)){var sd;if(sd=$('seldiv-'+key)){sd.style.backgroundColor=color;}}}});}
-function setTool(e){var c=e.target.id;['dragtoolicon','seltoolicon'].each(function(tool,key){var me=$(tool);if(me.id==c){setOpacity(me,10);G.tool=key;if(key==1){new Effect.SlideDown('seltools');}else{Element.hide('seltools');}}else{setOpacity(me,2);}});G.graphs.each(function(value,key){if(value){if($('graph-'+key)){var odivc=$('overlaycontainerdiv-'+key);odivc.innerHTML='';}}});return;}
+function updateSelColor(color,me){G.selColor=color;var l=$('colorexampleCANVAS-sel');l.style.backgroundColor=color;for(key in G.graphs){if(typeof(G.graphs[key])!='function'){if($('graph-'+key)){var sd;if(sd=$('seldiv-'+key)){sd.style.backgroundColor=color;}}}}}
+function setTool(e){var c=e.target.id;['dragtoolicon','seltoolicon'].each(function(tool,key){var me=$(tool);if(me.id==c){setOpacity(me,10);G.tool=key;if(key==1){new Effect.SlideDown('seltools');}else{Element.hide('seltools');}}else{setOpacity(me,2);}});for(key in G.graphs){if(typeof(G.graphs[key])!='function'){if($('graph-'+key)){var odivc=$('overlaycontainerdiv-'+key);odivc.innerHTML='';}}}
+return;}
 function setOpacity(o,v){o.style.opacity=v/10;o.style.filter='alpha(opacity='+v*10+')';}
 function addGraph(){if(G.graphs[G.cg]){if(!G.graphs[G.cg].paths[0]){return;}}
 G.graphs.push(new Graph());G.cg=G.graphs.length-1;if($('newgraphsnstime').checked){var s=$('allgraphstart').value;var e=$('allgraphend').value;if(e!=''&&s!=''){G.graphs[G.cg].start=s;G.graphs[G.cg].end=e;}}}
@@ -32,11 +33,11 @@ var mycolor='#'+'00'+pi+'00';}else if(nextcolor<1120){nextcolor-=865;var pi=next
 var mycolor='#'+'00'+'00'+pi;}else if(nextcolor<1120){var mycolor='#dddddd';}
 G.graphs[G.cg].nextcolor++;return mycolor;}
 function closeGraph(me){var list='pathul-'+me;var le=$(list);if(le){Sortable.destroy(list);}
-delete G.graphs[me];$('graphspace').removeChild($('graph-'+me));var i=0;G.graphs.each(function(graph,key){if(graph&&graph.paths[0]){G.cg=key;i++;}})
+delete G.graphs[me];$('graphspace').removeChild($('graph-'+me));var i=0;for(key in G.graphs){if(typeof(G.graphs[key])!='function'){G.cg=key;i++;}}
 if(i==0){resetSizeForAll();G.graphs=new Array();addGraph();$('playlistdisplay').innerHTML='';Element.hide('playlistdisplay');}}
 function closeAllGraphs(flc){$('graphspace').innerHTML='';G.graphs=new Array();resetSizeForAll();addGraph();G.cg=0;if(!flc){$('playlistdisplay').innerHTML='';Element.hide('playlistdisplay');}}
 function resetSizeForAll(){slider.setValue(50);$('sizeindicatorforall').innerHTML='50';}
-function drawAllGraphs(){G.graphs.each(function(value,key){if(value){if(!$('graph-'+key)){G.cg=key;drawGraph();}}});}
+function drawAllGraphs(){for(key in G.graphs){if(typeof(G.graphs[key])!='function'){if(!$('graph-'+key)){G.cg=key;drawGraph();}}}}
 function updateTimes(graph,start,end){G.graphs[graph].start=start;G.graphs[graph].end=end;if($('controlsfor-'+graph)){$('start-'+graph).value=start;$('end-'+graph).value=end;}}
 function resetGraphTime(me){updateTimes(me,defaultstarttime,defaultendtime);createGraphImage(me,0);}
 function showTimePresets(e){var me=$('timepresetscontainer');if(Element.visible(me)){new Effect.SlideUp(me);}else{new Effect.SlideDown(me);}}
@@ -45,10 +46,10 @@ function changeLineDrawType(me,e){var line=e.target.parentNode.id.replace(/[^-]+
 function setGraphStart(me,e){G.graphs[me].start=e.target.value;createGraphImage(me,0);}
 function setGraphEnd(me,e){G.graphs[me].end=e.target.value;createGraphImage(me,0);}
 function setAllGraphTimes(s,e){if(e){var start=s;var end=e;}else if(s){var start=defaultstarttime;var end=defaultendtime;Element.toggle($('containerforallgraphtimes'));}else{var start=$F('allgraphstart');var end=$F('allgraphend');Element.toggle($('containerforallgraphtimes'));if(end==''||start==''){dsPicker.handleError('Either start or end time is empty.');return;}}
-G.graphs.each(function(graph,key){if(graph){updateTimes(key,start,end);}})
+for(key in G.graphs){if(typeof(G.graphs[key])!='function'){updateTimes(key,start,end);}}
 createAllGraphImages();}
-function setAllGraphSizes(size){G.graphs.each(function(graph,key){if(graph){G.graphs[key].size=size;var i=$('sizeindicatorfor-'+key);if(i){i.innerHTML=size;gsliders[key].setValue(size);}
-var i=$('seldiv-'+key);if(i){i.style.height=G.graphs[key].ysize+'px';}}})
+function setAllGraphSizes(size){for(key in G.graphs){if(typeof(G.graphs[key])!='function'){G.graphs[key].size=size;var i=$('sizeindicatorfor-'+key);if(i){i.innerHTML=size;gsliders[key].setValue(size);}
+var i=$('seldiv-'+key);if(i){i.style.height=G.graphs[key].ysize+'px';}}}
 createAllGraphImages();}
 function removeGraphPath(me,e){var list=e.target.parentNode.parentNode;var ele=e.target.parentNode;var pathno=e.target.parentNode.id.replace(/[^_]+_(\d+)/,'$1');var i=0;var tmp=new Array();destroyDraggable(me);G.graphs[me].paths.each(function(path){if(i!=pathno){tmp.push(path);}else{if(path.path=='total'){G.graphs[me].total=0;G.graphs[me].justtotal=0;var jtf=$('justtotalfor-'+me);jtf.checked=false;Element.hide(jtf);}
 if(path.path=='avg'){G.graphs[me].avg=0;}}
@@ -101,7 +102,7 @@ function setGraphLabel(me,e){G.graphs[me].graphlabel=e.target.value;G.createGrap
 function setVertLabel(me,e){G.graphs[me].vertlabel=e.target.value;G.createGraphImage(me,0);}
 function autoRefresh(e){var n=e.target.value;if(n!=0){autoRefreshSetup(n);}}
 function autoRefreshSetup(n){if(n!=0){refreshd=setTimeout('G.autoRefreshReal('+n+')',n);}}
-function createAllGraphImages(){G.graphs.each(function(value,key){if(value){G.createGraphImage(key,0);}});}
+function createAllGraphImages(){for(key in G.graphs){if(typeof(G.graphs[key])!='function'){G.createGraphImage(key,0);}}}
 function autoRefreshReal(n){var s=$('autorefresh');if(n!=0&&s.value!=0){G.createAllGraphImages();G.autoRefreshSetup(n);}}
 function graphMouseOverHandler(e){if(!isMouseLeaveOrEnter(e,this)){return;}
 var me=e.currentTarget.id.replace(/[^-]*-(\d+)/,'$1');if(G.graphs[me].bglastdrawn===undefined){return;}

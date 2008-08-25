@@ -126,8 +126,8 @@ var G = (function() {
         G.selColor = color;
         var l = $('colorexampleCANVAS-sel');
         l.style.backgroundColor = color;
-        G.graphs.each(function(value,key){
-            if ( value ){
+        for (key in G.graphs){
+            if ( typeof(G.graphs[key]) != 'function' ){
                 // Potential pinch point... these lookups are slow
                 if (  $('graph-' + key) ){
                     var sd;
@@ -136,7 +136,7 @@ var G = (function() {
                     }
                 }
             }
-        });
+        }
     }
 
     function setTool(e){
@@ -155,15 +155,15 @@ var G = (function() {
                 setOpacity(me,2);
             }
         });
-        G.graphs.each(function(value,key){
-            if ( value ){
+        for (key in G.graphs){
+            if ( typeof(G.graphs[key]) != 'function' ){
                 // Potential pinch point... these lookups are slow
                 if (  $('graph-' + key) ){
                     var odivc = $('overlaycontainerdiv-' + key);
                     odivc.innerHTML = '';
                 }
             }
-        });
+        }
         return;
     }
     function setOpacity(o,v){
@@ -339,12 +339,12 @@ var G = (function() {
         delete G.graphs[me];
         $('graphspace').removeChild( $('graph-' + me) );
         var i = 0;
-        G.graphs.each(function(graph,key){
-            if ( graph && graph.paths[0] ){
+        for (key in G.graphs){
+            if ( typeof(G.graphs[key]) != 'function' ){
                 G.cg = key;
                 i++;
             }
-        })
+        }
         if ( i == 0 ){
             resetSizeForAll();
             G.graphs = new Array();
@@ -369,15 +369,15 @@ var G = (function() {
         $('sizeindicatorforall').innerHTML = '50';
     }
     function drawAllGraphs(){
-        G.graphs.each(function(value,key){
-            if ( value ){
+        for (key in G.graphs){
+            if ( typeof(G.graphs[key]) != 'function' ){
                 // Potential pinch point... these lookups are slow
                 if ( ! $('graph-' + key) ){
                     G.cg=key;
                     drawGraph();
                 }
             }
-        });
+        }
     }
     function updateTimes(graph,start,end){
         G.graphs[graph].start       = start;
@@ -445,17 +445,17 @@ var G = (function() {
                 return;
             }
         }
-        G.graphs.each(function(graph,key){
-            if ( graph ){
+        // thanks Prototype!
+        for (key in G.graphs){
+            if ( typeof(G.graphs[key]) != 'function' ){
                 updateTimes(key,start,end);
             }
-        })
+        }
         createAllGraphImages();
     }
     function setAllGraphSizes(size){
-        //FIX what if there are no graphs?
-        G.graphs.each(function(graph,key){
-            if ( graph ){
+        for (key in G.graphs){
+            if ( typeof(G.graphs[key]) != 'function' ){
                 G.graphs[key].size = size;
                 var i = $('sizeindicatorfor-' + key);
                 if ( i ){
@@ -467,7 +467,7 @@ var G = (function() {
                     i.style.height = G.graphs[key].ysize + 'px';
                 }
             }
-        })
+        }
         createAllGraphImages();
     }
     function removeGraphPath(me,e){
@@ -1253,11 +1253,11 @@ var G = (function() {
         }
     }
     function createAllGraphImages(){
-        G.graphs.each(function(value,key){
-            if ( value ){
-                G.createGraphImage(key,0);
+        for (key in G.graphs){
+            if ( typeof(G.graphs[key]) != 'function' ){
+                    G.createGraphImage(key,0);
             }
-        });
+        }
     }
     function autoRefreshReal(n){
         var s = $('autorefresh');
