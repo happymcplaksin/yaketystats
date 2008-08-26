@@ -1062,6 +1062,9 @@ $version = "2.0";
     <link rel="stylesheet" type="text/css" href="css/fonts-min.css">
     <link rel="stylesheet" type="text/css" href="css/grids-min.css">
     <link rel="stylesheet" type="text/css" href="colorPicker.css">
+    <script type="text/javascript" src="js.php"></script>
+<?php 
+/*
     <script type="text/javascript" src="js/json.js"></script>
     <script type="text/javascript" src="js/prototype.js"></script>
     <script type="text/javascript" src="js/prototype-plus.js"></script>
@@ -1069,6 +1072,9 @@ $version = "2.0";
     <script type="text/javascript" src="js/yahoo.color.js"></script>
     <script type="text/javascript" src="js/colorPicker.js"></script>
     <script type="text/javascript" src="js/mingraph.js"></script>
+ */
+?>
+    <script type="text/javascript" src="js/scriptaculous.js"></script>
     <script type="text/javascript">
 <?php
     sajax_show_javascript();
