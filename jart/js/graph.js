@@ -1140,6 +1140,7 @@ var G = (function() {
         // no the best image... get a better one
         img.src        = 'img/stock_text_underlined-16.png';
         img.style.verticalAlign = 'middle';
+        img.title      = "Edit this line label";
         li.appendChild(img);
         Event.observe(img,'click',function(){Element.toggle(span);Element.toggle(einp);}.bindAsEventListener());
         Event.observe(einp,'change',function(e){updatePathLabel(e)}.bindAsEventListener());
@@ -1206,10 +1207,12 @@ var G = (function() {
     }
     function updatePathLabel(e){
         var ele  = e.currentTarget;
-        var s    = e.currentTarget.value;
+        // get rid of nasty chars
+        var s    = e.currentTarget.value.replace(/[!@#$%^&*(){}\[\]]/g,'');
         var x    = e.currentTarget.parentNode.id;
         var me   = x.replace(/pathli-(\d+).*/,'$1');
         var path = x.replace(/pathli-\d+_(\d+).*/,'$1');
+        e.currentTarget.value = s;
         G.graphs[me].paths[path].name = s;
         var span = e.currentTarget.previousSibling;
         // the ringer cannot look empty
@@ -1232,7 +1235,9 @@ var G = (function() {
         });
     }
     function setGraphLabel(me,e){
-        G.graphs[me].graphlabel = e.target.value;
+        var v = e.target.value.replace(/[!@#$%^&*(){}\[\]]/g,'');
+        G.graphs[me].graphlabel = v;
+        e.target.value = v;
         //var t = document.createTextNode(G.graphs[me].graphlabel);
         //$('graphlabelfor-' + me).appendChild(t);
         G.createGraphImage(me,0);
