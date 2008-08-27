@@ -255,6 +255,10 @@ function createRrdCommandLine($graphnumber,$paths,$debuglog,$justgraph){
         }else{
             $path  = escapeshellcmd($v->path);
         }
+        if ( ! file_exists($path) ){
+            // there should probably be a log message here
+            continue;
+        }
         $color = escapeshellcmd($color);
         $name = escapeshellcmd($v->name);
         $name = preg_replace('/[:]/','\\:',$name);
