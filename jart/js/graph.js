@@ -462,10 +462,6 @@ var G = (function() {
                     i.innerHTML = size;
                     gsliders[key].setValue(size);
                 }
-                var i = $('seldiv-' + key);
-                if ( i ){
-                    i.style.height = G.graphs[key].ysize + 'px';
-                }
             }
         }
         createAllGraphImages();
