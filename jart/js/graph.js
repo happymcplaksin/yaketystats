@@ -658,6 +658,9 @@ var G = (function() {
                 }
                 var neww = parseInt(result[9]);
                 var newh = parseInt(result[10]) + 'px';
+                var pme = $('overlaydragdiv-' + graph);
+                pme.style.width = neww + 'px';
+                pme.style.height = newh;
                 var sizes = [];
                     sizes[50]  = 200;
                     sizes[100] = 400;
