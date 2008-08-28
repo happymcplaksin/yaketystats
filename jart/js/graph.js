@@ -653,19 +653,33 @@ var G = (function() {
             }
             var ole = $('seldiv-' + graph);
             if ( ole ){
-                var oldsize = ole.style.height;
-                var newsize = parseInt(result[10]) + 'px';
-                if ( oldsize != newsize ){
-                    ole.style.height = newsize;
+                if ( ole.style.left == 0 || ole.style.height === undefined ){
+                    return;
                 }
-                oldsize = parseInt(oldsize.replace(/px$/,''));
-                newsize = parseInt(newsize.replace(/px$/,''));
-                var diff = newsize -oldsize;
-                var offset = parseInt(ole.style.left.replace(/px$/,''));
-                var newnew = Math.floor(offset + (diff * .70)) ;
-                //console.log(ole.style.left,newnew,diff);
-                // fix log
-                ole.style.left = newnew + 'px';
+                var neww = parseInt(result[9]);
+                var newh = parseInt(result[10]) + 'px';
+                var sizes = [];
+                    sizes[50]  = 200;
+                    sizes[100] = 400;
+                    sizes[150] = 500;
+                    sizes[250] = 575;
+                    sizes[350] = 650;
+                var oldh = parseInt(ole.style.height);
+                if ( sizes[oldh] === undefined ){
+                    return;
+                }
+                var oldw = sizes[oldh];
+                if ( oldh != newh ){
+                    ole.style.height = newh;
+                }
+                var oldsw  = parseInt(ole.style.width);
+                var swperc = oldsw /oldw;
+                var newsw  = Math.floor(neww * swperc)
+                var oldoff = parseInt(ole.style.left);
+                var perc   = oldoff / oldw;
+                var newoff = Math.floor(neww * perc);
+                ole.style.width = newsw + 'px';
+                ole.style.left = newoff + 'px';
             }
         }
     }
