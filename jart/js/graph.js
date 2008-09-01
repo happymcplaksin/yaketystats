@@ -586,7 +586,7 @@ var G = (function() {
         createGraphImage(a[2],0);
     }
     function setCurrentGraph(me){
-        var old     = $$('currentgraph');
+        var old     = $$('div.currentgraph');
         if ( old !== undefined && old[0] !== undefined ){
             Element.removeClassName(old[0],'currentgraph');
             old[0].parentNode.style.zIndex = 0;

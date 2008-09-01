@@ -1543,12 +1543,16 @@ $version = "2.0";
                 $('errorspace').appendChild(a);
                 // magically add the playlist to the div if it exists
                 var par = msg[3].replace(/(.*\/).*/,'$1');
-                par     = par.replace(/\//g,'');
+                par     = par.replace(/\W/g,'');
                 par    += 'hide';
-                var par = $(par);
+                par     = $(par);
                 if ( par ){
                     var path  = msg[3];
                     var id    = msg[3].replace(/\//g,'');
+                    var ex    = $(id);
+                    if ( ex !== null ){
+                        return;
+                    }
                     var pln   = msg[3].replace(/.*\/(.*)/,'$1');
                     var div   = document.createElement('div');
                     div.id    = id;
