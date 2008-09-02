@@ -1061,6 +1061,7 @@ $version = "2.0";
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html>
 <head>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
     <title>Jart <?php echo $version; ?></title>
     <link rel="stylesheet" type="text/css" href="css/reset-min.css">
     <link rel="stylesheet" type="text/css" href="css/fonts-min.css">
@@ -1075,7 +1076,7 @@ $version = "2.0";
     <script type="text/javascript" src="js/scriptaculous.js"></script>
     <script type="text/javascript" src="js/yahoo.color.js"></script>
     <script type="text/javascript" src="js/colorPicker.js"></script>
-    <script type="text/javascript" src="js/mingraph.js"></script>
+    <script type="text/javascript" src="js/graph.js"></script>
  */
 ?>
     <script type="text/javascript" src="js/scriptaculous.js"></script>
@@ -1778,17 +1779,17 @@ $version = "2.0";
     <div id="bd">
         <div id="picker" class="yui-b">
             <div style="border-bottom: 1px solid black; margin-bottom: 1em;">
-                <img src="img/stock_unknown-24.png" id="pickerregexerhelp" class="helpbutton" />
-                <br /><span id="pickerbutton" class="clickable"><img src="img/stock_form-file-selection.png" title="Picker" /></span> <span id="regexerbutton" class="clickable"><img src="img/stock_macro-stop-after-procedure.png" title="Regexer" /></span>
-                <span id="prefsbutton" class="clickable"><img src="img/stock_edit-contour.png" title="Preferences" style="display:none" /></span>
+                <img src="img/stock_unknown-24.png" id="pickerregexerhelp" class="helpbutton">
+                <br><span id="pickerbutton" class="clickable"><img src="img/stock_form-file-selection.png" title="Picker"></span> <span id="regexerbutton" class="clickable"><img src="img/stock_macro-stop-after-procedure.png" title="Regexer"></span>
+                <span id="prefsbutton" class="clickable"><img src="img/stock_edit-contour.png" title="Preferences" style="display:none"></span>
                 <span id="playlistdisplay" style="display:none"></span>
-                <br />
-                <br />
+                <br>
+                <br>
             </div>
-            <div id="timepresetscontainer">
-            <span class="clickable button" id="reloadpresetbutton"><img src="img/stock_repeat-16.png" height="16" width="16" border="0" /></span>&nbsp;<span class="clickable button" id="daybutton">Day</span>&nbsp;<span class="clickable button" id="twodaysbutton">2 Days</span>&nbsp;<span class="clickable button" id="weekbutton">Week</span>&nbsp;<span class="clickable button" id="monthbutton">Month</span>
+            <div id="timepresetscontainer" style="display:none">
+            <span class="clickable button" id="reloadpresetbutton"><img src="img/stock_repeat-16.png" height="16" width="16"></span>&nbsp;<span class="clickable button" id="daybutton">Day</span>&nbsp;<span class="clickable button" id="twodaysbutton">2 Days</span>&nbsp;<span class="clickable button" id="weekbutton">Week</span>&nbsp;<span class="clickable button" id="monthbutton">Month</span>
             </div>
-            <br />
+            <br>
             <div style="display:none" id="containerforplaylistdialog">
                 <div id="playlistdialog">
                     <label for="playlistsubs">Dir:</label>
@@ -1796,61 +1797,61 @@ $version = "2.0";
                         $o = playlistDirs();
                         print($o);
                     ?>
-                    <br />
+                    <br>
                     <label for="playlistname">Name:</label>
-                    <input id="playlistname" type="text" width="20" value="" />
-                    <br />
+                    <input id="playlistname" type="text" width="20" value="">
+                    <br>
                     <label for="playlisttimes">Make All Times Absolute:</label>
-                    <input id="playlisttimes" type="checkbox" />
-                    <br />
-                    <input type="button" onClick="dsPicker.savePlaylist(); return false;" value="Go!" />
-                    <input type="button" onClick="Element.toggle($('containerforplaylistdialog')); return false;" value="Cancel" />
+                    <input id="playlisttimes" type="checkbox">
+                    <br>
+                    <input type="button" onClick="dsPicker.savePlaylist(); return false;" value="Go!">
+                    <input type="button" onClick="Element.toggle($('containerforplaylistdialog')); return false;" value="Cancel">
 
                 </div>
             </div>
             <div style="display:none" id="newsubcontainer">
                 <label for="newsubname">Directory Name:</label>
-                <input id="newsubname" width="20" value="" />
-                <br />
-                <input type="button" onClick="dsPicker.newPlSub(); return false" value="Go!" />
-                <br />
-                <br />
-                <input type="button" onClick="Element.toggle($('newsubcontainer')); return false;" value="Cancel" />
-                <br />
+                <input id="newsubname" width="20" value="">
+                <br>
+                <input type="button" onClick="dsPicker.newPlSub(); return false" value="Go!">
+                <br>
+                <br>
+                <input type="button" onClick="Element.toggle($('newsubcontainer')); return false;" value="Cancel">
+                <br>
             </div>
             <div style="display:none" id="containerforallgraphtimes">
                 <div id="allgraphtimesdialog">
                     <label for="allgraphstart">Start:</label>
-                    <input id="allgraphstart" type="text" width="20" value="" />
-                    <br />
+                    <input id="allgraphstart" type="text" width="20" value="">
+                    <br>
                     <label for="allgraphend">End:</label>
-                    <input id="allgraphend" type="text" width="20" value="" />
-                    <br />
+                    <input id="allgraphend" type="text" width="20" value="">
+                    <br>
                     <label for="newgraphsnstime">New Graphs Too:</label>
-                    <input type="checkbox" id="newgraphsnstime" />
-                    <br />
-                    <input type="button" onClick="G.setAllGraphTimes(0,0); return false;" value="Go!" />
-                    <input type="button" onClick="G.setAllGraphTimes(1,0); return false;" value="Set All to Defaults" />
-                    <br />
-                    <input type="button" onClick="Element.toggle($('containerforallgraphtimes')); return false;" value="Cancel" />
+                    <input type="checkbox" id="newgraphsnstime">
+                    <br>
+                    <input type="button" onClick="G.setAllGraphTimes(0,0); return false;" value="Go!">
+                    <input type="button" onClick="G.setAllGraphTimes(1,0); return false;" value="Set All to Defaults">
+                    <br>
+                    <input type="button" onClick="Element.toggle($('containerforallgraphtimes')); return false;" value="Cancel">
                 </div>
             </div>
             <div style="display:none" id="containerforallgraphsizes">
                 <div id="allgraphsizesdialog">
                     Size:
-                    <div class="slidediv roomy" id="slidedivforall" style="width:200px"><div class="slidehandle" id="slidehandleforall"><img src="img/stock_up.png" /></div></div>
+                    <div class="slidediv roomy" id="slidedivforall" style="width:200px"><div class="slidehandle" id="slidehandleforall"><img src="img/stock_up.png"></div></div>
                     <div id="sizeindicatorforall">50</div>
-                    <input type="button" onClick="Element.toggle($('containerforallgraphsizes')); return false;" value="Cancel" />
+                    <input type="button" onClick="Element.toggle($('containerforallgraphsizes')); return false;" value="Cancel">
                 </div>
             </div>
             <div id="allgraphcontrols" class="yui-g">
             <div class="yui-u first">
-                <span class="clickable" id="newgraphbutton"><img src="img/stock_file-with-objects.png" title="New Graph" /></span>
-                <span class="clickable" id="saveplaylistbutton"><img src="img/stock_data-save.png" title="Save Playlist" /></span>
-                <span class="clickable" id="setalltimesbutton"><img src="img/stock_timer.png" title="Set Times for All Graphs" /></span>
-                <span class="clickable" id="setallsizesbutton"><img src="img/stock_handles-simple.png" title="Set Sizes for All Graphs" /></span>
-                <br />
-            <br class="clear" /><br />
+                <span class="clickable" id="newgraphbutton"><img src="img/stock_file-with-objects.png" title="New Graph"></span>
+                <span class="clickable" id="saveplaylistbutton"><img src="img/stock_data-save.png" title="Save Playlist"></span>
+                <span class="clickable" id="setalltimesbutton"><img src="img/stock_timer.png" title="Set Times for All Graphs"></span>
+                <span class="clickable" id="setallsizesbutton"><img src="img/stock_handles-simple.png" title="Set Sizes for All Graphs"></span>
+                <br>
+            <br class="clear"><br>
             <label for="autorefresh" id="arl">Auto-Refresh</label>
             <select name="autorefresh" id="autorefresh">
                 <option value="0">Never</option>
@@ -1860,32 +1861,32 @@ $version = "2.0";
             </select>
             <?php 
             /*if ( in_array($_SERVER['PHP_AUTH_USER'],$admins) ){
-            <br />
+            <br>
             <label for="debuglog">DebugLog</label>
-            <input type="checkbox" onClick="debugLogTog()" id="debuglog" />
+            <input type="checkbox" onClick="debugLogTog()" id="debuglog">
             <a href="drag-debug.php">drag-debug</a>
             }
             */
             ?>
 <?php if (isset($_GET['pl']) ){ ?>
-            <a href="<?php echo $_SERVER['PHP_SELF'] ?>"><img border="0" src="img/stock_repeat-16.png" title="Reset Page" /></a>
-            <br />
+            <a href="<?php echo $_SERVER['PHP_SELF'] ?>"><img src="img/stock_repeat-16.png" title="Reset Page"></a>
+            <br>
 <?php } ?>
 <?php if ( in_array($_SERVER['PHP_AUTH_USER'],$admins) ){ ?>
-            <input type="button" onClick="debugShow(debugcount); debugcount++; return false;" value="more!" />
+            <input type="button" onClick="debugShow(debugcount); debugcount++; return false;" value="more!">
 <?php } ?>
             </div>
             <div class="yui-u">
 <?php 
     if ( in_array($_SERVER['PHP_AUTH_USER'],$admins) ){
 ?>
-                <span class="clickable" style="float: right" onClick="G.closeAllGraphs(0);"><img src="img/stock_delete.png" title="Delete All Graphs" /></span>
+                <span class="clickable" style="float: right" onClick="G.closeAllGraphs(0);"><img src="img/stock_delete.png" title="Delete All Graphs"></span>
 <?php }else{ ?>
 
-                <span class="clickable" style="float: right" onClick="var answer=confirm('You sure?'); if (answer){ G.closeAllGraphs(0)};"><img src="img/stock_delete.png" title="Delete All Graphs" /></span>
+                <span class="clickable" style="float: right" onClick="var answer=confirm('You sure?'); if (answer){ G.closeAllGraphs(0)};"><img src="img/stock_delete.png" title="Delete All Graphs"></span>
 <?php } ?>
             </div>
-            <img src="img/stock_help-chat.png" height="24" width="24" id="smiley" />
+            <img src="img/stock_help-chat.png" height="24" width="24" id="smiley">
         </div>
 
             <?php 
@@ -1893,42 +1894,42 @@ $version = "2.0";
                 include('local.html'); 
             }
             ?>
-            <br />
-            <span class="clickable" style="float: right"><img id="pickerspinner" style="display: none" src="img/scanner-transparent-back.gif" /></span>
+            <br>
+            <span class="clickable" style="float: right"><img id="pickerspinner" style="display: none" src="img/scanner-transparent-back.gif"></span>
             <div id="alphanav">
             </div>
             <div id="hostlist">
             </div>
             <div id="regexernav" style="display:none">
                 <form onSubmit="return false;">
-                    <span class="red">&quot;[.]rrd$&quot; will be appended to your regex!!</span><br />
+                    <span class="red">&quot;[.]rrd$&quot; will be appended to your regex!!</span><br>
                     <label for="regextext">Regex:</label>
-                    <input id="regextext" type="text" size="40" value="" />
-                    <br />
-                    <img src="img/stock_unknown-24.png" id="pathbreaksgraphhelp" class="helpbutton" />
+                    <input id="regextext" type="text" size="40" value="">
+                    <br>
+                    <img src="img/stock_unknown-24.png" id="pathbreaksgraphhelp" class="helpbutton">
                     <label for="regexgraphpathbreaks">Path Breaks Graph:</label>
-                    <input id="regexgraphpathbreaks" type="checkbox" />
-                    <br />
+                    <input id="regexgraphpathbreaks" type="checkbox">
+                    <br>
                     <label for="regexunlimited">Unlimited graphs</label>
-                    <input id="regexunlimited" type="checkbox" />
-                    <br />
-                    <input id="regexgo"   type="button" value="Go" />
+                    <input id="regexunlimited" type="checkbox">
+                    <br>
+                    <input id="regexgo"   type="button" value="Go">
                 </form>
             </div>
         </div>
         <div id="yui-main">
             <div id="containerforgraphspace" class="yui-b">
-                <div id="toolmenu" style="padding: 2px;>
-                    <span class="clickable" id="dragtool"><img src="img/lc_arrowshapes.quad-arrow.png" id="dragtoolicon" title="Drag/CtC" /></span>
-                    <span class="clickable" id="seltool"><img src="img/lc_flowchartshapes.png" id="seltoolicon" title="Highlight" /></span>
+                <div id="toolmenu" style="padding: 2px;">
+                    <span class="clickable" id="dragtool"><img src="img/lc_arrowshapes.quad-arrow.png" id="dragtoolicon" title="Drag/CtC"></span>
+                    <span class="clickable" id="seltool"><img src="img/lc_flowchartshapes.png" id="seltoolicon" title="Highlight"></span>
                     <div id="seltools" style="padding-left: .5em; padding-top: .8em; border-top: 1px solid black;">
                         <form name="seltools">
-                            <input type="radio" name="seltools" value="time" id="seltoolstime" /><label for="seltoolstime"><img src="img/sc10937.png" title="Selection Sets Time" /></label>
-                            <br />
-                            <input type="radio" name="seltools" value="select" id="seltoolssel" checked /><label for="seltoolssel"><img src="img/stock_draw-rounded-rectangle.png" title="Selection for Display Only" /></label>
+                            <input type="radio" name="seltools" value="time" id="seltoolstime"><label for="seltoolstime"><img src="img/sc10937.png" title="Selection Sets Time"></label>
+                            <br>
+                            <input type="radio" name="seltools" value="select" id="seltoolssel" checked><label for="seltoolssel"><img src="img/stock_draw-rounded-rectangle.png" title="Selection for Display Only"></label>
                         </form>
-                        <input id="selcolorinp" value="#000000" style="display:none" /><label class="colorexample" id="colorexampleCANVAS-sel" style="background-color:#000000" title="Hightlight Color"></label><img src="img/stock_3d-color-picker-16.png" border=0 style="margin-left: 1em;" title="Highlight Color" />
-                        <br />
+                        <input id="selcolorinp" value="#000000" style="display:none"><label class="colorexample" id="colorexampleCANVAS-sel" style="background-color:#000000" title="Hightlight Color"></label><img src="img/stock_3d-color-picker-16.png" style="margin-left: 1em;" title="Highlight Color">
+                        <br>
                     </div>
                 </div>
                 <div id="errorspace"></div>
@@ -1936,20 +1937,20 @@ $version = "2.0";
                     <textarea id="regexerlist" cols="80" rows="30" disabled="true"></textarea>
                 </div>
                 <div id="regexersaver" style="display:none">
-                <img src="img/stock_unknown-24.png" id="regexsaver" class="helpbutton" />
+                <img src="img/stock_unknown-24.png" id="regexsaver" class="helpbutton">
                     <form onSubmit="return false;">
                         <label for="regextotal">Total<strong>s</strong></label>
-                        <input id="regextotal" type="checkbox" />
-                        <br />
+                        <input id="regextotal" type="checkbox">
+                        <br>
                         <label for="regexjusttotal">JUST Total<em>s</em></label>
-                        <input id="regexjusttotal" type="checkbox" />
-                        <br />
+                        <input id="regexjusttotal" type="checkbox">
+                        <br>
                         <label for="regexonly">Regex ONLY</label>
-                        <input id="regexonly" type="checkbox" />
-                        <br />
-                        <label for="savename">Playlist Name</label>
-                        <input id="regexsavename" type="text" size="20" value="" />
-                        <input id="regexsaveit"   type="button" value="Save" />
+                        <input id="regexonly" type="checkbox">
+                        <br>
+                        <label for="regexsavename">Playlist Name</label>
+                        <input id="regexsavename" type="text" size="20" value="">
+                        <input id="regexsaveit"   type="button" value="Save">
                     </form>
                 </div>
                 <div id="graphspace">
@@ -1982,23 +1983,23 @@ $version = "2.0";
 
 <div id="pickerregexerhelpd" style="display: none" class="help">
 <dl>
-    <dt><img src="img/stock_form-file-selection.png" title="Picker" /></dt>
+    <dt><img src="img/stock_form-file-selection.png" title="Picker"></dt>
     <dd>Selects the Picker controls. These controls allow interactive building of graphs and playlists.</dd>
-    <dt><img src="img/stock_macro-stop-after-procedure.png" title="Regexer" /></dt>
+    <dt><img src="img/stock_macro-stop-after-procedure.png" title="Regexer"></dt>
     <dd>Selects the Regexer. The Regexers allows you to build a playlist of graphs via regular expression. Knowledge of the regular expressions and the RRD layout is required for this option.</dd>
-    <dt><img src="img/stock_file-with-objects.png" title="New Graph" /></dt>
+    <dt><img src="img/stock_file-with-objects.png" title="New Graph"></dt>
     <dd>New Graph. This button creates a new graph. This is useful when creating graphs a line at a time.</dd>
-    <dt><img src="img/stock_data-save.png" title="Save Playlist" /></dt>
+    <dt><img src="img/stock_data-save.png" title="Save Playlist"></dt>
     <dd>Save Playlist. This button brings up the Save Playlist dialog. A playlist saved from this button is made up of the currently displayed graphs.</dd>
-    <dt><img src="img/stock_timer.png" title="Set Times for All Graphs" /></dt>
+    <dt><img src="img/stock_timer.png" title="Set Times for All Graphs"></dt>
     <dd>Set Times for All Graphs. This button brings up a dialog that allows you to change the start and end times of all displayed graphs.</dd>
-    <dt><img src="img/stock_handles-simple.png" title="Set Sizes for All Graphs" /></dt>
+    <dt><img src="img/stock_handles-simple.png" title="Set Sizes for All Graphs"></dt>
     <dd>Set Sizes for All Graphs. This button brings up a dialog that allows you to change the sizing for all displayed graphs.</dd>
-    <dt><img src="img/stock_delete.png" title="Delete All Graphs" /></dt>
+    <dt><img src="img/stock_delete.png" title="Delete All Graphs"></dt>
     <dd>Delete All Graphs. This button removes all graphs from view and adjusts the graph counter to 0.</dd>
-    <dt><img src="img/lc_arrowshapes.quad-arrow.png" title="Drag/CtC" /></dt>
+    <dt><img src="img/lc_arrowshapes.quad-arrow.png" title="Drag/CtC"></dt>
     <dd>Drag Tool. When this tool is selected, graphs can be dragged back and forth in time by mousing over the graph and dragging.</dd>
-    <dt><img src="img/lc_flowchartshapes.png" title="Highlight" /></dt>
+    <dt><img src="img/lc_flowchartshapes.png" title="Highlight"></dt>
     <dd>Selection Tool. This tool operates in one of two modes. The first mode uses the selection to narrow the displayed times. The second mode makes no use of the selection -- it's there for display/demonstration only. Selection color can also be controlled in the options for this tool.</dd>
 </dl>
 </div>

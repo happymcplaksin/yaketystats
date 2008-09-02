@@ -50,7 +50,6 @@ var G = (function() {
 
     function init(){
         var tpc = $('timepresetscontainer');
-        tpc.style.display = 'none';
 
         addGraph();
         document.onkeypress = function(e){handleKeys(e)}.bindAsEventListener();
