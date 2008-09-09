@@ -786,10 +786,10 @@ function ls_dir($dir){
     if ( preg_match('`\.\.`', $dir) ){
         return "Uh, no.\n";
     }
-    if ( is_dir($dir) && is_readable($dir) && is_executable($dir) ){
+    if ( is_dir($dir) && is_readable($dir) && is_executable($dir) && $dir != 'lost+found' ){
         $dh = opendir($dir) or die('can not open dir, pal');
         while (($file = readdir($dh)) != false) {
-            if ( $file != '.' && $file != '..' && $file{0} != '.' ){
+            if ( $file != '.' && $file != '..' && $file{0} != '.' && $file != 'lost+found' ){
                 if ( is_dir($dir.'/'.$file) ){
                     $nodes['dirs'][] = $dir.'/'.$file;
                 }else{
