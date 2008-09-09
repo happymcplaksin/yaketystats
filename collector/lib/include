@@ -1,0 +1,80 @@
+#                               Hey Emacs, please use -*- cperl -*- mode
+
+$|=1;
+
+# TODO:  Perhaps all of these should come from a config file!
+
+# Globals.  They all start with 'g_'.
+our $g_version = "1.3.4";
+our $g_dir;
+our $g_os = $^O; # $^O is a perl built-in variable
+if ( $g_os eq "linux" ) {
+  our $g_var = "/var/yaketystats";
+} else {
+  our $g_var = "/var/yaketystats";
+}
+our $g_lib = "$g_dir/lib";
+our $g_bin = "$g_dir/bin";
+our $g_tmp = "$g_var/tmp";
+our $g_etc = "$g_dir/etc";
+
+require "$g_lib/subs.pl";
+
+our $g_user_agent = "yaketystats $g_version";
+our $g_debug = 0;
+our $g_debug_level = 99;
+our $g_host;
+our $g_subname;
+our $g_statfile = "$g_var/stats";
+our $g_client_lock = "$g_var/lock.client";
+our $g_server_lock = "$g_var/lock.server";
+our $g_message_file = "$g_var/messages";
+our $g_summary_file = "$g_var/summary";
+our $g_get_fqdn = "$g_dir/bin/get_fqdn";
+our $g_hostname_file = "$g_var/fqdn";
+our $g_interval;
+our @g_stats;
+our $g_rrddir = "$g_dir/rrd";
+# Used by maybe_create_rrdfile:
+our $g_secs_per_hour = 60 * 60;
+our $g_secs_per_month = 60 * 60 * 24 * 30;
+our $g_secs_per_10years = 60 * 60 * 24 * 365 * 10;
+our $g_default_timeout = 20;
+our $g_noexit = 0;
+our $g_exit = 1;
+our $g_configfile = "$g_etc/config";
+our $g_ignore_file = "$g_etc/ignores";
+our $g_lock_dir = "$g_var/locks";
+our $g_incoming = "$g_var/incoming";
+our $g_outgoing = "$g_var/outgoing";
+our $g_libexec = "$g_dir/libexec";
+# We dare you to use this in a filesystem name.  Nyah nyah!
+our $g_sep = '';
+# Set by collectors, used by bivalve
+our $g_collector;
+
+our %g_paths;
+# Fill %g_paths
+configure ();
+if ( $ARGV[0] eq "-d" ) {
+  $g_debug = 1;
+}
+
+our $g_server_config = "$g_etc/server.conf";
+our $g_client_config = "$g_etc/client.conf";
+# Defaults which can be overridden in (client|server).conf
+our $g_server_logdir = "/www/logs/stats";
+our @g_known_versions = ("1.3");
+our $g_stats_host = "SERVER-FQDN";
+our $g_url_prefix = "/store.php";
+our $g_deadlog_dir = "/www/logs/rolledstats";
+
+our $g_max_collectors = 10;
+
+our $g_syslog_facility = "local5";
+our $g_syslog_priority = "info";
+our $g_syslog_tag = $g_user_agent;
+$g_syslog_tag =~ s/ .*//;
+our $g_syslog = 1;
+# End globals.
+1;

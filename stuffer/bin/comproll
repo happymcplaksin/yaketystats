@@ -1,0 +1,10 @@
+#!/bin/sh
+
+dir="`grep '^rolled_dir' /usr/local/yaketystats/etc/server.conf | awk '{print \$2}'`"
+
+# Delete old logs
+/usr/bin/find $dir -type f ! -mtime -14 -exec /bin/rm -f {} \;
+
+# Compress those we keep
+/usr/bin/find $dir -type f | grep -v 'gz$' | xargs -i gzip {}
+
