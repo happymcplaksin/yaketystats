@@ -217,7 +217,7 @@ sub readlog {
     }
   }
 
-  dumphash ();
+  dump_data ();
 
   if ( $lockit == 1 ) {
     debug ("Unlocking $lock.", 50);
@@ -369,7 +369,7 @@ sub add_and_maybe_dump {
   if ( $num_entries >= $g_max_log_entries ) {
     debug ("Dumping hash with $num_entries entries.\n", 100);
     debug (Data::Dumper->Dump ( [\%stats], ['*stats'] ), 100);
-    if ( dumphash () == 0 ) {
+    if ( dump_data () == 0 ) {
       return (0);
     } else {
       return (1);
@@ -378,7 +378,7 @@ sub add_and_maybe_dump {
   return (0);
 }
 
-sub dumphash {
+sub dump_data {
   my ($rrdfile, $type, $interval, $stat, $pair, $count, @pairs, $aref, @a, $total, $dumpstart);
 
 #  $dumpstart = time ();

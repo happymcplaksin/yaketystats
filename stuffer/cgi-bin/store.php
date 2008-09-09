@@ -49,6 +49,11 @@ if ( isset($_REQUEST['dataversion']) ){
                 unavail(ERROR_BAD_REQUEST);
             }
 
+	    // if there's no directory, make one!
+	    if ( ! mkdir_p($dir) ){
+	      unavail(ERROR_CONFLICT);
+	    }
+
             /*
             $uuid = lookupUUID($host);
             if ( $_REQUEST['uuid'] != $uuid ){
@@ -146,14 +151,17 @@ function lookupUUID($host){
 }
 
 function mkdir_p ($dir) {
-  if ( file_exists (dirname ($dir)) ) {
-    if ( ! mkdir ($dir) ) {
-      unavail(ERROR_FORBIDDEN);
-      return (FALSE);
+  if ( ! file_exists($dir) ) {
+    if ( file_exists (dirname ($dir)) ) {
+      if ( ! mkdir ($dir) ) {
+	unavail(ERROR_FORBIDDEN);
+	return (FALSE);
+      }
+      chmod ($dir, 0775);
+    } else {
+      mkdir_p(dirname ($dir));
     }
-    chmod ($dir, 0775);
-  } else {
-    mkdir_p(dirname ($dir));
+    return (TRUE);
   }
   return (TRUE);
 }
