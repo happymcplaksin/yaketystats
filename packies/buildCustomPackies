@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-myOS=`uname`
-
 # fqdn or URL of the server
 #     prefix /store.php
 #     virthost stanza
@@ -21,19 +19,49 @@ myOS=`uname`
 # fontpath
 # htaccess file!
 
-# function that asks questions and returns the answer
-# check for alien && rpmbuild if debian bail if it's not there
-
 # ask some questions
+# verify the sanity of some answers.
 # show a report of answers with a you're stupid verify
 # build the packies
+# build the virthost file if necessary
+
+myOS=`uname`
+alien=''
+
+function verify(){
+    local file="$1"
+    if [[ ! -f $file ]]
+    then
+        echo "Can't find $file"
+        exit 4
+    fi
+}
+
+case $myOS in
+    Linux)
+        verify /usr/bin/rpmbuild
+        if [[ -f /etc/debian_version ]]
+        then
+            alien=/usr/bin/alien  # if $alien is not null, we're on a debian-based distro
+            verify $alien
+        fi
+    ;;
+    SunOS)
+        verify /usr/bin/pkgmk
+        verify /usr/bin/pkgproto
+    ;;
+    "HP-UX")
+        verify /usr/sbin/swpackage
+    ;;
+esac
+
 
 function ask(){
     # we r sysadmins!
     q="$1"
     v="$2"
-    sv="`eval echo $\`echo $v\``"
-    /bin/echo -n "${q} [${sv}]:"
+    sv=${!v}
+    echo -n "${q} [${sv}]:"
     read uv
     if [[ -z "${uv}" ]]
         then
@@ -58,19 +86,34 @@ function ask(){
     eval "`echo ${v}`=${uv}"
 }
 
+function parseurl(){
+    if [[ "${serverurl}" =~ "^http://${serverfqdn}.*/store.php" ]]
+    then
+        local nobangequalstilde='whynot?'
+    else
+        echo "    Your URL seems funny."
+        serverurl="http://${serverfqdn}/store.php"
+        ask "    Enter the URL to store.php" serverurl
+        parseurl $serverurl
+    fi
+}
+
 domain="`grep domain /etc/resolv.conf | awk '{print $2}'`"
 [[ -z "$domain" ]] && domain="example.com"
 
 packielist=${packielist:-"both"}
 version=${version:-"2.0"}
-serverfqdn=${serverfqdn:-"stats.${domain}"}
+serverfqdn=${serverurl:-"stats.${domain}"}
+serverurl=${serverurl:-"http://${serverfqdn}/store.php"}
 makevirthost=${makevirthost:-"n"}
 verify='y'
 
 
 ask "What packages are you making? (server|client|both)" packielist
 ask "What version number do you want this/these package(s) to have?" version
-ask "What is the URL or FQDN of your stats server:" serverfqdn
+ask "What is the FQDN of your stats server:" serverfqdn
+ask "Enter the URL to store.php (http only right now)" serverurl
+parseurl $serverurl
 
 # down here so that serverfqdn is maybe possibly more optimum
 documentroot=${documentroot:-"/var/www/${serverfqdn}/htdocs"}
