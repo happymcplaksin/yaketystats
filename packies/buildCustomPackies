@@ -103,7 +103,7 @@ domain="`grep domain /etc/resolv.conf | awk '{print $2}'`"
 
 packielist=${packielist:-"both"}
 version=${version:-"2.0"}
-serverfqdn=${serverurl:-"stats.${domain}"}
+serverfqdn=${serverfqdn:-"stats.${domain}"}
 serverurl=${serverurl:-"http://${serverfqdn}/store.php"}
 makevirthost=${makevirthost:-"n"}
 verify='y'
