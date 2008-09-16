@@ -87,7 +87,7 @@ function ask(){
 }
 
 function parseurl(){
-    if [[ "${serverurl}" =~ "^http://${serverfqdn}.*/store.php" ]]
+    if [[ "${serverurl}" =~ "^http://.*/store.php" ]]
     then
         local nobangequalstilde='whynot?'
     else
@@ -104,16 +104,18 @@ domain="`grep domain /etc/resolv.conf | awk '{print $2}'`"
 packielist=${packielist:-"both"}
 version=${version:-"2.0"}
 serverfqdn=${serverfqdn:-"stats.${domain}"}
-serverurl=${serverurl:-"http://${serverfqdn}/store.php"}
 makevirthost=${makevirthost:-"n"}
+serveradmin="stats@${domain}"
 verify='y'
 
 
 ask "What packages are you making? (server|client|both)" packielist
 ask "What version number do you want this/these package(s) to have?" version
-ask "What is the FQDN of your stats server:" serverfqdn
+serverurl=${serverurl:-"http://${serverfqdn}/store.php"}
 ask "Enter the URL to store.php (http only right now)" serverurl
 parseurl $serverurl
+serverfqdn=${serverurl#http://}
+serverfqdn=${serverfqdn%%/*}
 
 # down here so that serverfqdn is maybe possibly more optimum
 documentroot=${documentroot:-"/var/www/${serverfqdn}/htdocs"}
@@ -129,6 +131,7 @@ then
     then
         ask "What's the DocumentRoot?" documentroot
         ask "Path for log directory?" logdir
+        ask "What's your server admin mail address?" serveradmin
     fi
     ask "Inbound stat directory" inbound
     ask "Rolled stats direcotry" rolled
