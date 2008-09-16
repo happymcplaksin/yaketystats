@@ -1,0 +1,11 @@
+NameVirtualHost SERVERIP
+<VirtualHost SERVERIP:80>
+  ServerName SERVERNAME
+  ServerAdmin SERVERADMIN
+  DocumentRoot DOCUMENTROOT
+
+  SetEnvIf Request_URI "^REQUESTURI" dontlog
+
+  CustomLog LOGDIR/stats-access.log combined env=!dontlog
+  ErrorLog LOGDIR/stats-error.log
+</VirtualHost>

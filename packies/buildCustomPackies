@@ -25,6 +25,16 @@
 # build the packies
 # build the virthost file if necessary
 
+TXT_BOLD=`tput bold`
+TXT_RED=`tput setaf 1`
+TXT_GREEN=`tput setaf 2`
+TXT_YLW=`tput setaf 3`
+TXT_BLUE=`tput setaf 4`
+TXT_PURPLE=`tput setaf 5`
+TXT_CYAN=`tput setaf 6`
+TXT_WHITE=`tput setaf 7`
+TXT_RESET=`tput sgr0`
+
 myOS=`uname`
 alien=''
 
@@ -45,13 +55,22 @@ case $myOS in
             alien=/usr/bin/alien  # if $alien is not null, we're on a debian-based distro
             verify $alien
         fi
+        function myhost(){
+            /usr/bin/getent hosts $1 | awk '{print $1}'
+        }
     ;;
     SunOS)
         verify /usr/bin/pkgmk
         verify /usr/bin/pkgproto
+        function myhost(){
+            /bin/getent hosts $1 | awk '{print $1}'
+        }
     ;;
     "HP-UX")
         verify /usr/sbin/swpackage
+        function myhost(){
+            /usr/contrib/bin/nsquery $1 | grep Address | awk '{print $2}'
+        }
     ;;
 esac
 
@@ -82,7 +101,7 @@ function ask(){
         default)
             ;;
     esac
-    report="${report}${q}: ${v}=${uv}\n"
+    report="${report}${q}: ${TXT_GREEN}${v}=${uv}${TXT_RESET}\n"
     eval "`echo ${v}`=${uv}"
 }
 
@@ -112,7 +131,7 @@ verify='y'
 ask "What packages are you making? (server|client|both)" packielist
 ask "What version number do you want this/these package(s) to have?" version
 serverurl=${serverurl:-"http://${serverfqdn}/store.php"}
-ask "Enter the URL to store.php (http only right now)" serverurl
+ask "Enter the URL to store.php (HTTP:80 only right now)" serverurl
 parseurl $serverurl
 serverfqdn=${serverurl#http://}
 serverfqdn=${serverfqdn%%/*}
@@ -129,6 +148,9 @@ then
     ask "Do you want this script to generate a virtual host file?" makevirthost
     if [ "$makevirthost" = 'y' ]
     then
+        requesturi=${serverurl#http://$serverfqdn}
+        serverip=`myhost ${serverfqdn}`
+        ask "What's the server's IP address?" serverip
         ask "What's the DocumentRoot?" documentroot
         ask "Path for log directory?" logdir
         ask "What's your server admin mail address?" serveradmin
@@ -141,6 +163,22 @@ echo -e "\n\nYou can set these as environment variables.\n\n$report"
 ask "looks good?" verify
 if [ "${verify}" != 'y' ]
 then
-    echo "Ok then."
+    echo "${TXT_RED}Ok then.${TXT_RESET}"
     exit 4
+fi
+if [[ "$makevirthost" = 'y' ]]
+then
+    template=virthost.template
+    if [[ ! -f "${template}" ]]
+    then
+        echo "I can't find my template file. Please put it in . for me and re-run."
+        exit 4
+    fi
+    if [[ -f "${serverfqdn}.conf" ]]
+    then
+        ask "${serverfqdn}.conf exists, overwrite?" verify
+    fi
+    sed -e "s|SERVERIP|$serverip|g" -e "s|SERVERNAME|$serverfqdn|g" -e "s|SERVERADMIN|$serveradmin|g" \
+        -e "s|DOCUMENTROOT|$documentroot|g" -e "s|REQUESTURI|$requesturi|g" -e "s|LOGDIR|$logdir|g" \
+        $template > ${serverfqdn}.conf
 fi
