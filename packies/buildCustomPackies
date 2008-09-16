@@ -1,29 +1,17 @@
 #!/usr/bin/env bash
 
-# fqdn or URL of the server
-#     prefix /store.php
-#     virthost stanza
-#       means looking up the IP of the FQDN or URL
-#       DocumentRoot
-#       logRoot (and maybe lognames)
-# inbound_dir /www/SERVER-FQDN/logs/yaketystats
-# rolled_dir  /www/SERVER-FQDN/logs/yaketystats.rolled
-# maint /www/SERVER-FQDN/maintenance
-# rrddir /rrd
-# what packages do you want? server/client/jart?
-# what's the package version?
-
 # if jart
 # where should jart live?
 # admins
 # fontpath
 # htaccess file!
 
-# ask some questions
-# verify the sanity of some answers.
-# show a report of answers with a you're stupid verify
 # build the packies
-# build the virthost file if necessary
+## function for server, client and both calls the other two
+## those, in turn, call os-specific ones
+### redhat
+#### build a spec file
+#### run rpmbuild
 
 TXT_BOLD=`tput bold`
 TXT_RED=`tput setaf 1`
@@ -117,6 +105,29 @@ function parseurl(){
     fi
 }
 
+function rpmPrep(){
+    mkdir -p redhat/{RPMS,SOURCES,SRPMS,SPECS}
+}
+
+function buildClientRPM(){
+    rpmPrep
+    cd ../collector
+    tar czf ../packies/redhat/SOURCES/client-${version}.tar.gz .
+    cd $me
+}
+
+function buildServerRPM(){
+    rpmPrep
+    cd ../stuffer
+    tar czf ../packies/redhat/SOURCES/server-${version}.tar.gz .
+    cd $me
+}
+
+echo "ask for the stats uid and gid"
+echo "ask for the release # if redhat"
+exit 65
+
+me=`pwd`
 domain="`grep domain /etc/resolv.conf | awk '{print $2}'`"
 [[ -z "$domain" ]] && domain="example.com"
 
@@ -166,6 +177,7 @@ then
     echo "${TXT_RED}Ok then.${TXT_RESET}"
     exit 4
 fi
+
 if [[ "$makevirthost" = 'y' ]]
 then
     template=virthost.template
@@ -181,4 +193,5 @@ then
     sed -e "s|SERVERIP|$serverip|g" -e "s|SERVERNAME|$serverfqdn|g" -e "s|SERVERADMIN|$serveradmin|g" \
         -e "s|DOCUMENTROOT|$documentroot|g" -e "s|REQUESTURI|$requesturi|g" -e "s|LOGDIR|$logdir|g" \
         $template > ${serverfqdn}.conf
+    echo "Find your virthost file in ${serverfqdn}.conf"
 fi

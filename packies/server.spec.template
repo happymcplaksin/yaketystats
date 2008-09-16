@@ -1,0 +1,25 @@
+%package server
+Group: Applications/System
+Summary: Stuff stats into rrd files
+Requires: %{name} = %{version}-%{release}, %{name} = %{version}-%{release}
+
+%description server
+Your stats need a place to go;
+You are tired of your script called "go".
+May this server serve you well.
+Before your boxes go to hell.
+
+%files server
+%defattr(-, root, root, 0755)
+/usr/local/%{name}/bin/check_rrds
+/usr/local/%{name}/bin/comproll
+/usr/local/%{name}/bin/stuffer
+%config(noreplace) /usr/local/%{name}/etc/server.conf
+/usr/local/%{name}/cgi-bin/store.php
+
+#%doc(missingok) /usr/doc/%{name}-%{version}/you.wish
+#%doc /usr/man/man1/HAHAHAHA
+
+%changelog
+* Wed Oct 31 2007 Mark Plaksin <happy@yaketystats.org>
+- First try

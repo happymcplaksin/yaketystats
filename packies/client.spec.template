@@ -1,0 +1,62 @@
+%define _prefix /usr/local/yaketystats
+%define _varprefix /var/yaketystats
+%define mydir %{_builddir}/%{name}-%{version}
+
+Summary: Collect stats and report them to a yaketystats server
+Name: yaketystats-client
+Group: Applications/System
+License: GPL
+Provides: %{name}
+Version: VERSION
+Release: RELEASE
+Buildroot: %{_tmppath}/%{name}-%{version}-root
+Source: %{name}-%{version}.tar.gz
+URL: http://yaketystats.org/
+
+%description
+Yaketystats collects your stats.
+And reports them to the server.
+Watch the stats go up and down.
+To keep your servers from going splats.
+
+http://yaketystats.org/
+
+%prep
+%setup -c
+
+%clean
+rm -rf %{buildroot}
+
+%install
+rm -rf %{buildroot}
+
+install -d -m 0755 %{buildroot}/%{_prefix}
+install -d -m 0755 %{buildroot}/%{_prefix}/bin
+install -d -m 0755 %{buildroot}/%{_prefix}/etc
+install -d -m 0755 %{buildroot}/%{_prefix}/lib
+install -d -m 0755 %{buildroot}/%{_prefix}/libexec
+install -Dp -m 0755 %{mydir}/bin/* %{buildroot}%{_prefix}/bin
+install -Dp -m 0755 %{mydir}/etc/* %{buildroot}%{_prefix}/etc
+install -Dp -m 0755 %{mydir}/lib/* %{buildroot}%{_prefix}/lib
+install -Dp -m 0755 %{mydir}/libexec/* %{buildroot}%{_prefix}/libexec
+install -m 0755 %{mydir}/.forward %{buildroot}/%{_prefix}
+
+%files
+%defattr(-, root, root, 0755)
+/usr/share/doc/%{name}-%{version}-%{release}/README
+%{_prefix}/.forward
+%{_prefix}/bin/[abd-r]*
+%{_prefix}/bin/collect
+%dir %{_prefix}/etc
+%{_prefix}/etc/client.conf
+%{_prefix}/etc/config
+%{_prefix}/etc/crontab
+%{_prefix}/etc/ignores
+%config(noreplace) %{_prefix}/etc/snmp.config
+%{_prefix}/etc/stats.conf.default
+%{_prefix}/lib
+%{_prefix}/libexec
+
+%config(noreplace) %{_prefix}/etc/stats.conf
+%attr(0755, stats, stats)%{_varprefix}
+%config(noreplace) %{_varprefix}/fqdn
