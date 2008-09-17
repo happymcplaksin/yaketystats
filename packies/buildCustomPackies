@@ -106,20 +106,23 @@ function parseurl(){
 }
 
 function rpmPrep(){
-    mkdir -p redhat/{RPMS,SOURCES,SRPMS,SPECS}
+    mkdir -p redhat/{RPMS/noarch,SOURCES,SRPMS/noarch,SPECS,TMP,BUILD}
 }
 
 function buildClientRPM(){
+    clientspec=redhat/SPECS/yaketystats-client.spec
     rpmPrep
     cd ../collector
-    tar czf ../packies/redhat/SOURCES/client-${version}.tar.gz .
+    tar czf ../packies/redhat/SOURCES/yaketystats-client-${version}.tar.gz .
     cd $me
+    sed -e "s/RELEASE/${release}/" -e "s/VERSION/${version}/" client.spec.template > ${clientspec}
+    rpmbuild --define "_topdir ${me}/redhat" -ba ${clientspec}
 }
 
 function buildServerRPM(){
     rpmPrep
     cd ../stuffer
-    tar czf ../packies/redhat/SOURCES/server-${version}.tar.gz .
+    tar czf ../packies/redhat/SOURCES/yaketystats-server-${version}.tar.gz .
     cd $me
 }
 

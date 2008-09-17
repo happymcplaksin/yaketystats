@@ -35,6 +35,12 @@ install -d -m 0755 %{buildroot}/%{_prefix}/bin
 install -d -m 0755 %{buildroot}/%{_prefix}/etc
 install -d -m 0755 %{buildroot}/%{_prefix}/lib
 install -d -m 0755 %{buildroot}/%{_prefix}/libexec
+install -d -m 0775 %{buildroot}/%{_varprefix}
+install -d -m 0775 %{buildroot}/%{_varprefix}/tmp
+install -d -m 0775 %{buildroot}/%{_varprefix}/locks
+install -d -m 0775 %{buildroot}/%{_varprefix}/incoming
+install -d -m 0775 %{buildroot}/%{_varprefix}/outgoing
+install -d -m 0775 %{buildroot}/%{_varprefix}/outgoing/uploads
 install -Dp -m 0755 %{mydir}/bin/* %{buildroot}%{_prefix}/bin
 install -Dp -m 0755 %{mydir}/etc/* %{buildroot}%{_prefix}/etc
 install -Dp -m 0755 %{mydir}/lib/* %{buildroot}%{_prefix}/lib
@@ -43,20 +49,6 @@ install -m 0755 %{mydir}/.forward %{buildroot}/%{_prefix}
 
 %files
 %defattr(-, root, root, 0755)
-/usr/share/doc/%{name}-%{version}-%{release}/README
-%{_prefix}/.forward
-%{_prefix}/bin/[abd-r]*
-%{_prefix}/bin/collect
-%dir %{_prefix}/etc
-%{_prefix}/etc/client.conf
-%{_prefix}/etc/config
-%{_prefix}/etc/crontab
-%{_prefix}/etc/ignores
-%config(noreplace) %{_prefix}/etc/snmp.config
-%{_prefix}/etc/stats.conf.default
-%{_prefix}/lib
-%{_prefix}/libexec
+%{_prefix}
 
-%config(noreplace) %{_prefix}/etc/stats.conf
-%attr(0755, stats, stats)%{_varprefix}
-%config(noreplace) %{_varprefix}/fqdn
+%attr(0775, stats, stats)%{_varprefix}
