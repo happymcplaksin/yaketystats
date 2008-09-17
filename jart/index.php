@@ -47,9 +47,9 @@ function clickToCenterTime($start,$end,$graph,$xsize,$xoff){
     $json  = new Services_JSON();
     $start = strtotime($start);
     $end   = strtotime($end);
-    if ( $start == -1 || $end == -1 ){
+    if ( ! $start || ! $end ){
         $out[] = 'ERROR';
-        $out[] = "Bad start or end time";
+        $out[] = "Bad start or end time: ";
         $out   = $json->encode($out);
         return $out;
     }
@@ -81,13 +81,13 @@ function convertAllTimes($str){
         $tmp   = array();
         $tmp[] = $v[0];
         $time  = strtotime($v[1]);
-        if ( $time == -1 ){
+        if ( ! $time ){
             $time = mktime();
         }
         $time = date($dateformat,$time);
         $tmp[] = $time;
         $time  = strtotime($v[2]);
-        if ( $time == -1 ){
+        if ( ! $time ){
             $time = mktime();
         }
         $time = date($dateformat,$time);
@@ -105,7 +105,7 @@ function convertTime($id,$str){
         $str = stripslashes($str);
     }
     $time = strtotime($str);
-    if ( $time != -1 ){
+    if ( ! $time ){
         $time = date($dateformat,$time);
     }
     $a[]  = $id;
@@ -127,9 +127,9 @@ function createGraphDragOverlay($graphnumber,$paths,$debuglog){
     $start = strtotime($paths->start);
     $end   = strtotime($paths->end);
     $args  = "$rrdtool fetch ";
-    if ( $start == -1 || $end == -1 ){
+    if ( ! $start || ! $end ){
         $out[] = 'ERROR';
-        $out[] = "cgdi: Bad start or end time";
+        $out[] = "cgdi: Bad start or end time: ";
         $out   = $json->encode($out);
         return $out;
     }
@@ -184,9 +184,9 @@ function createRrdCommandLine($graphnumber,$paths,$debuglog,$justgraph){
     }else{
         $justtotal = 0;
     }
-    if ( $start == -1 || $end == -1 ){
+    if ( ! $start || ! $end ){
         $out[] = 'ERROR';
-        $out[] = "crcl: Bad start or end time".$paths->start.' '.$paths->end;
+        $out[] = "crcl: Bad start or end time: ".$paths->start.' '.$paths->end;
         return $out;
     }
     $args = "-i -W 'YaketyStats' -E --font DEFAULT:8:$font -s $start -e $end --rigid ";
@@ -566,9 +566,9 @@ function dragTime($cx,$graph,$start,$end,$xsize){
     $start = strtotime($start);
     $end   = strtotime($end);
     $w     = intval($xsize);
-    if ( $start == -1 || $end == -1 ){
+    if ( ! $start || ! $end ){
         $out[] = 'ERROR';
-        $out[] = "Bad start or end time";
+        $out[] = "Bad start or end time: ";
         $out   = $json->encode($out);
         return $out;
     }
@@ -976,9 +976,9 @@ function selTime($graph,$s1,$s2p,$e1,$e2p){
     $json  = new Services_JSON();
     $start = strtotime($s1);
     $end   = strtotime($e1);
-    if ( $start == -1 || $end == -1 ){
+    if ( ! $start || ! $end ){
         $out[] = 'ERROR';
-        $out[] = "Bad start or end time";
+        $out[] = "Bad start or end time: ";
         $out   = $json->encode($out);
         return $out;
     }
