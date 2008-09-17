@@ -65,8 +65,10 @@ our $g_client_config = "$g_etc/client.conf";
 # Defaults which can be overridden in (client|server).conf
 our $g_server_logdir = "/www/logs/stats";
 our @g_known_versions = ("1.3");
-our $g_stats_host = "SERVER-FQDN";
-our $g_url_prefix = "/store.php";
+our $g_store_url;
+our $g_server_fqdn;
+our $g_server_protocol;
+our $g_server_uri;
 our $g_deadlog_dir = "/www/logs/rolledstats";
 
 our $g_max_collectors = 10;

@@ -3,6 +3,12 @@
 // Allow group-write
 umask (0022);
 
+define("ERROR_BAD_REQUEST",400);
+define("ERROR_FORBIDDEN",403);
+define("ERROR_CONFLICT",409);
+define("ERROR_SERVICE_UNAVAILABLE",503);
+define("ERROR_HAPPY_UNAVAILABLE",588);
+
 // Read paths from stats.conf
 //
 // Maybe a Makefile should fill in this path?
@@ -19,21 +25,20 @@ foreach ($server_conf as $line) {
   }
 }
 
-$now     = mktime();
+// Bail out right away if maintenance is happening
+if ( file_exists ($maint) ) {
+  unavail(ERROR_SERVICE_UNAVAILABLE);
+}
 
-define("ERROR_BAD_REQUEST",400);
-define("ERROR_FORBIDDEN",403);
-define("ERROR_CONFLICT",409);
-define("ERROR_SERVICE_UNAVAILABLE",503);
-define("ERROR_HAPPY_UNAVAILABLE",588);
+$now     = mktime();
 
 // silence errors and warnings so the header call in unavail works.
 // TODO: This is awesome for debugging!
 //error_reporting(0);
 
-// Bail out if maintenance is happening
-if ( file_exists ($maint) ) {
-  unavail(ERROR_SERVICE_UNAVAILABLE);
+if ( empty($_REQUEST['host']) || 
+     empty($_REQUEST['path']) ) {
+    unavail(ERROR_BAD_REQUEST);
 }
 
 if ( isset($_REQUEST['dataversion']) ){
@@ -45,7 +50,7 @@ if ( isset($_REQUEST['dataversion']) ){
 	  // FUTURE TODO MAYBE: verify that host matches uuid if not, 403
 	  // Make sure there are no bad characters in the host
             $host = preg_replace('[^a-zA-Z0-9-.]','',$_REQUEST['host']);
-            if ( empty($host) ){
+            if ( empty($host) ) {
                 unavail(ERROR_BAD_REQUEST);
             }
 
@@ -112,7 +117,7 @@ if ( isset($_REQUEST['dataversion']) ){
 $host = preg_replace('#/([^/]*)/.*#','$1',$_REQUEST['path']);
 
 if ( empty($host) ){
-    unavail(ERROR_USER);
+    unavail(ERROR_BAD_REQUEST);
 }
 
 $log  = $dir.$host;

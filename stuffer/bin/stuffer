@@ -20,7 +20,7 @@ $g_dir = realpath("$g_dir/..");
 require "$g_dir/lib/include";
 
 # Globals
-our ($g_statfile, $g_server_lock, $g_url_prefix, $g_rrddir, $g_exit,
+our ($g_statfile, $g_server_lock, $g_server_uri, $g_rrddir, $g_exit,
      $g_noexit, $g_sep, $g_max_log_entries, $g_max_rrd_entries,
      $g_lock_dir, $g_host, $g_collector);
 our ($g_secs_per_hour, $g_secs_per_month, $g_secs_per_10years);
@@ -260,11 +260,11 @@ sub parse_logline {
     if ( $line =~ /Lady&Tramp/ ) {
       return (undef);
     }
-    if ( $line !~ /^path=/ && $line !~ /^$g_url_prefix/ ) {
+    if ( $line !~ /^path=/ && $line !~ /^$g_server_uri/ ) {
       fileit ("Help me!  I can't handle line: $line\n");
       return (undef);
     }
-    $line =~ s/$g_url_prefix\?//;
+    $line =~ s/$g_server_uri\?//;
     $sep = '&';
   } else {
     if ( $version eq "1.3" ) {
