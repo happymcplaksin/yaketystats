@@ -227,6 +227,7 @@ function createRrdCommandLine($graphnumber,$paths,$debuglog,$justgraph){
     $totalargs = '';
     $avgargs   = '';
     $plusses   = '';
+    $lines     = '';
     $i         = 0;
     $a         = 0;
     foreach ($paths->paths as $v) {
@@ -255,7 +256,7 @@ function createRrdCommandLine($graphnumber,$paths,$debuglog,$justgraph){
         }else{
             $path  = escapeshellcmd($v->path);
         }
-        if ( ! file_exists($path) ){
+        if ( ! file_exists($v->path) && $v->path != 'total' && $v->path != 'avg' ){
             // there should probably be a log message here
             continue;
         }
@@ -306,14 +307,10 @@ function createRrdCommandLine($graphnumber,$paths,$debuglog,$justgraph){
                 // uh are these the same?
                 if ( $negative ){
                     $nulldefs .= "VDEF:jg$defid=$defid,MAXIMUM ";
-                    //$nulllines .= "PRINT:jg$defid:MAX-%2.2lf ";
                     $nulldefs .= "VDEF:tg$defid=$defid,MINIMUM ";
-                    //$nulllines .= "PRINT:tg$defid:MIN-%2.2lf ";
                 }else{
                     $nulldefs .= "VDEF:jg$defid=$defid,MAXIMUM ";
-                    //$nulllines .= "PRINT:jg$defid:MAX%2.2lf ";
                     $nulldefs .= "VDEF:tg$defid=$defid,MINIMUM ";
-                    //$nulllines .= "PRINT:tg$defid:MIN%2.2lf ";
                 }
             }
         }
@@ -332,12 +329,9 @@ function createRrdCommandLine($graphnumber,$paths,$debuglog,$justgraph){
         $plusses = substr($plusses, 0, -3);
         $defs .= 'CDEF:total='.$totalargs.$plusses.' ';
         $defs .= 'VDEF:supertotal=total,MAXIMUM ';
-        //$nulllines .= "PRINT:supertotal:MAX%2.2lf ";
     }
     if ( $avg ){
         $defs .= 'CDEF:average='.$avgargs.$a.',AVG ';
-        //$defs .= 'VDEF:supertotal=total,MAXIMUM ';
-        //$nulllines .= "PRINT:supertotal:MAX%2.2lf ";
     }
     if ( $justgraph != 1  ){
         $ndefs     = $defs;
@@ -381,6 +375,7 @@ function createRrdCommandLine($graphnumber,$paths,$debuglog,$justgraph){
         ob_start();
         var_dump($rargs);
         var_dump( $paths);
+        var_dump( $lines );
         $taco=ob_get_contents();
         ob_end_clean();
         $fp = fopen("$mygraphimage-createcmd.log",'w');
