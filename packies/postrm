@@ -4,114 +4,16 @@
 #
 # - Delete crontab
 # - Delete user and group
-# - Delete logcheck entry
-# - Delete syslog entry
 OUR_USER=stats
-ROOTDIR=/
-uname=`uname`
-USERDEL=$ROOTDIR/usr/sbin/userdel
-GROUPDEL=$ROOTDIR/usr/sbin/groupdel
-EXPR=$ROOTDIR/usr/bin/expr
-
-# On Debian systems, we only want to do this stuff if we're being purged 
-if [ "$uname" = "Linux" -a "$1" != "purge" ]; then
-  exit
-fi
-
-# Maybe I should just use PATH instead of all these variables.
-if [ "$uname" = Linux ]; then
-  RM=$ROOTDIR/bin/rm
-  SU=$ROOTDIR/bin/su
-  CRONTAB_R="/usr/bin/crontab -u $OUR_USER -r"
-  PS=$ROOTDIR/bin/ps
-  GREP=$ROOTDIR/bin/grep
-  SLEEP=$ROOTDIR/bin/sleep
-else
-  RM=$ROOTDIR/usr/bin/rm
-  SU=$ROOTDIR/usr/bin/su
-  CRONTAB_R="/usr/bin/crontab -r $OUR_USER"
-  PS=$ROOTDIR/usr/bin/ps
-  GREP=$ROOTDIR/usr/bin/grep
-  SLEEP=$ROOTDIR/usr/bin/sleep
-fi
-
-# Only wipe this when purging under Debian.  Do other OSes have something
-# similar to purge?
-if [ "$uname" = "Linux" ]; then
-  $RM -rf /usr/local/$OUR_USER
-fi
-
+OUR_GROUP=stats
+PATH=/bin:/usr/bin:$PATH
 # Wipe out crontab so the running cron stops trying to run jobs as stats
-$CRONTAB_R
+crontab -r $OUR_USER
 
-# There has got to be a standard way of doing this, but maybe not a way
-# that's standard across OSes.
-#
-# OK, I'm too lazy to do locking right now.  So try waiting a bit.
-# (Locking idea:  This script could create a file which means "no more stats
-# processes may start" and then wait for all stats processes to end, and then
-# kill stats processes that haven't ended after a time interval.  Which would
-# require the loop below anyhow :)
+# kill all of the user processes
+ps -u $OUR_USER | grep -v PID | awk '{print $1}' | xargs -i kill {}
+sleep 2
+ps -u $OUR_USER | grep -v PID | awk '{print $1}' | xargs -i kill {}
 
-tries=5
-echo "Trying to delete $OUR_USER user.  May take up to "
-echo "`$EXPR $tries \* $tries` seconds..."
-otries=$tries
-while [ $otries -gt 0 ]; do
-  itries=$tries
-  # Look for processes owned by $OUR_USER.
-  # NOTE:  There is a space and a tab character in the []'s!
-  while [ $itries -gt 0 ]; do
-    $PS -ef | $GREP "^[ 	]*${OUR_USER}" > /dev/null
-    # Looks safe, let's try it! 
-    if [ $? = 1 ]; then
-      $USERDEL $OUR_USER
-      u_stat=$?
-      if [ $u_stat = 0 ]; then
-        u_del_success=1
-        # OK, some OSes (Linux!) delete the group when you run userdel so
-        # check whether the group exists first
-        $GREP '^stats:' /etc/group > /dev/null
-        if [ $? = 0 ]; then
-          # Sheesh!
-          if [ "$uname" = "SunOS" ]; then
-            TMPDIR=/etc $GROUPDEL $OUR_USER
-            g_stat=$?
-          else
-            $GROUPDEL $OUR_USER      
-            g_stat=$?
-          fi
-          if [ $g_stat = 0 ]; then
-            g_del_success=1
-          fi
-        else
-          # It group never existed, success!
-          g_del_success=1
-        fi
-      fi
-      # If both succeeded, we're done!
-      if [ "$u_del_success" = 1 -a "$g_del_success" = 1 ]; then
-        echo "Success!"
-        itries=-10
-        otries=-10
-      fi
-    fi
-    itries=`$EXPR $itries - 1`
-    $SLEEP 1
-  done
-  otries=`$EXPR $otries - 1`
-  $SLEEP 1
-done
-
-if [ $itries -gt -10 ]; then
-  echo "I tried really hard but could not delete the user and/or group named $OUR_USER"
-  echo "You should check it out."
-fi
-
-echo
-echo "You should remove the stats user from cron.allow.  You might also want to remove the stats"
-echo "lines from syslog.conf and logcheck.ignore."
-echo "That is, this script does none of that (yet).  "
-echo
-echo "If you never want to use stats again you should 'rm -rf /usr/local/yaketystats'"
-echo "and 'rm -rf /var/yaketystats'"
+userdel $OUR_USER
+groupdel $OUR_GROUP

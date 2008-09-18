@@ -4,6 +4,14 @@
 #
 # Create stats user and group 
 
+checkit(){
+    if [[ $? != 0 ]]
+    then
+        echo "$1: So sorry.  Bailing"
+        exit 4
+    fi
+}
+
 CHROOT=""
 ROOTDIR=/
 if [ "`uname`" = SunOS ]
@@ -16,16 +24,10 @@ if [ "`uname`" = SunOS ]
 fi
 
 OUR_GROUP=stats
-OUR_GID=11994
+OUR_GID=TBDGID
 OUR_USER=stats
-OUR_UID=11994
-
-if [ -f /etc/redhat-release ]
-then
-  DIR=/usr/local/%{name}
-else
-  DIR=/usr/local/yaketystats
-fi
+OUR_UID=TBDUID
+DIR=/usr/local/yaketystats
 
 grep "^$OUR_GROUP:" $ROOTDIR/etc/group > /dev/null
 if [ $? = 0 ]
@@ -33,31 +35,17 @@ if [ $? = 0 ]
   echo "Group $OUR_GROUP exists so I refuse to add it."
 else
   $CHROOT /usr/sbin/groupadd -g $OUR_GID $OUR_GROUP
-  if [ $? != 0 ]
-  then
-    echo "Ugh!  I'm dying an ugly death!  groupadd had an error :("
-    exit 41
-  fi
+  checkit groupadd
 fi
 
 grep "^$OUR_USER:" $ROOTDIR/etc/passwd > /dev/null
 if [ $? = 0 ]
   then
   echo "User $OUR_USER exists so I refuse to add it."
-  status=$?
 else
   $CHROOT /usr/sbin/useradd -m -d $DIR -u $OUR_UID -g $OUR_GID $OUR_USER
-  status=$?
-fi
-if [ $status != 0 ]
-then
-  echo "Ugh!  I'm dying an ugly death!  useradd had an error ($status).  Perhaps $DIR already exists?"
-  exit 42
+  checkit useradd
 fi
 
 chmod 755 $DIR
-if [ $? != 0 ]
-then
-  echo "chmod 755 failed"
-  exit 43
-fi
+checkit chmoddir

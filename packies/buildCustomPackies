@@ -117,6 +117,19 @@ function parseurl(){
     fi
 }
 
+function allPrep(){
+    [[ "${allPrepRan}" = 1 ]] && return
+    allPrepRan=1
+    cd $me
+    cp ../collector/etc/client.conf .
+    sed -e "s/SERVER-URL/${serverurl}/" client.conf > ../collector/etc/client.conf
+    cp ../stuffer/etc/server.conf .
+    # we're goint to make store.php look for ./mainte...
+    sed -e "s/INBOUND/${inbound}/" \
+        -e "s/ROLLED/${rolled}/" \
+        -e "s/RRDDIR/${rrddir}/" server.conf > ../stuffer/etc/server.conf
+}
+
 function rpmPrep(){
     cd $me
     mkdir -p redhat/{RPMS/noarch,SOURCES,SRPMS/noarch,SPECS,TMP,BUILD}
@@ -127,6 +140,14 @@ function rpmPrep(){
     tar czf ../packies/redhat/SOURCES/yaketystats-server-${version}.tar.gz .
     checkit "server tar"
 }
+
+# use settings from last time? (with confirm)
+#for redhat:
+## fix the scripts (testing left)
+### preinst needs TBDUID and TBDGID
+### postinst TBDUID TBDGID
+## put the scripts in the packies
+## fix comproll to read the config file
 
 function buildRPM(){
     clientspec="redhat/SPECS/yaketystats-${1}.spec"
@@ -140,9 +161,11 @@ function buildRPM(){
 }
 
 function client(){
+    allPrep
     build${packie} client
 }
 function server(){
+    allPrep
     build${packie} server
 }
 function both(){
@@ -165,8 +188,8 @@ verify='y'
 
 
 ask "What packages are you making? (server|client|both)" packielist
-if [[ "${packielist} != 'client' && \
-      "${packielist} != 'server' && \
+if [[ "${packielist}" != 'client' && \
+      "${packielist}" != 'server' && \
       "${packielist}" != 'both' ]]
 then
     echo "Malfunction, bro!"
@@ -210,7 +233,6 @@ then
     ask "Rolled stats direcotry" rolled
     ask "RRD files directory" rrddir
 fi
-
 
 
 # Report
