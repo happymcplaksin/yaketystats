@@ -102,6 +102,7 @@ function ask(){
             ;;
     esac
     report="${report}${q}: ${TXT_GREEN}${v}=${uv}${TXT_RESET}\n"
+    myenv="${myenv}${v}=${uv}\n"
     eval "`echo ${v}`=${uv}"
 }
 
@@ -122,12 +123,12 @@ function allPrep(){
     allPrepRan=1
     cd $me
     cp ../collector/etc/client.conf .
-    sed -e "s/SERVER-URL/${serverurl}/" client.conf > ../collector/etc/client.conf
+    sed -e "s|SERVER-URL|${serverurl}|" client.conf > ../collector/etc/client.conf
     cp ../stuffer/etc/server.conf .
     # we're goint to make store.php look for ./mainte...
-    sed -e "s/INBOUND/${inbound}/" \
-        -e "s/ROLLED/${rolled}/" \
-        -e "s/RRDDIR/${rrddir}/" server.conf > ../stuffer/etc/server.conf
+    sed -e "s|INBOUND|${inbound}|" \
+        -e "s|ROLLED|${rolled}|" \
+        -e "s|RRDDIR|${rrddir}|" server.conf > ../stuffer/etc/server.conf
 }
 
 function rpmPrep(){
@@ -150,6 +151,7 @@ function rpmPrep(){
 ## fix comproll to read the config file
 
 function buildRPM(){
+    echo "Building ${1}"
     clientspec="redhat/SPECS/yaketystats-${1}.spec"
     template="${1}.spec.template"
     rpmPrep
@@ -175,74 +177,90 @@ function both(){
 
 me=`pwd`
 domain="`grep domain /etc/resolv.conf | awk '{print $2}'`"
+dontask=${dontask:-"n"}
 [[ -z "$domain" ]] && domain="example.com"
-
-packielist=${packielist:-"both"}
-version=${version:-"2.0"}
-serverfqdn=${serverfqdn:-"stats.${domain}"}
-serverurl=${serverurl:-"http://${serverfqdn}/store.php"}
-makevirthost=${makevirthost:-"n"}
-serveradmin="stats@${domain}"
-statsuid=${statsuid:-"11994"}
-verify='y'
-
-
-ask "What packages are you making? (server|client|both)" packielist
-if [[ "${packielist}" != 'client' && \
-      "${packielist}" != 'server' && \
-      "${packielist}" != 'both' ]]
+if [[ -f env ]]
 then
-    echo "Malfunction, bro!"
-    exit 44
+    echo "Hey, I found an env file that looks like this:"
+    echo
+    cat env
+    ask "Want me to use it for answers?" dontask
 fi
-ask "What version number do you want this/these package(s) to have?" version
-if [[ "${myOS}" = 'Linux' ]]
+
+if [[ "${dontask}" = "y" ]]
 then
-    release=${release:-"1"}
-    ask "What version of the RPM?" release
-fi
-ask "What do you want the stats user's UID to be?" statsuid
-statsgid=${statsgid:-"${statsuid}"}
-ask "What do you want the stats user's GID to be?" statsgid
+    echo "${TXT_GREEN}Ok then.${TXT_RESET}"
+    . env
+else
+    packielist=${packielist:-"both"}
+    version=${version:-"2.0"}
+    serverfqdn=${serverfqdn:-"stats.${domain}"}
+    serverurl=${serverurl:-"http://${serverfqdn}/store.php"}
+    makevirthost=${makevirthost:-"n"}
+    serveradmin="stats@${domain}"
+    statsuid=${statsuid:-"11994"}
+    verify='y'
 
-ask "Enter the URL to store.php (HTTP:80 only right now)" serverurl
-parseurl $serverurl
-serverfqdn=${serverurl#http://}
-serverfqdn=${serverfqdn%%/*}
 
-# down here so that serverfqdn is maybe possibly more optimum
-documentroot=${documentroot:-"/var/www/${serverfqdn}/htdocs"}
-logdir=${logdir:-"/var/www/${serverfqdn}/logs"}
-inbound=${inbound:-"/var/www/${serverfqdn}/inbound"}
-rolled=${rolled:-"/var/www/${serverfqdn}/rolled"}
-rrddir=${rrddir:-"/rrd"}
-
-if [[ "${packielist}" = 'both' || "${packielist}" = "server" ]]
-then
-    ask "Do you want this script to generate a virtual host file?" makevirthost
-    if [[ "$makevirthost" = 'y' ]]
+    ask "What packages are you making? (server|client|both)" packielist
+    if [[ "${packielist}" != 'client' && \
+          "${packielist}" != 'server' && \
+          "${packielist}" != 'both' ]]
     then
-        requesturi=${serverurl#http://$serverfqdn}
-        serverip=`myhost ${serverfqdn}`
-        ask "What's the server's IP address?" serverip
-        ask "What's the DocumentRoot?" documentroot
-        ask "Path for log directory?" logdir
-        ask "What's your server admin mail address?" serveradmin
+        echo "Malfunction, bro!"
+        exit 44
     fi
-    ask "Inbound stat directory" inbound
-    ask "Rolled stats direcotry" rolled
-    ask "RRD files directory" rrddir
-fi
+    ask "What version number do you want this/these package(s) to have?" version
+    if [[ "${myOS}" = 'Linux' ]]
+    then
+        release=${release:-"1"}
+        ask "What version of the RPM?" release
+    fi
+    ask "What do you want the stats user's UID to be?" statsuid
+    statsgid=${statsgid:-"${statsuid}"}
+    ask "What do you want the stats user's GID to be?" statsgid
+
+    ask "Enter the URL to store.php (HTTP:80 only right now)" serverurl
+    parseurl $serverurl
+    serverfqdn=${serverurl#http://}
+    serverfqdn=${serverfqdn%%/*}
+
+    # down here so that serverfqdn is maybe possibly more optimum
+    documentroot=${documentroot:-"/var/www/${serverfqdn}/htdocs"}
+    logdir=${logdir:-"/var/www/${serverfqdn}/logs"}
+    inbound=${inbound:-"/var/www/${serverfqdn}/inbound"}
+    rolled=${rolled:-"/var/www/${serverfqdn}/rolled"}
+    rrddir=${rrddir:-"/rrd"}
+
+    if [[ "${packielist}" = 'both' || "${packielist}" = "server" ]]
+    then
+        ask "Do you want this script to generate a virtual host file?" makevirthost
+        if [[ "$makevirthost" = 'y' ]]
+        then
+            requesturi=${serverurl#http://$serverfqdn}
+            serverip=`myhost ${serverfqdn}`
+            ask "What's the server's IP address?" serverip
+            ask "What's the DocumentRoot?" documentroot
+            ask "Path for log directory?" logdir
+            ask "What's your server admin mail address?" serveradmin
+        fi
+        ask "Inbound stat directory" inbound
+        ask "Rolled stats direcotry" rolled
+        ask "RRD files directory" rrddir
+    fi
 
 
-# Report
-echo -e "\n\n${TXT_YLW}You can set these as environment variables.${TXT_RESET}\n\n$report"
-ask "looks good?" verify
-if [[ "${verify}" != 'y' ]]
-then
-    echo "${TXT_RED}Ok then.${TXT_RESET}"
-    exit 4
-fi
+    # Report
+    echo -e "\n\n${TXT_YLW}You can set these as environment variables.${TXT_RESET}\n\n$report"
+    ask "looks good?" verify
+    if [[ "${verify}" != 'y' ]]
+    then
+        echo "${TXT_RED}Ok then.${TXT_RESET}"
+        exit 4
+    fi
+    echo -e "${myenv}" > env
+fi #dontask
+sleep 3
 
 if [[ "$makevirthost" = 'y' ]]
 then
@@ -261,6 +279,7 @@ then
         $template > ${serverfqdn}.conf
     checkit "virthost sed"
     echo "Find your virthost file in ${serverfqdn}.conf"
+    sleep 2
 fi
 
 $packielist
