@@ -131,6 +131,14 @@ function allPrep(){
         -e "s|RRDDIR|${rrddir}|" server.conf > ../stuffer/etc/server.conf
 }
 
+function cleanUp(){
+    [[ "${cleanUpRan}" = 1 ]] && return
+    cleanUpRan=1
+    cd $me
+    cp client.conf ../collector/etc/
+    cp server.conf ../stuffer/etc/
+}
+
 function rpmPrep(){
     cd $me
     mkdir -p redhat/{RPMS/noarch,SOURCES,SRPMS/noarch,SPECS,TMP,BUILD}
@@ -283,3 +291,4 @@ then
 fi
 
 $packielist
+cleanUp
