@@ -35,8 +35,18 @@ function verify(){
     fi
 }
 
+checkit(){
+    if [[ $? != 0 ]]
+    then
+        echo "$1: So sorry.  Bailing"
+        exit 4
+    fi
+}
+
+
 case $myOS in
     Linux)
+        packie=RPM
         verify /usr/bin/rpmbuild
         if [[ -f /etc/debian_version ]]
         then
@@ -48,6 +58,7 @@ case $myOS in
         }
     ;;
     SunOS)
+        packie=PKG
         verify /usr/bin/pkgmk
         verify /usr/bin/pkgproto
         function myhost(){
@@ -55,6 +66,7 @@ case $myOS in
         }
     ;;
     "HP-UX")
+        packie=DEPOT
         verify /usr/sbin/swpackage
         function myhost(){
             /usr/contrib/bin/nsquery $1 | grep Address | awk '{print $2}'
@@ -106,29 +118,37 @@ function parseurl(){
 }
 
 function rpmPrep(){
+    cd $me
     mkdir -p redhat/{RPMS/noarch,SOURCES,SRPMS/noarch,SPECS,TMP,BUILD}
-}
-
-function buildClientRPM(){
-    clientspec=redhat/SPECS/yaketystats-client.spec
-    rpmPrep
     cd ../collector
     tar czf ../packies/redhat/SOURCES/yaketystats-client-${version}.tar.gz .
-    cd $me
-    sed -e "s/RELEASE/${release}/" -e "s/VERSION/${version}/" client.spec.template > ${clientspec}
-    rpmbuild --define "_topdir ${me}/redhat" -ba ${clientspec}
-}
-
-function buildServerRPM(){
-    rpmPrep
+    checkit "client tar"
     cd ../stuffer
     tar czf ../packies/redhat/SOURCES/yaketystats-server-${version}.tar.gz .
-    cd $me
+    checkit "server tar"
 }
 
-echo "ask for the stats uid and gid"
-echo "ask for the release # if redhat"
-exit 65
+function buildRPM(){
+    clientspec="redhat/SPECS/yaketystats-${1}.spec"
+    template="${1}.spec.template"
+    rpmPrep
+    cd $me
+    sed -e "s/RELEASE/${release}/" -e "s/VERSION/${version}/" ${template} > ${clientspec}
+    checkit "${clientspec} sed"
+    rpmbuild --define "_topdir ${me}/redhat" -ba ${clientspec}
+    checkit "rpmbuild of ${clientspec}"
+}
+
+function client(){
+    build${packie} client
+}
+function server(){
+    build${packie} server
+}
+function both(){
+    client
+    server
+}
 
 me=`pwd`
 domain="`grep domain /etc/resolv.conf | awk '{print $2}'`"
@@ -137,14 +157,31 @@ domain="`grep domain /etc/resolv.conf | awk '{print $2}'`"
 packielist=${packielist:-"both"}
 version=${version:-"2.0"}
 serverfqdn=${serverfqdn:-"stats.${domain}"}
+serverurl=${serverurl:-"http://${serverfqdn}/store.php"}
 makevirthost=${makevirthost:-"n"}
 serveradmin="stats@${domain}"
+statsuid=${statsuid:-"11994"}
 verify='y'
 
 
 ask "What packages are you making? (server|client|both)" packielist
+if [[ "${packielist} != 'client' && \
+      "${packielist} != 'server' && \
+      "${packielist}" != 'both' ]]
+then
+    echo "Malfunction, bro!"
+    exit 44
+fi
 ask "What version number do you want this/these package(s) to have?" version
-serverurl=${serverurl:-"http://${serverfqdn}/store.php"}
+if [[ "${myOS}" = 'Linux' ]]
+then
+    release=${release:-"1"}
+    ask "What version of the RPM?" release
+fi
+ask "What do you want the stats user's UID to be?" statsuid
+statsgid=${statsgid:-"${statsuid}"}
+ask "What do you want the stats user's GID to be?" statsgid
+
 ask "Enter the URL to store.php (HTTP:80 only right now)" serverurl
 parseurl $serverurl
 serverfqdn=${serverurl#http://}
@@ -157,10 +194,10 @@ inbound=${inbound:-"/var/www/${serverfqdn}/inbound"}
 rolled=${rolled:-"/var/www/${serverfqdn}/rolled"}
 rrddir=${rrddir:-"/rrd"}
 
-if [ "${packielist}" = 'both' -o "${packielist}" = "server" ]
+if [[ "${packielist}" = 'both' || "${packielist}" = "server" ]]
 then
     ask "Do you want this script to generate a virtual host file?" makevirthost
-    if [ "$makevirthost" = 'y' ]
+    if [[ "$makevirthost" = 'y' ]]
     then
         requesturi=${serverurl#http://$serverfqdn}
         serverip=`myhost ${serverfqdn}`
@@ -173,9 +210,13 @@ then
     ask "Rolled stats direcotry" rolled
     ask "RRD files directory" rrddir
 fi
-echo -e "\n\nYou can set these as environment variables.\n\n$report"
+
+
+
+# Report
+echo -e "\n\n${TXT_YLW}You can set these as environment variables.${TXT_RESET}\n\n$report"
 ask "looks good?" verify
-if [ "${verify}" != 'y' ]
+if [[ "${verify}" != 'y' ]]
 then
     echo "${TXT_RED}Ok then.${TXT_RESET}"
     exit 4
@@ -196,5 +237,8 @@ then
     sed -e "s|SERVERIP|$serverip|g" -e "s|SERVERNAME|$serverfqdn|g" -e "s|SERVERADMIN|$serveradmin|g" \
         -e "s|DOCUMENTROOT|$documentroot|g" -e "s|REQUESTURI|$requesturi|g" -e "s|LOGDIR|$logdir|g" \
         $template > ${serverfqdn}.conf
+    checkit "virthost sed"
     echo "Find your virthost file in ${serverfqdn}.conf"
 fi
+
+$packielist

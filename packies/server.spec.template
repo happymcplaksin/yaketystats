@@ -17,9 +17,6 @@ Before your boxes go to hell.
 %config(noreplace) /usr/local/%{name}/etc/server.conf
 /usr/local/%{name}/cgi-bin/store.php
 
-#%doc(missingok) /usr/doc/%{name}-%{version}/you.wish
-#%doc /usr/man/man1/HAHAHAHA
-
 %changelog
 * Wed Oct 31 2007 Mark Plaksin <happy@yaketystats.org>
 - First try
