@@ -230,6 +230,7 @@ function createRrdCommandLine($graphnumber,$paths,$debuglog,$justgraph){
     $lines     = '';
     $i         = 0;
     $a         = 0;
+    $fakerrds  = array('total','av');
     foreach ($paths->paths as $v) {
         $stack = '';
         $negative = 0;
@@ -256,7 +257,7 @@ function createRrdCommandLine($graphnumber,$paths,$debuglog,$justgraph){
         }else{
             $path  = escapeshellcmd($v->path);
         }
-        if ( ! file_exists($v->path) && $v->path != 'total' && $v->path != 'avg' ){
+        if ( ! file_exists($v->path) && ! in_array($v->path,$fakerrds) ){
             // there should probably be a log message here
             continue;
         }
