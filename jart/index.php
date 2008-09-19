@@ -105,7 +105,7 @@ function convertTime($id,$str){
         $str = stripslashes($str);
     }
     $time = strtotime($str);
-    if ( ! $time ){
+    if ( $time ){
         $time = date($dateformat,$time);
     }
     $a[]  = $id;
