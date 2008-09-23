@@ -589,11 +589,31 @@ sub run_sub {
   return (0, @data);
 }
 
-# Quick and dirty to get the config info.  Fancier when do big config file
-# changeroo.
-our ($g_stats_host, $g_url_prefix, $g_max_log_entries, $g_max_rrd_entries,
-     $g_server_logdir, $g_deadlog_dir, $g_client_config, $g_server_config,
-     $g_rrddir);
+sub config_value {
+  my ($line) = @_;
+
+  return ((split (/\s+/, $line))[1]);
+}
+
+# TODO:  Yup, it doesn't do ports.
+sub parse_server_url {
+  my ($url) = @_;
+  my ($protocol, $fqdn, $uri);
+
+  $protocol = $url;
+  $protocol =~ s|(^[a-z1-9]+)://.*|$1|;
+  $fqdn = $url;
+  $fqdn =~ s|${protocol}://||;
+  $fqdn =~ s|^([^/]+).*|$1|;
+  $uri = $url;
+  $uri =~ s|^${protocol}://${fqdn}||;
+  return ($protocol, $fqdn, $uri);
+}
+
+our ($g_server_fqdn, $g_server_protocol, $g_server_uri, $g_max_log_entries,
+     $g_max_rrd_entries, $g_server_logdir, $g_deadlog_dir,
+     $g_client_config, $g_server_config, $g_rrddir);
+
 sub get_config {
   my ($role) = @_;
   my ($line, $file);
@@ -606,40 +626,44 @@ sub get_config {
     $file = $g_server_config;
   }
 
-  if ( !open (F, $file) ) {
-    fileit ("Can't read $file.  You are hosed.");
-    exit (8);
-  }
-  while ( <F> ) {
-    $line = $_;
-    chomp ($line);
-    if ( $line !~ /^#/ ) {
-      if ( $role eq "client" ) {
-	if ( $line =~ /^\s*host / ) {
-	  $g_stats_host = (split (/\s+/, $line))[1];
+  if ( open (F, $file) ) {
+    while ( <F> ) {
+      $line = $_;
+      chomp ($line);
+      if ( $line !~ /^#/ ) {
+	if ( $line =~ /^\s*store_url / ) {
+	  ($g_server_protocol, $g_server_fqdn, $g_server_uri) = parse_server_url(config_value($line));
+	}
+	if ( $line =~ /^\s*rrddir / ) {
+	  $g_rrddir = config_value($line);
+	}
+	if ( $line =~ /^\s*max_log_entries / ) {
+	  $g_max_log_entries = config_value($line);
+	}
+	if ( $line =~ /^\s*max_rrd_entries / ) {
+	  $g_max_rrd_entries = config_value($line);
+	}
+	if ( $line =~ /^\s*inbound_dir /) {
+	  $g_server_logdir = config_value($line);
+	}
+	if ( $line =~ /^\s*rolled_dir /) {
+	  $g_deadlog_dir = config_value($line);
 	}
       }
     }
-    if ( $role eq "server" ) {
-      if ( $line =~ /^\s*rrddir / ) {
-        $g_rrddir = (split (/\s+/, $line))[1];
-      }
-      if ( $line =~ /^\s*prefix / ) {
-        $g_url_prefix = (split (/\s+/, $line))[1];
-      }
-      if ( $line =~ /^\s*max_log_entries / ) {
-        $g_max_log_entries = (split (/\s+/, $line))[1];
-      }
-      if ( $line =~ /^\s*max_rrd_entries / ) {
-        $g_max_rrd_entries = (split (/\s+/, $line))[1];
-      }
-      if ( $line =~ /^\s*inbound_dir /) { 
-        $g_server_logdir = (split (/\s+/, $line))[1];
-      }
-      if ( $line =~ /^\s*rolled_dir /) { 
-        $g_deadlog_dir = (split (/\s+/, $line))[1];
-      }
-    }
+    close (F);
+  }
+  if ( $role eq "client" && !defined ($g_server_fqdn) ) {
+    fileit ("store_url is undefined.  Death!");
+    exit (38);
+  }
+  if ( $role eq "server" &&
+       ( (!defined ($g_server_logdir) || "$g_server_logdir" eq "") ||
+	 (!defined ($g_deadlog_dir) || "$g_deadlog_dir" eq "") ||
+	 (!defined ($g_rrddir) || "$g_rrddir" eq "" ))
+       ) {
+    fileit ("inbound_dir and/or rolled_dir and/or rrddir is/are undefined.  Death!");
+    exit (39);
   }
 }
 

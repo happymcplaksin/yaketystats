@@ -20,9 +20,10 @@ $g_dir =~ s/\/[^\/]+$//;
 $g_dir = realpath("$g_dir/..");
 require "$g_dir/lib/include";
 
-our ($g_outgoing,$g_uploads);
-our ($g_stats_host, $g_url_prefix, $g_host, $g_debug, $g_debug_level);
-our ($g_default_timeout, $g_user_agent, $opt_d, $opt_l);
+our ($g_outgoing,$g_uploads, $g_server_fqdn, $g_server_uri,
+$g_server_protocol, $g_host, $g_debug, $g_debug_level, $g_default_timeout,
+$g_user_agent, $opt_d, $opt_l);
+
 $g_uploads="$g_outgoing/uploads";
 my ($file,@files,@packetlist,@packets,$packet_size,$i,$packet,
     $current_packet_num, $num,%pairs, $packet_prefix, $packet_file,
@@ -101,26 +102,18 @@ if ( defined ($packet_file) ) {
   }
 }
 
-# If maintenance is happening, exit
-# TODO:  Make these variables
-if ( http_get ("$g_stats_host", 80, "/maintenance", 1) == 0 ) {
-  debug ("Maintenance is happening.  Exiting.", 50);
-  fileit ("Maintenance is happening.  Exiting.");
-  exit (0);
-}
-
 # upload all packets if possible
 $pairs{'host'}=$g_host;
 $pairs{'dataversion'}=$g_pusherman_version;
 
 for($i = 0; $i < @packetlist; $i += 5){
   if ( $i < (@packetlist - 1) ){
-    # If http_post_file fails, assume further attempts will fail at this time too so skip them
-    if ( http_post_file ("$g_stats_host", 80, "$g_url_prefix",\%pairs,@packetlist[$i .. $i+4]) != 0 ){
+    # If post_file fails, assume further attempts will fail at this time too so skip them
+    if ( post_file ("$g_server_protocol", "$g_server_fqdn", 80, "$g_server_uri",\%pairs,@packetlist[$i .. $i+4]) != 0 ){
       last;
     }
   }else{
-    http_post_file ("$g_stats_host", 80, "$g_url_prefix",\%pairs,@packetlist[$i .. (@packetlist - 1)]);
+    post_file ("$g_server_protocol", "$g_server_fqdn", 80, "$g_server_uri",\%pairs,@packetlist[$i .. (@packetlist - 1)]);
   }
 }
 
@@ -200,6 +193,17 @@ sub conglomerate {
     fileit ("Can't open $packet_file: $!. Bailing.");
   }
 }
+
+sub post_file {
+  my ($protocol, $fqdn, $port, $uri, $pair_href, @packets) = @_;
+
+  if ($protocol ne "http") {
+    fileit ("$protocol is an unsupported protocol");
+    return (33);
+  }
+  http_post_file ($fqdn, 80, $uri, $pair_href, @packets);
+}
+
 # POST /file.php HTTP/1.1
 # Host: jojo.edu
 # User-Agent: Mozilla/5.0 (X11; U; Linux ppc; en-US; rv:1.7.12) Gecko/20050923 Firefox/1.0.7 (Debian package 1.0.7-1)
@@ -285,6 +289,8 @@ sub http_post_file {
           "Content-Type: multipart/form-data; boundary=$boundary${nl}" .
           "Content-Length: ${length}${nl}${nl}";
 
+  debug ("HTTP post start: $start", 90);
+  debug ("HTTP post form_data: $form_data", 90);
   print $sock "$start";
   print $sock $form_data;
 
