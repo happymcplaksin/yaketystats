@@ -605,8 +605,8 @@ sub parse_server_url {
   $fqdn = $url;
   $fqdn =~ s|${protocol}://||;
   $fqdn =~ s|^([^/]+).*|$1|;
-  $uri = $protocol;
-  $uri =~ s|${protocol}://${fqdn}||;
+  $uri = $url;
+  $uri =~ s|^${protocol}://${fqdn}||;
   return ($protocol, $fqdn, $uri);
 }
 
@@ -633,22 +633,22 @@ sub get_config {
 	chomp ($line);
 	if ( $line !~ /^#/ ) {
 	  if ( $line =~ /^\s*store_url / ) {
-	    ($g_server_protocol, $g_server_fqdn, $g_server_uri) = parse_server_url(config_value($1));
+	    ($g_server_protocol, $g_server_fqdn, $g_server_uri) = parse_server_url(config_value($line));
 	  }
 	  if ( $line =~ /^\s*rrddir / ) {
-	    $g_rrddir = config_value($1);
+	    $g_rrddir = config_value($line);
 	  }
 	  if ( $line =~ /^\s*max_log_entries / ) {
-	    $g_max_log_entries = config_value($1);
+	    $g_max_log_entries = config_value($line);
 	  }
 	  if ( $line =~ /^\s*max_rrd_entries / ) {
-	    $g_max_rrd_entries = config_value($1);
+	    $g_max_rrd_entries = config_value($line);
 	  }
 	  if ( $line =~ /^\s*inbound_dir /) {
-	    $g_server_logdir = config_value($1);
+	    $g_server_logdir = config_value($line);
 	  }
 	  if ( $line =~ /^\s*rolled_dir /) {
-	    $g_deadlog_dir = config_value($1);
+	    $g_deadlog_dir = config_value($line);
 	  }
 	}
       }

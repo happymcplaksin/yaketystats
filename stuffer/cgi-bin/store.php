@@ -36,8 +36,7 @@ $now     = mktime();
 // TODO: This is awesome for debugging!
 //error_reporting(0);
 
-if ( empty($_REQUEST['host']) || 
-     empty($_REQUEST['path']) ) {
+if ( empty($_REQUEST['host']) ) {
     unavail(ERROR_BAD_REQUEST);
 }
 

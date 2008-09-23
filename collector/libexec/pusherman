@@ -195,9 +195,9 @@ sub conglomerate {
 }
 
 sub post_file {
-  my ($protocol, $fqdn, $uri, $pair_href, @packets) = @_;
+  my ($protocol, $fqdn, $port, $uri, $pair_href, @packets) = @_;
 
-  if ($protocol != "http") {
+  if ($protocol ne "http") {
     fileit ("$protocol is an unsupported protocol");
     return (33);
   }
@@ -289,6 +289,8 @@ sub http_post_file {
           "Content-Type: multipart/form-data; boundary=$boundary${nl}" .
           "Content-Length: ${length}${nl}${nl}";
 
+  debug ("HTTP post start: $start", 90);
+  debug ("HTTP post form_data: $form_data", 90);
   print $sock "$start";
   print $sock $form_data;
 
