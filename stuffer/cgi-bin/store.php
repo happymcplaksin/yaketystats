@@ -13,12 +13,9 @@ define("ERROR_HAPPY_UNAVAILABLE",588);
 //
 // Maybe a Makefile should fill in this path?
 $server_conf = file ("/usr/local/yaketystats/etc/server.conf");
+$maint = "maintenance";
 // It's OK if the maintenance file isn't defined but you'll never be able to have maintenance
 foreach ($server_conf as $line) {
-  if ( preg_match ('/^\s*maint .*$/', $line, $matches) > 0 ) {
-    $maint = preg_split ('/[\s]+/', $matches[0]);
-    $maint = $maint[1];
-  }
   if ( preg_match ('/^\s*inbound_dir .*$/', $line, $matches) > 0 ) {
     $dir = preg_split ('/[\s]+/', $matches[0]);
     $dir = $dir[1];

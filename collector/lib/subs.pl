@@ -616,44 +616,54 @@ our ($g_server_fqdn, $g_server_protocol, $g_server_uri, $g_max_log_entries,
 
 sub get_config {
   my ($role) = @_;
-  my ($line, $file, @files);
+  my ($line, $file);
   local *F;
 
   if ( $role eq "client" ) {
-    push (@files, $g_client_config);
+    $file = $g_client_config;
   }
   if ( $role eq "server" ) {
-    push (@files, $g_server_config);
+    $file = $g_server_config;
   }
 
-  foreach $file (@files) {
-    if ( open (F, $file) ) {
-      while ( <F> ) {
-	$line = $_;
-	chomp ($line);
-	if ( $line !~ /^#/ ) {
-	  if ( $line =~ /^\s*store_url / ) {
-	    ($g_server_protocol, $g_server_fqdn, $g_server_uri) = parse_server_url(config_value($line));
-	  }
-	  if ( $line =~ /^\s*rrddir / ) {
-	    $g_rrddir = config_value($line);
-	  }
-	  if ( $line =~ /^\s*max_log_entries / ) {
-	    $g_max_log_entries = config_value($line);
-	  }
-	  if ( $line =~ /^\s*max_rrd_entries / ) {
-	    $g_max_rrd_entries = config_value($line);
-	  }
-	  if ( $line =~ /^\s*inbound_dir /) {
-	    $g_server_logdir = config_value($line);
-	  }
-	  if ( $line =~ /^\s*rolled_dir /) {
-	    $g_deadlog_dir = config_value($line);
-	  }
+  if ( open (F, $file) ) {
+    while ( <F> ) {
+      $line = $_;
+      chomp ($line);
+      if ( $line !~ /^#/ ) {
+	if ( $line =~ /^\s*store_url / ) {
+	  ($g_server_protocol, $g_server_fqdn, $g_server_uri) = parse_server_url(config_value($line));
+	}
+	if ( $line =~ /^\s*rrddir / ) {
+	  $g_rrddir = config_value($line);
+	}
+	if ( $line =~ /^\s*max_log_entries / ) {
+	  $g_max_log_entries = config_value($line);
+	}
+	if ( $line =~ /^\s*max_rrd_entries / ) {
+	  $g_max_rrd_entries = config_value($line);
+	}
+	if ( $line =~ /^\s*inbound_dir /) {
+	  $g_server_logdir = config_value($line);
+	}
+	if ( $line =~ /^\s*rolled_dir /) {
+	  $g_deadlog_dir = config_value($line);
 	}
       }
-      close (F);
     }
+    close (F);
+  }
+  if ( $role eq "client" && !defined ($g_server_fqdn) ) {
+    fileit ("store_url is undefined.  Death!");
+    exit (38);
+  }
+  if ( $role eq "server" &&
+       ( (!defined ($g_server_logdir) || "$g_server_logdir" eq "") ||
+	 (!defined ($g_deadlog_dir) || "$g_deadlog_dir" eq "") ||
+	 (!defined ($g_rrddir) || "$g_rrddir" eq "" ))
+       ) {
+    fileit ("inbound_dir and/or rolled_dir and/or rrddir is/are undefined.  Death!");
+    exit (39);
   }
 }
 
