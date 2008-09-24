@@ -167,6 +167,12 @@ function buildRPM(){
     template="${1}.spec.template"
     rpmPrep
     cd $me
+    sed -e "s/TBDGID/${statsgid}/" \
+        -e "s/TBDUID/${statsuid}/" \
+      preinst.in > preinst
+    sed -e "s/TBDGID/${statsgid}/" \
+        -e "s/TBDUID/${statsuid}/" \
+      postinst.in > postinst
     sed -e "s/RELEASE/${release}/" \
         -e "s/VERSION/${version}/" \
         -e '/^%pre$/ r preinst' \

@@ -8,7 +8,12 @@ OUR_USER=stats
 OUR_GROUP=stats
 PATH=/bin:/usr/bin:$PATH
 # Wipe out crontab so the running cron stops trying to run jobs as stats
-crontab -r $OUR_USER
+if [ "`uname`" = Linux ]
+then
+  crontab -r -u $OUR_USER
+else
+  crontab -r $OUR_USER
+fi
 
 # kill all of the user processes
 ps -u $OUR_USER | grep -v PID | awk '{print $1}' | xargs -i kill {}
@@ -16,4 +21,8 @@ sleep 2
 ps -u $OUR_USER | grep -v PID | awk '{print $1}' | xargs -i kill {}
 
 userdel $OUR_USER
-groupdel $OUR_GROUP
+grep "^${OUR_USER}:" /etc/group > /dev/null
+if [ $? = 0 ]
+then
+  groupdel $OUR_GROUP
+fi
