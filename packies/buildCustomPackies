@@ -102,7 +102,7 @@ function ask(){
             ;;
     esac
     report="${report}${q}: ${TXT_GREEN}${v}=${uv}${TXT_RESET}\n"
-    myenv="${myenv}${v}=${uv}\n"
+    myenv="${v}=${uv}\n${myenv}"
     eval "`echo ${v}`=${uv}"
 }
 
@@ -167,7 +167,12 @@ function buildRPM(){
     template="${1}.spec.template"
     rpmPrep
     cd $me
-    sed -e "s/RELEASE/${release}/" -e "s/VERSION/${version}/" ${template} > ${clientspec}
+    sed -e "s/RELEASE/${release}/" \
+        -e "s/VERSION/${version}/" \
+        -e '/^%pre$/ r preinst' \
+        -e '/^%post$/ r postinst' \
+        -e '/^%postun$/ r postrm' \
+      ${template} > ${clientspec}
     checkit "${clientspec} sed"
     rpmbuild --define "_topdir ${me}/redhat" -ba --target noarch ${clientspec}
     checkit "rpmbuild of ${clientspec}"
@@ -235,6 +240,7 @@ else
     parseurl $serverurl
     serverfqdn=${serverurl#http://}
     serverfqdn=${serverfqdn%%/*}
+    myenv="serverfqdn=${serverfqdn}\n${myenv}"
 
     # down here so that serverfqdn is maybe possibly more optimum
     documentroot=${documentroot:-"/var/www/${serverfqdn}/htdocs"}
