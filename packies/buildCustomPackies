@@ -106,8 +106,16 @@ function ask(){
     eval "`echo ${v}`=${uv}"
 }
 
+# Yowza!  In bash > 3.1 if you quote the right-hand argument to =~
+# then you get plain old string matching instead of regexp matching.
+#
+# This seems to mean that removing the quotes will make it work with all
+# versions of bash which support =~.
+#
+# Alternately if you're running bash > 3.1 and want to quote the right-hand
+# side, shopt -s compat31
 function parseurl(){
-    if [[ "${serverurl}" =~ "^http://.*/store.php" ]]
+    if [[ "${serverurl}" =~ ^http://.*/store.php ]]
     then
         local nobangequalstilde='whynot?'
     else
@@ -122,21 +130,16 @@ function allPrep(){
     [[ "${allPrepRan}" = 1 ]] && return
     allPrepRan=1
     cd $me
-    cp ../collector/etc/client.conf .
-    sed -e "s|SERVER-URL|${serverurl}|" client.conf > ../collector/etc/client.conf
-    cp ../stuffer/etc/server.conf .
-    # we're goint to make store.php look for ./mainte...
+    sed -e "s|SERVER-URL|${serverurl}|" ../collector/etc/client.conf.in > ../collector/etc/client.conf
     sed -e "s|INBOUND|${inbound}|" \
         -e "s|ROLLED|${rolled}|" \
-        -e "s|RRDDIR|${rrddir}|" server.conf > ../stuffer/etc/server.conf
+        -e "s|RRDDIR|${rrddir}|" ../stuffer/etc/server.conf.in > ../stuffer/etc/server.conf
 }
 
 function cleanUp(){
     [[ "${cleanUpRan}" = 1 ]] && return
     cleanUpRan=1
     cd $me
-    cp client.conf ../collector/etc/
-    cp server.conf ../stuffer/etc/
 }
 
 function rpmPrep(){
@@ -166,7 +169,7 @@ function buildRPM(){
     cd $me
     sed -e "s/RELEASE/${release}/" -e "s/VERSION/${version}/" ${template} > ${clientspec}
     checkit "${clientspec} sed"
-    rpmbuild --define "_topdir ${me}/redhat" -ba ${clientspec}
+    rpmbuild --define "_topdir ${me}/redhat" -ba --target noarch ${clientspec}
     checkit "rpmbuild of ${clientspec}"
 }
 
@@ -198,7 +201,7 @@ fi
 if [[ "${dontask}" = "y" ]]
 then
     echo "${TXT_GREEN}Ok then.${TXT_RESET}"
-    . env
+    . ./env
 else
     packielist=${packielist:-"both"}
     version=${version:-"2.0"}
