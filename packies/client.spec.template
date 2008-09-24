@@ -54,3 +54,9 @@ install -m 0755 %{mydir}/.forward %{buildroot}/%{_prefix}
 %config(noreplace) /usr/local/yaketystats/etc/stats.conf
 
 %attr(0775, stats, stats)%{_varprefix}
+
+%pre
+
+%post
+
+%postun
