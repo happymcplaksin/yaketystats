@@ -186,6 +186,9 @@ sub readlog {
   LOOP: while ( <F> ) {
     $line = $_;
 
+    if ( $line =~ /^$/ ) {
+      next LOOP;
+    }
     ($path, $type, $interval, $timestamp, $value) = parse_logline ($line, $version);
     # If there was trouble bubble, move on
     if ( ! defined ($path) ) {
