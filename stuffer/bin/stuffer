@@ -515,8 +515,8 @@ sub maybe_create_rrdfile {
     $low_res_rows = $g_secs_per_10years / $low_res_secs_per_cdp;
   }
 
-  # Start a week ago
-  $time = time () - (86400*7);
+  # Start 60 days ago
+  $time = time () - (86400*60);
   if (defined ($start)) {
     $time = $start;
   }

@@ -281,11 +281,13 @@ function createRrdCommandLine($graphnumber,$paths,$debuglog,$justgraph){
             if ( ! $last ){
                 $last = my_rrd_last($path);
             }
-            $defid  = "WUB$i";
+            $rpn = $defid  = "WUB$i";
             $defs .= "DEF:$defid=$path:$ds:$rra ";
             if ( $justtotal == 0 ){
                 if ( $negative ){
-                    $defs .= "CDEF:neg$defid=0,$defid,- ";
+                    $rpn = "0,$defid,-";
+                    #$defs .= "CDEF:neg$defid=0,$defid,- ";
+                    $defs .= "CDEF:neg$defid=$rpn ";
                     $lines .= "$drawt:neg$defid#$color:'$name'$stack ";
                 }else{
                     $lines .= "$drawt:$defid#$color:'$name'$stack ";
@@ -297,11 +299,11 @@ function createRrdCommandLine($graphnumber,$paths,$debuglog,$justgraph){
             //}
 
             if ( $avg ){
-                $avgargs .= "$defid,";
+                $avgargs .= "$rpn,";
                 $a++;
             }
             if ( $total ){
-                $totalargs .= "$defid,";
+                $totalargs .= "$rpn,";
                 $plusses   .= '+,';
             }
             if ( $justgraph != 1 ){
