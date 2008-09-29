@@ -267,7 +267,6 @@ function createRrdCommandLine($graphnumber,$paths,$debuglog,$justgraph){
         if ( empty($minusb) ){
             if ( preg_match('#/(memory|disk)/#',$path) ){
                 $minusb = '-b 1024';
-                $name .= " 1024";
             }
         }
         $name = escapeshellcmd($v->name);
