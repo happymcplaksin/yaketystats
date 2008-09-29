@@ -222,6 +222,7 @@ function createRrdCommandLine($graphnumber,$paths,$debuglog,$justgraph){
         $args .= "--color CANVAS#".$paths->canvas.' ';
     }
 
+    $debug     = '';
     $total     = $paths->total;
     $avg       = $paths->avg;
     $totalargs = '';
@@ -230,6 +231,7 @@ function createRrdCommandLine($graphnumber,$paths,$debuglog,$justgraph){
     $lines     = '';
     $i         = 0;
     $a         = 0;
+    $minusb    = '';
     $fakerrds  = array('total','av');
     foreach ($paths->paths as $v) {
         $stack = '';
@@ -247,7 +249,7 @@ function createRrdCommandLine($graphnumber,$paths,$debuglog,$justgraph){
             $drawt = 'AREA';
             $stack = ':STACK';
         }
-        // the default jjstats DS
+        // the default Ystats DS
         $ds = 'yabba';
         if ( preg_match('/[:][:]/',$v->path) ){
             $path = preg_replace('/(.*)[:][:].*/','$1',$v->path);
@@ -261,7 +263,13 @@ function createRrdCommandLine($graphnumber,$paths,$debuglog,$justgraph){
             // there should probably be a log message here
             continue;
         }
-        $color = escapeshellcmd($color);
+        $color  = escapeshellcmd($color);
+        if ( empty($minusb) ){
+            if ( preg_match('#/(memory|disk)/#',$path) ){
+                $minusb = '-b 1024';
+                $name .= " 1024";
+            }
+        }
         $name = escapeshellcmd($v->name);
         $name = preg_replace('/[:]/','\\:',$name);
 
@@ -363,19 +371,20 @@ function createRrdCommandLine($graphnumber,$paths,$debuglog,$justgraph){
         $limits       = "--lower $lowerlimit --upper $upperlimit ";
         $w            = $paths->xsize * 3;
         $h            = $paths->ysize;
-        $rargs[]  = "$rrdtool graphv $mygraphimage --only-graph -h $h -w $w " . $limits . $args;
+        $rargs[]  = "$rrdtool graphv $mygraphimage $minusb --only-graph -h $h -w $w " . $limits . $args;
     }else{
         $mygraphimage = "$graphpath/$user-$graphnumber.png";
         $rargs[]  = "$rrdtool graphv $mygraphimage " . $nullargs. $targs;
         //background graph
         $mygraphimage = "$graphpath/$user-$graphnumber.png";
         $limits  = "--upper-limit <upper> --lower-limit <lower> ";
-        $rargs[]  = "$rrdtool graphv $mygraphimage " . $limits . $args. $targs;
+        $rargs[]  = "$rrdtool graphv $mygraphimage $minusb " . $limits . $args. $targs;
     }
 
     $debuglog = 1;
     if ( $debuglog ){
         ob_start();
+        var_dump($debug);
         var_dump($rargs);
         var_dump( $paths);
         var_dump( $lines );
