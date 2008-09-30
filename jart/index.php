@@ -232,6 +232,7 @@ function createRrdCommandLine($graphnumber,$paths,$debuglog,$justgraph){
     $i         = 0;
     $a         = 0;
     $minusb    = '';
+    $naniszero = 0;
     $fakerrds  = array('total','av');
     foreach ($paths->paths as $v) {
         $stack = '';
@@ -273,24 +274,24 @@ function createRrdCommandLine($graphnumber,$paths,$debuglog,$justgraph){
         $name = preg_replace('/[:]/','\\:',$name);
 
         if ( $v->path == 'total' ){
+            $naniszero  = 1;
             $total      = 1;
             $totalcolor = $color;
             $totaldrawt = $drawt;
             $defid      = 'total';
             $lines     .= " $totaldrawt:$defid#$totalcolor:Total$stack ";
         }elseif ( $v->path == 'avg' ){
-            $avg      = 1 ;
-            $avgcolor = $color;
-            $avgdrawt = $drawt;
-            $defid    = 'average';
-            $lines   .= " $avgdrawt:$defid#$avgcolor:Average$stack ";
+            $naniszero  = 1;
+            $avg        = 1 ;
+            $avgcolor   = $color;
+            $avgdrawt   = $drawt;
+            $defid      = 'average';
+            $lines     .= " $avgdrawt:$defid#$avgcolor:Average$stack ";
         }else{
             if ( ! $last ){
                 $last = my_rrd_last($path);
             }
             $defid  = "WUB$i";
-            // Force it for testing
-            $naniszero = 1;
             if ( $naniszero ) {
               # CDEF:result=value,UN,0,value,IF
               $rpn = "${defid},UN,0,${defid},IF";
@@ -381,7 +382,7 @@ function createRrdCommandLine($graphnumber,$paths,$debuglog,$justgraph){
         $rargs[]  = "$rrdtool graphv $mygraphimage $minusb --only-graph -h $h -w $w " . $limits . $args;
     }else{
         $mygraphimage = "$graphpath/$user-$graphnumber.png";
-        $rargs[]  = "$rrdtool graphv $mygraphimage " . $nullargs. $targs;
+        $rargs[]  = "$rrdtool graphv $mygraphimage $minusb " . $nullargs. $targs;
         //background graph
         $mygraphimage = "$graphpath/$user-$graphnumber.png";
         $limits  = "--upper-limit <upper> --lower-limit <lower> ";
