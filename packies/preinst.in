@@ -5,7 +5,7 @@
 # Create stats user and group 
 
 checkit(){
-    if [[ $? != 0 ]]
+    if [ $? != 0 ]
     then
         echo "$1: So sorry.  Bailing"
         exit 4

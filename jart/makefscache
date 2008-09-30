@@ -2,4 +2,6 @@
 
 rrddir=/rrd
 
-find $rrddir -follow > fscache
+find $rrddir -follow > fscache.tmp
+sort fscache.tmp > fscache
+rm fscache.tmp

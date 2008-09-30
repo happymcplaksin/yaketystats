@@ -184,13 +184,72 @@ function buildRPM(){
     checkit "rpmbuild of ${clientspec}"
 }
 
+function buildPKG(){
+    echo "Building ${1}"
+    dir="solaris/${1}"
+    mkdir -p ${dir}
+
+    #depend
+    if [[ ${1} == "server" ]]
+    then
+        echo "P yaketystats-client >= $version" > ${dir}/depend
+        name="../../../stuffer"
+        varstuff=''
+    else
+        name="../../../collector"
+        varstuff="d none /var/yaketystats 0775 stats stats\nd none /var/yaketystats/incoming 0775 stats stats\nd none /var/yaketystats/locks 0775 stats stats\nd none /var/yaketystats/outgoing 0775 stats stats\nd none /var/yaketystats/outgoing/uploads 0775 stats stats\nd none /var/yaketystats/tmp 0775 stats stats\n"
+    fi
+    #copyright
+    touch ${dir}/copyright
+    #pkginfo
+    sed -e "s/SORC/${1}/" -e "s/=VERSION/=${version}/" pkginfo.in > ${dir}/pkginfo
+    # prototype
+    cp prototype.in ${dir}/prototype
+    if [[ ${1} == "server" ]]
+    then
+        echo "i depend" >> ${dir}/prototype
+    else
+        #package scripts
+        ## preinstall
+        sed -e "s/TBDGID/${statsgid}/" \
+            -e "s/TBDUID/${statsuid}/" \
+          preinst.in > ${dir}/preinstall
+        echo "i preinstall" >> ${dir}/prototype
+        ## postinstall
+        sed -e "s/TBDGID/${statsgid}/" \
+            -e "s/TBDUID/${statsuid}/" \
+          postinst.in > ${dir}/postinstall
+        echo "i postinstall" >> ${dir}/prototype
+        ## preremove
+        ## postremove
+        cp postrm ${dir}/postremove
+        echo "i postremove" >> ${dir}/prototype
+        ##checkinstall
+    fi
+    cd ${dir}
+    # find | pkgproto >> prototype
+    # and fix ownership in prototype
+    find ${name} -name var -prune -o -print |\
+                  pkgproto "${name}=/usr/local/yaketystats" |\
+                  sed -e 's/^\([^ ]* [^ ]* [^ ]* [^ ]*\) [^ ]* [^ ]*$/\1 root root/' >> prototype
+    echo -e ${varstuff} >> prototype
+    # pkgmk
+    pkgmk -o -d ../ -a all
+    # pkgtrans -s 
+    cd ..
+    pkgtrans -s . yaketystats-${1}-${version}-SunOS`uname -r`-all.pkg yaketystats-${1}
+    cd $me
+}
+
 function client(){
     allPrep
     build${packie} client
+    # if debian?
 }
 function server(){
     allPrep
     build${packie} server
+    # if debian?
 }
 function both(){
     client
