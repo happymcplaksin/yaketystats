@@ -286,7 +286,8 @@
         background: #ddd;
         border: 1px solid black;
         font-size: smaller;
-        margin-left: 5em;
+        white-space: nowrap;
+        overflow: hidden;
     }
     -->
     </style>

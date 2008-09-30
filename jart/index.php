@@ -1800,9 +1800,9 @@ $version = "2.0";
                 <img src="img/stock_unknown-24.png" id="pickerregexerhelp" class="helpbutton">
                 <br><span id="pickerbutton" class="clickable"><img src="img/stock_form-file-selection.png" title="Picker"></span> <span id="regexerbutton" class="clickable"><img src="img/stock_macro-stop-after-procedure.png" title="Regexer"></span>
                 <span id="prefsbutton" class="clickable"><img src="img/stock_edit-contour.png" title="Preferences" style="display:none"></span>
+                <br>
+                <br>
                 <span id="playlistdisplay" style="display:none"></span>
-                <br>
-                <br>
             </div>
             <div id="timepresetscontainer" style="display:none">
             <span class="clickable button" id="reloadpresetbutton"><img src="img/stock_repeat-16.png" height="16" width="16"></span>&nbsp;<span class="clickable button" id="daybutton">Day</span>&nbsp;<span class="clickable button" id="twodaysbutton">2 Days</span>&nbsp;<span class="clickable button" id="weekbutton">Week</span>&nbsp;<span class="clickable button" id="monthbutton">Month</span>
