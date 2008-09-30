@@ -189,22 +189,26 @@ function createRrdCommandLine($graphnumber,$paths,$debuglog,$justgraph){
         $out[] = "crcl: Bad start or end time: ".$paths->start.' '.$paths->end;
         return $out;
     }
-    $args = "-i -W 'YaketyStats' -E --font DEFAULT:8:$font -s $start -e $end --rigid ";
+    $args = "-i -W 'YaketyStats' -E -s $start -e $end --rigid ";
     if ( $justgraph ){
         $args .= "--only-graph --rigid " . $args;
     }else{
         if ( $paths->size != 50 ){
             switch ($paths->size){
                 case 0:
+                    $args .= "--font DEFAULT:6:$font ";
                     $args .= '-w 200 -h 50 ';
                     break;
                 case 100:
+                    $args .= "--font DEFAULT:8:$font ";
                     $args .= '-w 500 -h 150 ';
                     break;
                 case 150:
+                    $args .= "--font DEFAULT:8:$font ";
                     $args .= '-w 575 -h 250 ';
                     break;
                 case 200:
+                    $args .= "--font DEFAULT:8:$font ";
                     $args .= '-w 650 -h 350 ';
                     break;
             }
