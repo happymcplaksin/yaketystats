@@ -1208,42 +1208,19 @@ $version = "2.0";
                 var i   = 0;
                 nodes.files.each(function(path){
                     var div  = document.createElement('div');
-                    div.className = 'roll';
-                    div.style.height = "20px";
-                    div.id = nodes.id + '-' + i;
-                    i++;
                     if ( path.match(/.*\/playlists\/.*/) ){
-                        var p  = '^' + webdir + '/playlists/' + user + '/';
-                        var re = new RegExp(p);
-                        if ( path.match(re) ){
-                            var sp  = document.createElement('span');
-                            sp.className = 'closebutton';
-                            var img = document.createElement('img');
-                            img.src = 'img/stock_stop-16.png';
-                            img.title = 'Delete this playlist';
-                            sp.appendChild(img);
-                            Event.observe(img,'click',function(e){ deletePlaylist(path,div.id) }.bindAsEventListener());
-                            div.appendChild(sp);
-                        }
-                    }
-                    var span = document.createElement('span');
-                    span.className = 'clickable';
-                    var txt  = document.createTextNode( path.replace(/.*\/([^/]*)(?:.rrd|.pspl)/,'$1') );
-                    span.appendChild(txt);
-                    Element.setStyle(span, { paddingLeft:'15px' } );
-                    div.appendChild(span);
-                    if ( path.match(/.*\/playlists\/.*/) ){
-                        path = path.replace(/.pspl/,'');
-                        Event.observe(span,'click',function(e){ loadPlaylist(path) }.bindAsEventListener());
-                        var txt   = document.createTextNode(' ');
-                        div.appendChild(txt);
-                        var urla  = document.createElement('a');
-                        urla.className = 'smalltxt';
-                        urla.href = '<?php echo $_SERVER['PHP_SELF'] ?>?pl=' + path.replace(/.*playlists\/(.*)/,'$1');
-                        var txt   = document.createTextNode('[URL]');
-                        urla.appendChild(txt);
-                        div.appendChild(urla);
+                        nameAttachPlaylist(path,div);
                     }else{
+                        div.className = 'roll';
+                        div.style.height = "20px";
+                        div.id = nodes.id + '-' + i;
+                        i++;
+                        var span = document.createElement('span');
+                        span.className = 'clickable';
+                        var txt  = document.createTextNode( path.replace(/.*\/([^/]*)(?:.rrd|.pspl)/,'$1') );
+                        span.appendChild(txt);
+                        Element.setStyle(span, { paddingLeft:'15px' } );
+                        div.appendChild(span);
                         Event.observe(span,'click',function(e){ G.addRrdToGraph(path,1) }.bindAsEventListener());
                     }
                     hider.appendChild(div);
@@ -1251,6 +1228,46 @@ $version = "2.0";
             }
             par.appendChild(hider);
             Element.hide('pickerspinner');
+        }
+
+        function nameAttachPlaylist(path,div){
+            var path = path.replace(/.pspl$/,'');
+            var id    = path.replace(/[/.]/g,'');
+            var ex    = $(id);
+            if ( ex !== null ){
+                Element.show(ex);
+                return;
+            }
+            div.className = 'roll';
+            div.style.height = "20px";
+            div.id = id;
+            var p  = '^' + webdir + '/playlists/' + user + '/';
+            var re = new RegExp(p);
+            if ( path.match(re) ){
+                var sp  = document.createElement('span');
+                sp.className = 'closebutton';
+                var img = document.createElement('img');
+                img.src = 'img/stock_stop-16.png';
+                img.title = 'Delete this playlist';
+                sp.appendChild(img);
+                Event.observe(img,'click',function(e){ deletePlaylist(path,div.id) }.bindAsEventListener());
+                div.appendChild(sp);
+            }
+            var span = document.createElement('span');
+            span.className = 'clickable';
+            var txt  = document.createTextNode( path.replace(/.*\/([^/]*)$/,'$1') );
+            span.appendChild(txt);
+            Element.setStyle(span, { paddingLeft:'15px' } );
+            div.appendChild(span);
+            Event.observe(span,'click',function(e){ loadPlaylist(path) }.bindAsEventListener());
+            var txt   = document.createTextNode(' ');
+            div.appendChild(txt);
+            var urla  = document.createElement('a');
+            urla.className = 'smalltxt';
+            urla.href = '<?php echo $_SERVER['PHP_SELF'] ?>?pl=' + path.replace(/.*playlists\/(.*)/,'$1');
+            var txt   = document.createTextNode('[URL]');
+            urla.appendChild(txt);
+            div.appendChild(urla);
         }
 
         function findAndLoad(a){
@@ -1566,37 +1583,8 @@ $version = "2.0";
                 par    += 'hide';
                 par     = $(par);
                 if ( par ){
-                    var path  = msg[3];
-                    var id    = msg[3].replace(/\//g,'');
-                    var ex    = $(id);
-                    if ( ex !== null ){
-                        return;
-                    }
-                    var pln   = msg[3].replace(/.*\/(.*)/,'$1');
                     var div   = document.createElement('div');
-                    div.id    = id;
-                    div.className = 'roll';
-                    var sp    = document.createElement('span');
-                    sp.className = "closebutton";
-                    var img   = document.createElement('img');
-                    img.src   = "img/stock_stop-16.png";
-                    img.title = "Delete this playlist";
-                    Event.observe(img,'click',function(e){ deletePlaylist(path,div.id) }.bindAsEventListener());
-                    sp.appendChild(img);
-                    div.appendChild(sp);
-                    var span  = document.createElement('span');
-                    var txt   = document.createTextNode(pln);
-                    span.appendChild(txt);
-                    span.className = 'clickable';
-                    Event.observe(span,'click',function(e){ loadPlaylist(path) }.bindAsEventListener());
-                    Element.setStyle(span, { paddingLeft:'15px' } );
-                    div.appendChild(span);
-                    var a     = document.createElement('a');
-                    a.className = 'smalltxt';
-                    a.href      = '<?php echo $_SERVER['PHP_SELF'] ?>?pl=' + path.replace(/.*playlists\/(.*)/,'$1');
-                    var txt   = document.createTextNode('[URL]');
-                    a.appendChild(txt);
-                    div.appendChild(a);
+                    nameAttachPlaylist(msg[3],div);
                     par.appendChild(div);
 
                 }
