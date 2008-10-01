@@ -8,7 +8,7 @@ path:   hpux:    logger:        /usr/bin/logger
 path:   hpux:    logtail:       /usr/local/bin/logtail
 path:   hpux:    mount:         /usr/sbin/mount
 path:   hpux:    netstat:       /usr/bin/netstat
-path:   hpux:    RAMsize:       /usr/local/bin/RAMsize
+path:   hpux:    RAMsize:       /usr/local/yaketystats/bin/RAMsize
 path:   hpux:    sar:           /usr/sbin/sar
 path:   hpux:    uptime:        /usr/bin/uptime
 path:   hpux:    vgdisplay:     /usr/sbin/vgdisplay

@@ -1,0 +1,43 @@
+product
+	tag		YaketyStats
+	revision	VERSION
+	title		YaketyStats
+	machine_type	*
+	os_name		HP-UX
+	os_release	*
+	os_version	?
+	directory	/
+        is_locatable    false
+
+	fileset
+		tag		client
+		title		YaketyStats client
+                is_locatable    false
+		revision	VERSION
+		preinstall      MEDIR/hp-ux/preinst
+		postinstall     MEDIR/hp-ux/postinst
+		postremove      MEDIR/postrm
+		directory       MEDIR/../collector=/usr/local/yaketystats
+                file_permissions -o root,0 -g root,0
+                file            *
+                file_permissions -o stats,TBDUID -g stats,TBDGID -m 775
+                file            /var/yaketystats
+                file            /var/yaketystats/incoming
+                file            /var/yaketystats/locks
+                file            /var/yaketystats/outgoing
+                file            /var/yaketystats/outgoing/uploads
+                file            /var/yaketystats/tmp
+        end
+
+	fileset
+		tag		server
+		title		YaketyStats server
+                is_locatable    false
+		revision	VERSION
+		prerequisite	YaketyStats.client,r>=VERSION
+
+		directory       MEDIR/../stuffer=/usr/local/yaketystats
+                file_permissions -o root,0 -g root,0
+                file            *
+        end
+end

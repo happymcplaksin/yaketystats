@@ -234,6 +234,36 @@ function buildPKG(){
     cd $me
 }
 
+function buildDEPOT(){
+    if [[ $1 == "server" ]]
+    then
+        return
+    fi
+
+    cd ${me}
+    cp HPUX.RAMsize ../collector/bin
+    mkdir -p hp-ux
+    cd hp-ux
+    find ../../stuffer | sed 's/^..\/..\/stuffer\/*//' | xargs -i echo "file " {} > stufferfiles
+    find ../../collector | sed 's/^..\/..\/collector\/*//' | xargs -i echo "file " {} > collector
+
+    sed -e "s/TBDGID/${statsgid}/" \
+        -e "s/TBDUID/${statsuid}/" \
+      ../preinst.in > preinst
+    sed -e "s/TBDGID/${statsgid}/" \
+        -e "s/TBDUID/${statsuid}/" \
+      ../postinst.in > postinst
+
+    sed -e "s/VERSION/${version}/" \
+        -e "s:MEDIR:${me}:" \
+        -e "s/TBDGID/${statsgid}/" \
+        -e "s/TBDUID/${statsuid}/" \
+      ../psf.in > yaketystats.psf
+
+    # sample: swpackage -s yaketystats.psf -d /tmp/blah -x run_as_superuser=false 
+    swpackage -s yaketystats.psf -d ${me}/hp-ux -x run_as_superuser=false
+}
+
 function client(){
     allPrep
     build${packie} client
