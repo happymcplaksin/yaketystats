@@ -1,17 +1,10 @@
 #!/usr/bin/env bash
 
-# if jart
-# where should jart live?
-# admins
-# fontpath
-# htaccess file!
-
-# build the packies
-## function for server, client and both calls the other two
-## those, in turn, call os-specific ones
-### redhat
-#### build a spec file
-#### run rpmbuild
+if [[ $BASH_VERSINFO != '3' ]]
+then
+    echo "Bash 3 required, sorry."
+    exit 3
+fi
 
 TXT_BOLD=`tput bold`
 TXT_RED=`tput setaf 1`
