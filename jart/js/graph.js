@@ -1,3 +1,8 @@
+// Copyright (C) 2008 Board of Regents of the University of Georgia
+//
+// This file is part of YaketyStats (see http://yaketystats.org/).
+// YaketyStats is free software: you can redistribute it and/or modify
+
 var G = (function() {
 
     var graphs       = new Array();
