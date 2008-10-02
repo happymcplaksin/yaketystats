@@ -143,6 +143,7 @@ function allPrep(){
     sed -e "s|INBOUND|${inbound}|" \
         -e "s|ROLLED|${rolled}|" \
         -e "s|RRDDIR|${rrddir}|" ../stuffer/etc/server.conf.in > ../stuffer/etc/server.conf
+    rm -f ${me}/{depot,pkg,rpm}build.log
 }
 
 function cleanUp(){
@@ -191,8 +192,9 @@ function buildRPM(){
         -e '/^%postun$/ r postrm' \
       ${template} > ${clientspec}
     checkit "${clientspec} sed"
-    rpmbuild --define "_topdir ${me}/redhat" -ba --target noarch ${clientspec}
+    rpmbuild --define "_topdir ${me}/redhat" -ba --target noarch ${clientspec} >> ${me}/rpmbuild.log 2>&1
     checkit "rpmbuild of ${clientspec}"
+    find redhat/RPMS/noarch -name \*${1}\*
 }
 
 function buildPKG(){
@@ -245,11 +247,12 @@ function buildPKG(){
                   sed -e 's/^\([^ ]* [^ ]* [^ ]* [^ ]*\) [^ ]* [^ ]*$/\1 root root/' >> prototype
     echo -e ${varstuff} >> prototype
     # pkgmk
-    pkgmk -o -d ../ -a all
+    pkgmk -o -d ../ -a all >> ${me}/pkgbuild.log 2>&1
     # pkgtrans -s 
     cd ..
-    pkgtrans -s . yaketystats-${1}-${version}-SunOS`uname -r`-all.pkg yaketystats-${1}
+    pkgtrans -s . yaketystats-${1}-${version}-SunOS`uname -r`-all.pkg yaketystats-${1} >> ${me}/pkgbuild.log 2>&1
     cd $me
+    find solaris/ -name yaketystats-${1}\*
 }
 
 function buildDEPOT(){
@@ -257,6 +260,7 @@ function buildDEPOT(){
     then
         return
     fi
+    echo "Building combo product"
 
     cd ${me}
     cp HPUX.RAMsize ../collector/bin
@@ -279,8 +283,9 @@ function buildDEPOT(){
       ../psf.in > yaketystats.psf
 
     # sample: swpackage -s yaketystats.psf -d /tmp/blah -x run_as_superuser=false 
-    swpackage -s yaketystats.psf -x media_type=tape -d ${me}/hp-ux/YaketyStats.depot -x run_as_superuser=false
-    swpackage -s yaketystats.psf -d ${me}/hp-ux/YaketyStats -x run_as_superuser=false
+    swpackage -s yaketystats.psf -x media_type=tape -d ${me}/hp-ux/YaketyStats.depot -x run_as_superuser=false >> ${me}/depotbuild.log 2>&1
+    swpackage -s yaketystats.psf -d ${me}/hp-ux/YaketyStats -x run_as_superuser=false >> ${me}/depotbuild.log 2>&1
+    ls -d ${me}/hp-ux/YaketyStats*
 }
 
 function client(){
@@ -325,13 +330,21 @@ else
     verify='y'
 
 
-    ask "What packages are you making? (server|client|both)" packielist
-    if [[ "${packielist}" != 'client' && \
-          "${packielist}" != 'server' && \
-          "${packielist}" != 'both' ]]
+    if [[ ${myOS} == "HP-UX" ]]
     then
-        echo "Malfunction, bro!"
-        exit 44
+        echo "Running this script on HP-UX builds a depot with both"
+        echo "the client and the server as filesets of a product."
+        packielist="both"
+        myenv="packielist=both\n${myenv}"
+    else
+        ask "What packages are you making? (server|client|both)" packielist
+        if [[ "${packielist}" != 'client' && \
+              "${packielist}" != 'server' && \
+              "${packielist}" != 'both' ]]
+        then
+            echo "Malfunction, bro!"
+            exit 44
+        fi
     fi
     ask "What version number do you want this/these package(s) to have?" version
     if [[ "${myOS}" = 'Linux' ]]
