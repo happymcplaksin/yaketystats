@@ -153,8 +153,8 @@ function cleanUp(){
 
 function rpmPrep(){
     cd $me
-    cp ../COPYING ../LICENSE ../collector
-    cp ../COPYING ../LICENSE ../stuffer
+    cp ../COPYING ../collector
+    cp ../COPYING ../stuffer
     mkdir -p redhat/{RPMS/noarch,SOURCES,SRPMS/noarch,SPECS,TMP,BUILD}
     cd ../collector
     tar czf ../packies/redhat/SOURCES/yaketystats-client-${version}.tar.gz .

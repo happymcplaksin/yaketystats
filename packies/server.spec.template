@@ -5,7 +5,7 @@
 Name: yaketystats-server
 Group: Applications/System
 Summary: Stuff stats into rrd files
-License: GPL
+License: GPLv2
 Requires: yaketystats-client = %{version}-%{release}
 Provides: %{name}
 Version: VERSION

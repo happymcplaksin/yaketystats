@@ -23,7 +23,6 @@ product
 
 		directory       MEDIR/../collector=/usr/local/share/doc/yaketystats
 		file		COPYING
-		file		LICENSE
 		
                 file_permissions -o stats,TBDUID -g stats,TBDGID -m 775
                 file            /var/yaketystats

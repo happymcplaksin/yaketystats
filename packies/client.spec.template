@@ -6,7 +6,7 @@
 Summary: Collect stats and report them to a yaketystats server
 Name: yaketystats-client
 Group: Applications/System
-License: GPL
+License: GPLv2
 Provides: %{name}
 Version: VERSION
 Release: RELEASE
@@ -47,7 +47,6 @@ install -Dp -m 0755 %{mydir}/bin/* %{buildroot}%{_prefix}/bin
 install -Dp -m 0755 %{mydir}/etc/* %{buildroot}%{_prefix}/etc
 install -Dp -m 0755 %{mydir}/lib/* %{buildroot}%{_prefix}/lib
 install -Dp -m 0755 %{mydir}/libexec/* %{buildroot}%{_prefix}/libexec
-install -m 0644 %{mydir}/LICENSE %{buildroot}/%{_docprefix}
 install -m 0644 %{mydir}/COPYING %{buildroot}/%{_docprefix}
 install -m 0644 %{mydir}/.forward %{buildroot}/%{_prefix}
 
