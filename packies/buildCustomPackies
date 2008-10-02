@@ -137,6 +137,8 @@ function cleanUp(){
 
 function rpmPrep(){
     cd $me
+    cp ../COPYING ../LICENSE ../collector
+    cp ../COPYING ../LICENSE ../stuffer
     mkdir -p redhat/{RPMS/noarch,SOURCES,SRPMS/noarch,SPECS,TMP,BUILD}
     cd ../collector
     tar czf ../packies/redhat/SOURCES/yaketystats-client-${version}.tar.gz .
@@ -193,7 +195,7 @@ function buildPKG(){
         varstuff="d none /var/yaketystats 0775 stats stats\nd none /var/yaketystats/incoming 0775 stats stats\nd none /var/yaketystats/locks 0775 stats stats\nd none /var/yaketystats/outgoing 0775 stats stats\nd none /var/yaketystats/outgoing/uploads 0775 stats stats\nd none /var/yaketystats/tmp 0775 stats stats\n"
     fi
     #copyright
-    touch ${dir}/copyright
+    cp ${me}/../COPYING ${dir}/copyright
     #pkginfo
     sed -e "s/SORC/${1}/" -e "s/=VERSION/=${version}/" pkginfo.in > ${dir}/pkginfo
     # prototype

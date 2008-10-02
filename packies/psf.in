@@ -20,6 +20,11 @@ product
 		directory       MEDIR/../collector=/usr/local/yaketystats
                 file_permissions -o root,0 -g root,0
                 file            *
+
+		directory       MEDIR/../collector=/usr/local/share/doc/yaketystats
+		file		COPYING
+		file		LICENSE
+		
                 file_permissions -o stats,TBDUID -g stats,TBDGID -m 775
                 file            /var/yaketystats
                 file            /var/yaketystats/incoming

@@ -1,4 +1,5 @@
 %define _prefix /usr/local/yaketystats
+%define _docprefix /usr/local/share/doc/yaketystats-VERSION
 %define _varprefix /var/yaketystats
 %define mydir %{_builddir}/%{name}-%{version}
 
@@ -35,6 +36,7 @@ install -d -m 0755 %{buildroot}/%{_prefix}/bin
 install -d -m 0755 %{buildroot}/%{_prefix}/etc
 install -d -m 0755 %{buildroot}/%{_prefix}/lib
 install -d -m 0755 %{buildroot}/%{_prefix}/libexec
+install -d -m 0755 %{buildroot}/%{_docprefix}
 install -d -m 0775 %{buildroot}/%{_varprefix}
 install -d -m 0775 %{buildroot}/%{_varprefix}/tmp
 install -d -m 0775 %{buildroot}/%{_varprefix}/locks
@@ -45,11 +47,14 @@ install -Dp -m 0755 %{mydir}/bin/* %{buildroot}%{_prefix}/bin
 install -Dp -m 0755 %{mydir}/etc/* %{buildroot}%{_prefix}/etc
 install -Dp -m 0755 %{mydir}/lib/* %{buildroot}%{_prefix}/lib
 install -Dp -m 0755 %{mydir}/libexec/* %{buildroot}%{_prefix}/libexec
-install -m 0755 %{mydir}/.forward %{buildroot}/%{_prefix}
+install -m 0644 %{mydir}/LICENSE %{buildroot}/%{_docprefix}
+install -m 0644 %{mydir}/COPYING %{buildroot}/%{_docprefix}
+install -m 0644 %{mydir}/.forward %{buildroot}/%{_prefix}
 
 %files
 %defattr(-, root, root, 0755)
 %{_prefix}
+%{_docprefix}
 %config(noreplace) /usr/local/yaketystats/etc/client.conf
 %config(noreplace) /usr/local/yaketystats/etc/stats.conf
 
