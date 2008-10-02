@@ -1,0 +1,42 @@
+# $snmp{$host}{$oid}{$name}{'path'} = $path
+# $snmp{$host}{$oid}{$name}{'community'} = $community
+# {'community'} is optional; otherwise use $community.
+
+my $host = "leibert-ups.example.com";
+my $base_oid = ".1.3.6.1.4.1.476.1.1.1.1";
+our $snmp_community = 'SuperSecret';
+
+$snmp{$host}{"$base_oid.2.1.0"}{'path'} = "BatTimeRemaining/BatTimeRemaining";
+$snmp{$host}{"$base_oid.2.3.0"}{'path'} = "BatVoltage/BatVoltage";
+$snmp{$host}{"$base_oid.2.4.0"}{'path'} = "BatCurrent/BatCurrent";
+$snmp{$host}{"$base_oid.2.6.0"}{'path'} = "BatCapacity/BatCapacity";
+$snmp{$host}{"$base_oid.2.7.0"}{'path'} = "BatTotalDischCounts/BatTotalDischCounts";
+$snmp{$host}{"$base_oid.2.8.0"}{'path'} = "BatCycleDurationInSeconds/BatCycleDurationInSeconds";
+$snmp{$host}{"$base_oid.2.9.0"}{'path'} = "BatAmpHours/BatAmpHours";
+$snmp{$host}{"$base_oid.2.10.0"}{'path'} = "BatKWhours/BatKWhours";
+$snmp{$host}{"$base_oid.3.6.1.2.1"}{'path'} = "InputVoltage/line1";
+$snmp{$host}{"$base_oid.3.6.1.2.2"}{'path'} = "InputVoltage/line2";
+$snmp{$host}{"$base_oid.3.6.1.2.3"}{'path'} = "InputVoltage/line3";
+$snmp{$host}{"$base_oid.3.6.1.3.1"}{'path'} = "InputCurrent/line1";
+$snmp{$host}{"$base_oid.3.6.1.3.2"}{'path'} = "InputCurrent/line2";
+$snmp{$host}{"$base_oid.3.6.1.3.3"}{'path'} = "InputCurrent/line3";
+$snmp{$host}{"$base_oid.4.2.0"}{'path'} = "OutputLoad/OutputLoad";
+$snmp{$host}{"$base_oid.4.4.1.2.1"}{'path'} = "OutputVoltage/line1";
+$snmp{$host}{"$base_oid.4.4.1.2.2"}{'path'} = "OutputVoltage/line2";
+$snmp{$host}{"$base_oid.4.4.1.2.3"}{'path'} = "OutputVoltage/line3";
+$snmp{$host}{"$base_oid.4.4.1.3.1"}{'path'} = "OutputCurrent/line1";
+$snmp{$host}{"$base_oid.4.4.1.3.2"}{'path'} = "OutputCurrent/line2";
+$snmp{$host}{"$base_oid.4.4.1.3.3"}{'path'} = "OutputCurrent/line3";
+$snmp{$host}{"$base_oid.4.5.0  "}{'path'} = "OutputWatts/OutputWatts";
+$snmp{$host}{"$base_oid.6.1.0"}{'path'} = "Alarms/Alarms";
+$snmp{$host}{"$base_oid.9.1.0"}{'path'} = "NominalOutputVoltage/NominalOutputVoltage";
+$snmp{$host}{"$base_oid.9.2.0"}{'path'} = "NominalInputVoltage/NominalInputVoltage";
+$snmp{$host}{"$base_oid.9.7.0"}{'path'} = "NominalOutputVaRating/NominalInputVoltage";
+$snmp{$host}{"$base_oid.9.8.0"}{'path'} = "NominalOutputWattsRating/NominalInputVoltage";
+$snmp{$host}{"$base_oid.13.1.0"}{'path'} = "OnBypass/OnBypass";
+$snmp{$host}{"$base_oid.13.4.1.2.1"}{'path'} = "BypassVoltage/line1";
+$snmp{$host}{"$base_oid.13.4.1.2.2"}{'path'} = "BypassVoltage/line2";
+$snmp{$host}{"$base_oid.13.4.1.2.3"}{'path'} = "BypassVoltage/line3";
+$snmp{$host}{"$base_oid.13.4.1.3.1"}{'path'} = "BypassCurrent/line1";
+$snmp{$host}{"$base_oid.13.4.1.3.2"}{'path'} = "BypassCurrent/line2";
+$snmp{$host}{"$base_oid.13.4.1.3.3"}{'path'} = "BypassCurrent/line3";
