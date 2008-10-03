@@ -1,7 +1,10 @@
+depotbuild.log
 env
 hp-ux
+pkgbuild.log
 postinst
 preinst
 redhat
+rpmbuild.log
 sock.bor.usg.edu.conf
 solaris
