@@ -1,5 +1,6 @@
 depotbuild.log
 env
+go
 hp-ux
 pkgbuild.log
 postinst
