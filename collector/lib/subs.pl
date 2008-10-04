@@ -751,7 +751,8 @@ sub list_dir_entries {
       if ( $entry !~ /^[.]/ ) {
 	if ( defined ($type) ) {
 	  ($entry_type) = (stat ("$dir/$entry"))[2];
-	  if ( $entry_type & $type ) {
+	  if ( ($type eq "file" && S_ISREG($entry_type)) ||
+	       ($type eq "dir" && S_ISDIR($entry_type)) ) {
 	    push (@return, "$dir/$entry");
 	  }
 	} else {

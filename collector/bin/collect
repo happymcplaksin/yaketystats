@@ -99,7 +99,7 @@ if ( minute_match(5) == 1 || $opt_p || $opt_o) {
     if ( lock_fh ($goldie_locks{'outputfilelock'}) == 1 ) {
       # move the files into outgoing
       debug ("Moving files from incoming ($g_incoming) to outgoing ($g_outgoing).", 50);
-      foreach $movie (list_dir_entries($g_incoming, \&S_IFREG, 1)) {
+      foreach $movie (list_dir_entries($g_incoming, "file", 1)) {
 	$movie = basename ($movie);
 	debug ("Moving $g_incoming/$movie to $g_outgoing/$movie", 60);
 	if ( rename("$g_incoming/$movie","$g_outgoing/$movie") != 1 ) {

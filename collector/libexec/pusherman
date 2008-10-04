@@ -58,7 +58,7 @@ handle_args ();
 get_config ("client");
 
 debug ("Looking for existing packets in $g_uploads", 50);
-foreach $packet (list_dir_entries($g_uploads, \&S_IFREG, 1)) {
+foreach $packet (list_dir_entries($g_uploads, "file", 1)) {
   debug ("Found $packet", 60);
   push(@packetlist,"$packet");
   $num = basename($packet);
@@ -66,23 +66,15 @@ foreach $packet (list_dir_entries($g_uploads, \&S_IFREG, 1)) {
   if ( $num > $current_packet_num ) {
     $current_packet_num = $num;
     debug ("Setting packet_file to $packet_file", 60);
-    $packet_file = "$g_uploads/$packet";
+    $packet_file = "$packet";
   }
 }
 
 # get an array of files
 debug ("Getting list of outgoing files in $g_outgoing", 50);
-if ( opendir(DIR,$g_outgoing) == 1 ){
-    while($file = readdir(DIR)){
-        if ( $file !~ /^[.]|^uploads$/ ){
-	  debug ("Found $g_outgoing/$file", 60);
-	  push (@files,"$g_outgoing/$file");
-        }
-    }
-    closedir(DIR);
-}else{
-    fileit ("Can't open $g_outgoing: $!. Bailing.");
-    exit (304);
+foreach $file (list_dir_entries ($g_outgoing, "file", 1)) {
+  debug ("Found $file", 60);
+  push (@files,$file);
 }
 
 # sort it
