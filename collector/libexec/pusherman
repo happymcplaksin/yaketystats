@@ -58,24 +58,16 @@ handle_args ();
 get_config ("client");
 
 debug ("Looking for existing packets in $g_uploads", 50);
-if ( opendir(DIR,$g_uploads) ){
-  while($packet = readdir(DIR)){
-    if ( $packet !~ /^[.]/ ){
-      debug ("Found $g_uploads/$packet", 60);
-      push(@packetlist,"$g_uploads/$packet");
-      $num = $packet;
-      $num =~ s/.*[.](\d+)$/$1/;
-      if ( $num > $current_packet_num ) {
-	$current_packet_num = $num;
-	debug ("Setting packet_file to $packet_file", 60);
-	$packet_file = "$g_uploads/$packet";
-      }
-    }
+foreach $packet (list_dir_entries($g_uploads, \&S_IFREG, 1)) {
+  debug ("Found $packet", 60);
+  push(@packetlist,"$packet");
+  $num = basename($packet);
+  $num =~ s/.*[.](\d+)$/$1/;
+  if ( $num > $current_packet_num ) {
+    $current_packet_num = $num;
+    debug ("Setting packet_file to $packet_file", 60);
+    $packet_file = "$g_uploads/$packet";
   }
-  closedir(DIR);
-}else{
-  fileit ("Can't open $g_uploads: $!. Bailing.");
-  exit (304);
 }
 
 # get an array of files
