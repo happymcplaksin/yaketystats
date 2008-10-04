@@ -46,6 +46,3 @@ else
   $CHROOT /usr/sbin/useradd -m -d $DIR -u $OUR_UID -g $OUR_GID $OUR_USER
   checkit useradd
 fi
-
-chmod 755 $DIR
-checkit chmoddir

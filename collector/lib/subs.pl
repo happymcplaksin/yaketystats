@@ -741,7 +741,7 @@ sub bivalve {
 sub list_dir_entries {
   my ($dir, $type, $sort) = @_;
   local *F;
-  my ($entry, $entry_type, $time, @return);
+  my ($entry, $entry_type, @return);
 
   if ( !opendir (F, $dir) ) {
     fileit ("Can't open $dir: $!");
@@ -750,7 +750,7 @@ sub list_dir_entries {
     while ( ($entry = readdir (F)) ) {
       if ( $entry !~ /^[.]/ ) {
 	if ( defined ($type) ) {
-	  ($entry_type, $time) = (stat ("$dir/$entry"))[2, 9];
+	  ($entry_type) = (stat ("$dir/$entry"))[2];
 	  if ( $entry_type & $type ) {
 	    push (@return, "$dir/$entry");
 	  }
