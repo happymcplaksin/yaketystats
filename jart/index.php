@@ -38,6 +38,347 @@ if ( ! is_dir("graphs") || ! is_writable("graphs") ){
     exit;
 }
 
+class Graph {
+    public $args      = array("-i -W 'YaketyStats' -E --rigid ");
+    public $comments  = array();
+    public $cmd       = array();
+    public $defs      = array();
+    public $debug     = '';
+    public $json      = '';
+    public $lines     = array();
+    public $minusb    = '';
+    public $naniszero = 0;
+    public $nuber     = 0;
+    public $paths     = array();
+    public $targs     = array();
+
+    public function __construct($number,$paths,$dooverlay){
+        $this->json  = new Services_JSON();
+        $this->number = $number;
+        $this->paths = $this->json->decode($paths);
+        $this->redrawoverlay = $dooverlay;
+    }
+
+    public function commentArgs(){
+        global $dateformat;
+        $this->comments[] = "'COMMENT:\\n' ";
+        $this->comments[] = "'COMMENT:Times displayed\\: ";
+        $this->comments[] = $this->dateEscape($dateformat, $this->paths->start);
+        $this->comments[] = " -- ";
+        $this->comments[] = $this->dateEscape( $dateformat, $this->paths->end);
+        $this->comments[] = "' ";
+        $this->comments[] = "'COMMENT:\\n' ";
+        $this->comments[] = "'COMMENT:Most recent RRD update\\:  ";
+        $this->comments[] = $this->dateEscape( $dateformat, $last)."' ";
+        $this->comments[] = "'COMMENT:\\n' ";
+        $this->comments[] = "'COMMENT:Graph created ";
+        $this->comments[] =  $this->dateEscape( $dateformat, time() ). "' ";
+    }
+
+    public function createCommandLine(){
+        global $rrdtool;
+        $this->paths->end = $this->stt($this->paths->end,'end');
+        $this->paths->start = $this->stt($this->paths->start,'start');
+        $this->timeArgs();
+        $this->fontArgs();
+        $this->sizeArgs();
+        $this->labelArgs();
+        $this->pathArgs();
+        $this->commentArgs();
+        $tmp  = array_merge($this->args,$this->defs,$this->lines,$this->comments);
+        $tmpa = join('',$tmp);
+        $out  = "$rrdtool graphv ". $this->nameGraph();
+        $out .= " ". $this->minusb . $tmpa;
+        $this->cmd = $out;
+        $this->debugLog($out);
+    }
+
+    public function dateEscape($f,$t){
+        return trim(addcslashes(date($f,$t),":"));
+    }
+
+    public function debugLog(){
+        ob_start();
+        foreach(func_get_args() as $v){
+            var_dump( $v );
+        }
+        $this->debug .= ob_get_contents();
+        ob_end_clean();
+    }
+
+    public function debugWriteLog(){
+        $file = $this->nameGraph() . "-class.log";
+        $fp = fopen($file,'w');
+        $blah = fwrite($fp,$this->debug);
+        fclose($fp);
+    }
+
+    public function draw(){
+        $this->createCommandLine();
+        $str = exec($this->cmd . " 2>&1",$output,$retval);
+        if ( $retval != 0 ){
+            //FIX
+            $out[] = 'ERROR';
+            $out[] = implode(" ", $output). " $retval $args";
+            return $out;
+        }else{
+            $out[] = 'image';
+            $out[] = $this->number;
+
+            $h = $this->grep('/^image_height =\s+/',$output);
+            $w = $this->grep('/^image_width =\s+/',$output);
+
+            $out[] = $this->nameGraph() . "?" . mktime();
+
+            if ( empty($h) ){
+                $h = $this->paths->ysize;
+            }
+            if (empty($w) ){
+                $w = $this->paths->xsize;
+            }
+
+            $out[] = $h;
+            $out[] = $w;
+            $min    = $this->grep('/^value_min =\s+/',$output);
+            $max    = $this->grep('/^value_max =\s+/',$output);
+            $out[]  = $min;
+            $out[]  = $max;
+
+            $xoff   = $this->grep('/^graph_left =\s+/',$output);
+            $yoff   = $this->grep('/^graph_top =\s+/',$output);
+            $xsize  = $this->grep('/^graph_width =\s+/',$output);
+            $ysize  = $this->grep('/^graph_height =\s+/',$output);
+            $out[]  = $xoff;
+            $out[]  = $yoff;
+            $out[]  = $xsize;
+            $out[]  = $ysize;
+            $out[]  = $this->redrawoverlay;
+        }
+        $this->debugLog($output,$out,$this->args,$this->defs);
+        $this->debugWriteLog();
+        return $this->json->encode($out);
+    }
+
+    public function error($msg){
+        $out[] = 'ERROR';
+        $out[] = $msg;
+        return $out;
+    }
+
+    public function fontArgs(){
+        global $font;
+        $fs = 6;
+        if ($this->paths->size > 49){
+            $fs = 8;
+        }
+        $this->args[] = "--font DEFAULT:$fs:$font ";
+    }
+
+    public function grep($regex,$s){
+        $r = preg_grep($regex,$s);
+        $r = array_values($r);
+        if ( ! empty($r[0]) ){
+            $r = $r[0];
+            $r = preg_replace($regex,'',$r);
+            $r = urlencode($r);
+        }
+        return $r;
+    }
+
+    public function labelArgs(){
+        if ( isset($this->paths->graphlabel) && !empty($this->paths->graphlabel) ){
+            $tmp = escapeshellcmd(preg_replace('/[:\'"&;]/','',$this->paths->graphlabel));
+            $this->args[] = "-t '$tmp' ";
+        }
+        if ( isset($this->paths->vertlabel) && !empty($this->paths->vertlabel) ){
+            $tmp = escapeshellcmd(preg_replace('/[:\'"&;]/','',$this->paths->vertlabel));
+            $this->args[] = "-v '$tmp' ";
+        }
+        if ( isset($this->paths->canvas) && !empty($this->paths->canvas) ){
+            $this->args[] = "--color CANVAS#".escapeshellcmd($this->paths->canvas).' ';
+        }
+    }
+
+    public function nameGraph(){
+        global $graphpath;
+        $user  = $_SERVER['PHP_AUTH_USER'];
+        return "$graphpath/$user-". $this->number . '.png';
+    }
+
+    private function pathArgs(){
+        // the default Ystats DS
+        $a         = 0;
+        $ds        = 'yabba';
+        $fakerrds  = array('total','av');
+        $i         = 0;
+        $last      = '';
+        $rra       = 'MAX';
+        if ($this->paths->total == 1 || $this->paths->total == 1 ){
+            $this->naniszero = 1;
+        }
+        foreach ($this->paths->paths as $v) {
+            if ( $v->display === 0 ){
+                continue;
+            }
+            $color = escapeshellcmd(substr(trim($v->color),1));
+            $drawt = escapeshellcmd(trim($v->drawtype));
+            if ( $drawt{0} == '-' ){
+                $drawt = substr($drawt, 1);
+                $negative = 1;
+            }
+            if ( $drawt == 'STACK' ){
+                $drawt = 'AREA';
+                $stack = ':STACK';
+            }
+            if ( preg_match('/[:][:]/',$v->path) ){
+                $path = preg_replace('/(.*)[:][:].*/','$1',$v->path);
+                $ds   = preg_replace('/.*[:][:](.*)/','$1',$v->path);
+                $path = escapeshellcmd($path);
+                $ds   = escapeshellcmd($ds);
+            }else{
+                $path  = escapeshellcmd($v->path);
+            }
+            if ( ! file_exists($v->path) && ! in_array($v->path,$fakerrds) ){
+                // there should probably be a log message here
+                continue;
+            }
+            if ( empty($this->minusb) ){
+                if ( preg_match('#/(memory|disk)/#',$path) ){
+                    $this->minusb = '-b 1024 ';
+                }
+            }
+            $name = escapeshellcmd($v->name);
+            $name = preg_replace('/[:]/','\\:',$name);
+            if ( $v->path == 'total' ){
+                $defid = 'total';
+                $this->lines[] = " $drawt:$defid#$color:Total$stack ";
+            }elseif ( $v->path == 'avg' ){
+                $defid = 'average';
+                $this->lines[] = " $drawt:$defid#$color:Average$stack ";
+            }else{
+                if ( ! $last ){
+                    $last = my_rrd_last($path);
+                }
+                // $i adds some uniqueness in case someone dupes a color
+                $defid  = "WUB$i";
+                if ( $this->naniszero == 1 ) {
+                  # CDEF:result=value,UN,0,value,IF
+                  $rpn = "${defid},UN,0,${defid},IF";
+                } else {
+                  $rpn = $defid;
+                }
+                $this->defs[] = "DEF:$defid=$path:$ds:$rra ";
+                if ( $this->paths->justtotal == 0 ){
+                    if ( $negative ){
+                        $rpn = "0,$rpn,-";
+                        #$defs .= "CDEF:neg$defid=0,$defid,- ";
+                        $this->defs[] = "CDEF:neg$defid=$rpn ";
+                        $this->lines[] = "$drawt:neg$defid#$color:'$name'$stack ";
+                    }else{
+                        $this->lines[] = "$drawt:$defid#$color:'$name'$stack ";
+                    }
+                }
+                if ( $this->paths->avg ){
+                    $avgargs .= "$rpn,";
+                    $a++;
+                }
+                if ( $this->paths->total ){
+                    $totalargs .= "$rpn,";
+                    $plusses   .= '+,';
+                }
+                if ( $justgraph != 1 ){
+                    $this->defs[] = "VDEF:jg$defid=$defid,MAXIMUM ";
+                    $this->defs[] = "VDEF:tg$defid=$defid,MINIMUM ";
+                }
+            }
+            if ( $this->paths->justtotal == 0 || $v->path == 'total' || $v->path == 'avg' ){
+                $this->lines[] = "'COMMENT:\\n' ";
+                $this->lines[] = "VDEF:AVG$i=$defid,AVERAGE ";
+                $this->lines[] = "'GPRINT:AVG$i:\\tAv%9.2lf%s' ";
+                $this->lines[] = "VDEF:MIN$i=$defid,MINIMUM ";
+                $this->lines[] = "'GPRINT:MIN$i:Min%9.2lf%s' ";
+                $this->lines[] = "VDEF:MAX$i=$defid,MAXIMUM ";
+                $this->lines[] = "'GPRINT:MAX$i:Max\\:%9.2lf%s\\n' ";
+            }
+            $i++;
+        }
+        if ( $this->paths->total ){
+            $plusses = substr($plusses, 0, -3);
+            $this->defs[] = 'CDEF:total='.$totalargs.$plusses.' ';
+            $this->defs[] = 'VDEF:supertotal=total,MAXIMUM ';
+        }
+        if ( $this->paths->avg ){
+            $this->defs[] = 'CDEF:average='.$avgargs.$a.',AVG ';
+        }
+    }
+
+    public function sizeArgs(){
+        global $font;
+        switch ($this->paths->size){
+            case 0:
+                $this->args[] = '-w 200 -h 50 ';
+                break;
+            case 100:
+                $this->args[] = '-w 500 -h 150 ';
+                break;
+            case 150:
+                $this->args[] = '-w 575 -h 250 ';
+                break;
+            case 200:
+                $this->args[] = '-w 650 -h 350 ';
+                break;
+        }
+    }
+
+    public function timeArgs(){
+        $this->args[] = '-s ' . $this->paths->start;
+        $this->args[] = ' -e ' . $this->paths->end . ' ';
+    }
+
+    public function stt($t,$l){
+        $r = strtotime($t);
+        if ( ! $r ){
+            // FIX
+            //throw new GraphException( "Bad $l time: $t", 'literal' );
+        }
+        return $r;
+    }
+
+}
+
+class Overlay extends Graph {
+
+    public function __construct($number,$paths){
+        parent::__construct($number,$paths);
+    }
+
+    public function nameGraph(){
+        global $graphpath;
+        $user  = $_SERVER['PHP_AUTH_USER'];
+        return "$graphpath/$user-". $this->number . '-overlay.png';
+    }
+
+    public function sizeArgs(){
+        $ul = urldecode($this->paths->max);
+        $ll = urldecode($this->paths->min);
+        $w  = $this->paths->xsize * 3;
+        $h  = $this->paths->ysize;
+        $this->args[] = "--only-graph -h $h -w $w ";
+        $this->args[] = "--lower $ll --upper $ul ";
+    }
+
+    public function timeArgs(){
+        $diff = $this->paths->end - $this->paths->start;
+        $this->paths->start = $this->paths->start - $diff;
+        $this->paths->end = $this->paths->end + $diff;
+        $this->args[] = '-s ' . $this->paths->start;
+        $this->args[] = ' -e ' . $this->paths->end . ' ';
+    }
+
+}
+
+class GraphException extends Exception {}
+
 function cleanempty($a){
     if ( ! is_array($a) ){
         return FALSE;
@@ -120,400 +461,15 @@ function convertTime($id,$str){
 }
 
 function createGraphDragOverlay($graphnumber,$paths,$debuglog){
-    global $rrdtool,$graphpath;
-    $debuglog = 1;
-    $user   = $_SERVER['PHP_AUTH_USER'];
-    $rra    = 'MAX';
-    if ( get_magic_quotes_gpc() ){
-        $paths = stripslashes($paths);
-    }
-    $json  = new Services_JSON();
-    $paths = $json->decode($paths);
-    $start = strtotime($paths->start);
-    $end   = strtotime($paths->end);
-    $args  = "$rrdtool fetch ";
-    if ( ! $start || ! $end ){
-        $out[] = 'ERROR';
-        $out[] = "cgdi: Bad start or end time: ";
-        $out   = $json->encode($out);
-        return $out;
-    }
-    $oip = $paths;
-    $diff  = $end - $start;
-    $oip->end   = date('r',$end + $diff);
-    $oip->start = date('r',$start - $diff);
-    $oip->justgraph = 1;
-    $oip    = $json->encode($oip);
-    //for readability
-    $nullgraph = 0;
-    $justgraph = 1;
-    $cic    = createRrdCommandLine($graphnumber,$oip,$debuglog,$justgraph);
-    if ( $debuglog ){
-        $fp = fopen("graphs/$user-$graphnumber-createdragimage.log",'a');
-        ob_start();
-        var_dump($cic);
-        $taco=ob_get_contents();
-        ob_end_clean();
-        $dstr = "\n\nReturned:\n$taco\n";
-        $blah = fwrite($fp,$dstr);
-        fclose($fp);
-    }
-    $oi     = createGraphImageReal($graphnumber,$cic[0],$nullgraph,$justgraph,$debuglog,$paths);
-    if ( $debuglog ){
-        $fp = fopen("graphs/$user-$graphnumber-createdragimage.log",'a');
-        ob_start();
-        var_dump($oi);
-        $taco=ob_get_contents();
-        ob_end_clean();
-        $dstr = "\n\nReturned:\n$taco\n";
-        $blah = fwrite($fp,$dstr);
-        fclose($fp);
-    }
-    $out  = $json->encode($oi);
-    return( $out );
-}
-
-function createRrdCommandLine($graphnumber,$paths,$debuglog,$justgraph){
-    global $rrdtool,$graphpath,$font;
-    $rra = 'MAX';
-    $user = $_SERVER['PHP_AUTH_USER'];
-    if ( get_magic_quotes_gpc() ){
-        $paths = stripslashes($paths);
-    }
-    $json  = new Services_JSON();
-    $paths = $json->decode($paths);
-    $start = strtotime($paths->start);
-    $end   = strtotime($paths->end);
-    if ( isset($paths->justtotal) ){
-        $justtotal = $paths->justtotal;
-    }else{
-        $justtotal = 0;
-    }
-    if ( ! $start || ! $end ){
-        $out[] = 'ERROR';
-        $out[] = "crcl: Bad start or end time: ".$paths->start.' '.$paths->end;
-        return $out;
-    }
-    $args = "-i -W 'YaketyStats' -E -s $start -e $end --rigid ";
-    if ( $justgraph ){
-        $args .= "--only-graph --rigid " . $args;
-    }else{
-        if ( $paths->size != 50 ){
-            switch ($paths->size){
-                case 0:
-                    $args .= "--font DEFAULT:6:$font ";
-                    $args .= '-w 200 -h 50 ';
-                    break;
-                case 100:
-                    $args .= "--font DEFAULT:8:$font ";
-                    $args .= '-w 500 -h 150 ';
-                    break;
-                case 150:
-                    $args .= "--font DEFAULT:8:$font ";
-                    $args .= '-w 575 -h 250 ';
-                    break;
-                case 200:
-                    $args .= "--font DEFAULT:8:$font ";
-                    $args .= '-w 650 -h 350 ';
-                    break;
-            }
-        }
-    }
-    if ( isset($paths->graphlabel) ){
-        $paths->graphlabel = preg_replace('/[:\'"&;]/','',$paths->graphlabel);
-        $args .= '-t \''.$paths->graphlabel.'\' ';
-    }
-    if ( isset($paths->vertlabel) ){
-        $paths->vertlabel = preg_replace('/[:\'"&;]/','',$paths->vertlabel);
-        $args .= '-v \''.$paths->vertlabel.'\' ';
-    }
-    if ( isset($paths->canvas) ){
-        $args .= "--color CANVAS#".$paths->canvas.' ';
-    }
-
-    $debug     = '';
-    $total     = $paths->total;
-    $avg       = $paths->avg;
-    $totalargs = '';
-    $avgargs   = '';
-    $plusses   = '';
-    $lines     = '';
-    $i         = 0;
-    $a         = 0;
-    $minusb    = '';
-    $naniszero = 0;
-    $fakerrds  = array('total','av');
-    foreach ($paths->paths as $v) {
-        $stack = '';
-        $negative = 0;
-        if ( $v->display === 0 ){
-            continue;
-        }
-        $color = preg_replace(':#:','',$v->color);
-        $drawt = escapeshellcmd($v->drawtype);
-        if ( $drawt{0} == '-' ){
-            $drawt = substr($drawt, 1);
-            $negative = 1;
-        }
-        if ( $drawt == 'STACK' ){
-            $drawt = 'AREA';
-            $stack = ':STACK';
-        }
-        // the default Ystats DS
-        $ds = 'yabba';
-        if ( preg_match('/[:][:]/',$v->path) ){
-            $path = preg_replace('/(.*)[:][:].*/','$1',$v->path);
-            $ds   = preg_replace('/.*[:][:](.*)/','$1',$v->path);
-            $path = escapeshellcmd($path);
-            $ds   = escapeshellcmd($ds);
-        }else{
-            $path  = escapeshellcmd($v->path);
-        }
-        if ( ! file_exists($v->path) && ! in_array($v->path,$fakerrds) ){
-            // there should probably be a log message here
-            continue;
-        }
-        $color  = escapeshellcmd($color);
-        if ( empty($minusb) ){
-            if ( preg_match('#/(memory|disk)/#',$path) ){
-                $minusb = '-b 1024';
-            }
-        }
-        $name = escapeshellcmd($v->name);
-        $name = preg_replace('/[:]/','\\:',$name);
-
-        if ( $v->path == 'total' ){
-            $naniszero  = 1;
-            $total      = 1;
-            $totalcolor = $color;
-            $totaldrawt = $drawt;
-            $defid      = 'total';
-            $lines     .= " $totaldrawt:$defid#$totalcolor:Total$stack ";
-        }elseif ( $v->path == 'avg' ){
-            $naniszero  = 1;
-            $avg        = 1 ;
-            $avgcolor   = $color;
-            $avgdrawt   = $drawt;
-            $defid      = 'average';
-            $lines     .= " $avgdrawt:$defid#$avgcolor:Average$stack ";
-        }else{
-            if ( ! $last ){
-                $last = my_rrd_last($path);
-            }
-            $defid  = "WUB$i";
-            if ( $naniszero ) {
-              # CDEF:result=value,UN,0,value,IF
-              $rpn = "${defid},UN,0,${defid},IF";
-            } else {
-              $rpn = $defid;
-            }
-            $defs .= "DEF:$defid=$path:$ds:$rra ";
-            if ( $justtotal == 0 ){
-                if ( $negative ){
-                    $rpn = "0,$rpn,-";
-                    #$defs .= "CDEF:neg$defid=0,$defid,- ";
-                    $defs .= "CDEF:neg$defid=$rpn ";
-                    $lines .= "$drawt:neg$defid#$color:'$name'$stack ";
-                }else{
-                    $lines .= "$drawt:$defid#$color:'$name'$stack ";
-                }
-            }
-            //disabled because it causes too many bugs
-            //if ( $drawt == 'AREA' ){
-                //$lines .= gradientArea($paths->canvas,$color,$defid);
-            //}
-
-            if ( $avg ){
-                $avgargs .= "$rpn,";
-                $a++;
-            }
-            if ( $total ){
-                $totalargs .= "$rpn,";
-                $plusses   .= '+,';
-            }
-            if ( $justgraph != 1 ){
-                // uh are these the same?
-                if ( $negative ){
-                    $nulldefs .= "VDEF:jg$defid=$defid,MAXIMUM ";
-                    $nulldefs .= "VDEF:tg$defid=$defid,MINIMUM ";
-                }else{
-                    $nulldefs .= "VDEF:jg$defid=$defid,MAXIMUM ";
-                    $nulldefs .= "VDEF:tg$defid=$defid,MINIMUM ";
-                }
-            }
-        }
-        if ( $justtotal == 0 || $v->path == 'total' || $v->path == 'avg' ){
-            $lines .= "'COMMENT:\\n' ";
-            $lines .= "VDEF:AVG$i=$defid,AVERAGE ";
-            $lines .= "'GPRINT:AVG$i:\\tAv%9.2lf%s' ";
-            $lines .= "VDEF:MIN$i=$defid,MINIMUM ";
-            $lines .= "'GPRINT:MIN$i:Min%9.2lf%s' ";
-            $lines .= "VDEF:MAX$i=$defid,MAXIMUM ";
-            $lines .= "'GPRINT:MAX$i:Max\\:%9.2lf%s\\n' ";
-        }
-        $i++;
-    }
-    if ( $total ){
-        $plusses = substr($plusses, 0, -3);
-        $defs .= 'CDEF:total='.$totalargs.$plusses.' ';
-        $defs .= 'VDEF:supertotal=total,MAXIMUM ';
-    }
-    if ( $avg ){
-        $defs .= 'CDEF:average='.$avgargs.$a.',AVG ';
-    }
-    if ( $justgraph != 1  ){
-        $ndefs     = $defs;
-        $ndefs    .= $nulldefs;
-        $ndefs    .= $nulllines;
-        $ndefs    .= $lines;
-        $nullargs  = $args . $ndefs;
-        $defs     .= $lines;
-        $args     .= $defs;
-    }else{
-        $defs .= $lines;
-        $args .= $defs;
-    }
-    $date_format = 'm/d/y H\\\:i\\\:s';
-    $targs .= "'COMMENT:\\n' ";
-    $targs .= "'COMMENT:Times displayed\\: " . date($date_format, $start) . " -- " . date( $date_format, $end). "' ";
-    $targs .= "'COMMENT:\\n' ";
-    $targs .= "'COMMENT:Most recent RRD update\\:  " . date( $date_format, $last)."' ";
-    $targs .= "'COMMENT:\\n' ";
-    $targs .= "'COMMENT:Graph created " . date( $date_format, time() ). "' ";
-
-    if ( $justgraph == 1 ){
-        $upperlimit   = urldecode($paths->max);
-        $lowerlimit   = urldecode($paths->min);
-        $mygraphimage = "$graphpath/$user-$graphnumber-overlay.png";
-        $limits       = "--lower $lowerlimit --upper $upperlimit ";
-        $w            = $paths->xsize * 3;
-        $h            = $paths->ysize;
-        $rargs[]  = "$rrdtool graphv $mygraphimage $minusb --only-graph -h $h -w $w " . $limits . $args;
-    }else{
-        $mygraphimage = "$graphpath/$user-$graphnumber.png";
-        $rargs[]  = "$rrdtool graphv $mygraphimage $minusb " . $nullargs. $targs;
-        //background graph
-        $mygraphimage = "$graphpath/$user-$graphnumber.png";
-        $limits  = "--upper-limit <upper> --lower-limit <lower> ";
-        $rargs[]  = "$rrdtool graphv $mygraphimage $minusb " . $limits . $args. $targs;
-    }
-
-    $debuglog = 1;
-    if ( $debuglog ){
-        ob_start();
-        var_dump($debug);
-        var_dump($rargs);
-        var_dump( $paths);
-        var_dump( $lines );
-        $taco=ob_get_contents();
-        ob_end_clean();
-        $fp = fopen("$mygraphimage-createcmd.log",'w');
-        $blah = fwrite($fp,$taco);
-        fclose($fp);
-    }
-    return $rargs;
+    $o = new Overlay($graphnumber,$paths,0);
+    $ov = $o->draw();
+    return $ov;
 }
 
 function createGraphImage($graphnumber,$paths,$dooverlay,$debuglog,$overlay=0){
-    $debuglog = 1;
-    $json   = new Services_JSON();
-    // returns an array
-    $cmd       = createRrdCommandLine($graphnumber,$paths,$debuglog,$justgraph);
-    if ( $cmd[0] == 'ERROR' ){
-        return $json->encode($cmd);
-    }
-    $args      = $cmd[0];
-    $nullgraph = 1;
-    $justgraph = 0;
-    $graph    = createGraphImageReal($graphnumber,$args,$nullgraph,$justgraph,$debuglog);
-    $graph[]   = $dooverlay;
-    return $json->encode($graph);
-}
-
-function createGraphImageReal($graphnumber,$args,$nullgraph,$justgraph,$debuglog=0,$paths=''){
-    global $graphpath;
-    $json   = new Services_JSON();
-    $user   = $_SERVER['PHP_AUTH_USER'];
-    $output = array();
-    $retval = 0;
-    if ( $debuglog ){
-        $fp = fopen("graphs/$user-$graphnumber-createimage.log",'a');
-        $dstr = "\n\nArgs:\n" .$args;
-        $blah = fwrite($fp,$dstr);
-        fclose($fp);
-    }
-    $str    = exec("$args 2>&1",$output,$retval);
-    if ( $debuglog ){
-        $fp = fopen("graphs/$user-$graphnumber-createimage.log",'a');
-        $dstr = "\n\nOutput:\n". implode(' ', $output) . "\nRetval: $retval\n";
-        $blah = fwrite($fp,$dstr);
-        fclose($fp);
-    }
-    if ( $retval != 0 ){
-        $out[] = 'ERROR';
-        $out[] = implode(" ", $output). " $retval $args";
-        return $out;
-    }else{
-        $out[] = 'image';
-        $out[] = $graphnumber;
-
-        $h = rrdoutgrep('/^image_height =\s+/',$output);
-        $w = rrdoutgrep('/^image_width =\s+/',$output);
-
-        if ( $justgraph != 1 ){
-            $out[] = "$graphpath/$user-$graphnumber.png?".mktime();
-        }else{
-            $out[] = "$graphpath/$user-$graphnumber-overlay.png?".mktime();
-        }
-
-        if ( empty($h) ){
-            $h = $paths->ysize;
-        }
-        if (empty($w) ){
-            $w = $paths->xsize;
-        }
-
-        $out[] = $h;
-        $out[] = $w;
-        if ( $nullgraph ){
-            $min = rrdoutgrep('/^value_min =\s+/',$output);
-            $max = rrdoutgrep('/^value_max =\s+/',$output);
-            $out[]  = $min;
-            $out[]  = $max;
-
-            $xoff = rrdoutgrep('/^graph_left =\s+/',$output);
-            $yoff = rrdoutgrep('/^graph_top =\s+/',$output);
-            $xsize = rrdoutgrep('/^graph_width =\s+/',$output);
-            $ysize = rrdoutgrep('/^graph_height =\s+/',$output);
-            $out[]  = $xoff;
-            $out[]  = $yoff;
-            $out[]  = $xsize;
-            $out[]  = $ysize;
-        }
-        if ( $debuglog ){
-            $fp = fopen("graphs/$user-$graphnumber-createimage.log",'a');
-            ob_start();
-            var_dump('output',$output);
-            var_dump('coords',$coords);
-            var_dump( 'tmp');
-            var_dump( $tmp );
-            var_dump('str',$str);
-            var_dump('h',$h);
-            var_dump('w',$w);
-            var_dump( 'scale',$scale);
-            var_dump( 'min',$min);
-            var_dump( 'max',$max);
-            var_dump('out',$out);
-            $taco=ob_get_contents();
-            ob_end_clean();
-            $dstr = "\n\ncgir Returned:\n$taco\n";
-            $blah = fwrite($fp,$dstr);
-            fclose($fp);
-        }
-        return $out;
-    }
-    $out = array('ERROR','The Impossible Fallthrough!');
-    return $out;
+    $g = new Graph($graphnumber,$paths,$dooverlay);
+    $graph = $g->draw();
+    return $graph;
 }
 
 function debugLoadLog($file,$n){
@@ -934,15 +890,6 @@ function recurseForMassAdd($path,$limit,$out){
         $out[] = $nodes['files'];
     }
     return $out;
-}
-
-function rrdoutgrep($regex,$s){
-    $r = preg_grep($regex,$s);
-    $r = array_values($r);
-    $r = $r[0];
-    $r = preg_replace($regex,'',$r);
-    $r = urlencode($r);
-    return $r;
 }
 
 function savePlaylist($name,$pldir,$str){

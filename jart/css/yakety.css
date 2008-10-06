@@ -100,11 +100,18 @@
     .graphtitle {
         text-align: center;
         font-size: xx-small;
-        padding-top: 2px;
         border-bottom: 1px solid black;
-        height: 18px;
+        height: 20px;
         z-index: 0;
-        background-color: transparent;
+        color: #000;
+        background-color: #ddF;
+        background-image: url(img/tb.png);
+        background-repeat: repeat-x;
+    }
+    .graphtitletext{
+        margin-top: 4px;
+        margin-left: 4px;
+        float: left;
     }
     .currentgraph{
         background-color: #FF0;
