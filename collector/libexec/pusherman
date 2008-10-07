@@ -58,39 +58,23 @@ handle_args ();
 get_config ("client");
 
 debug ("Looking for existing packets in $g_uploads", 50);
-if ( opendir(DIR,$g_uploads) ){
-  while($packet = readdir(DIR)){
-    if ( $packet !~ /^[.]/ ){
-      debug ("Found $g_uploads/$packet", 60);
-      push(@packetlist,"$g_uploads/$packet");
-      $num = $packet;
-      $num =~ s/.*[.](\d+)$/$1/;
-      if ( $num > $current_packet_num ) {
-	$current_packet_num = $num;
-	debug ("Setting packet_file to $packet_file", 60);
-	$packet_file = "$g_uploads/$packet";
-      }
-    }
+foreach $packet (list_dir_entries($g_uploads, "file", 1)) {
+  debug ("Found $packet", 60);
+  push(@packetlist,"$packet");
+  $num = basename($packet);
+  $num =~ s/.*[.](\d+)$/$1/;
+  if ( $num > $current_packet_num ) {
+    $current_packet_num = $num;
+    $packet_file = "$packet";
+    debug ("Setting packet_file to $packet_file", 60);
   }
-  closedir(DIR);
-}else{
-  fileit ("Can't open $g_uploads: $!. Bailing.");
-  exit (304);
 }
 
 # get an array of files
 debug ("Getting list of outgoing files in $g_outgoing", 50);
-if ( opendir(DIR,$g_outgoing) == 1 ){
-    while($file = readdir(DIR)){
-        if ( $file !~ /^[.]|^uploads$/ ){
-	  debug ("Found $g_outgoing/$file", 60);
-	  push (@files,"$g_outgoing/$file");
-        }
-    }
-    closedir(DIR);
-}else{
-    fileit ("Can't open $g_outgoing: $!. Bailing.");
-    exit (304);
+foreach $file (list_dir_entries ($g_outgoing, "file", 1)) {
+  debug ("Found $file", 60);
+  push (@files,$file);
 }
 
 # sort it
@@ -123,13 +107,17 @@ $pairs{'host'}=$g_host;
 $pairs{'dataversion'}=$g_pusherman_version;
 
 for($i = 0; $i < @packetlist; $i += 5){
-  if ( $i < (@packetlist - 1) ){
+  # TODO:  This logic seems flawed (or too complex) but it's better than what was here before!
+  # Post up to 5 packets at a time
+  my $last_one;
+  if ( ($i + 4) < (@packetlist - 1) ) {
+    $last_one = $i +4;
+  } else {
+    $last_one = @packetlist - 1;
+  }
+  if ( post_file ("$g_server_protocol", "$g_server_fqdn", 80, "$g_server_uri",\%pairs, @packetlist[$i .. $last_one]) != 0 ){
     # If post_file fails, assume further attempts will fail at this time too so skip them
-    if ( post_file ("$g_server_protocol", "$g_server_fqdn", 80, "$g_server_uri",\%pairs,@packetlist[$i .. $i+4]) != 0 ){
-      last;
-    }
-  }else{
-    post_file ("$g_server_protocol", "$g_server_fqdn", 80, "$g_server_uri",\%pairs,@packetlist[$i .. (@packetlist - 1)]);
+    last;
   }
 }
 
@@ -161,7 +149,8 @@ sub conglomerate {
       debug ("The packet is > $g_maxsize");
       # Rename the file if it was a new file
       if ( $packet_file =~ /[-]$biggest_ts[.]/ ) {
-	$new_file =~ s/[-]($biggest_ts)[.]/$smallest_ts/;
+	$new_file = $packet_file;
+	$new_file =~ s/[-]($biggest_ts)[.]/-${smallest_ts}./;
 	if ( ! rename ($packet_file, $new_file) ) {
 	  fileit ("Could not rename $packet_file to $new_file.  I'm helpless!");
 	  return ();
@@ -185,14 +174,8 @@ sub conglomerate {
   debug ("Appending to packet file");
   if (open (F,">>$packet_file")){
     if ( open (G,$file) ){
-      # Looks like we are going to process $file.
-      # Check the timestamp in its name
-      $ts = $file;
-      $ts =~ s/.*[.]//;
-      if ( $ts < $smallest_ts ) {
-	# Make sure it's a string so we don't get 1e+blah
-	$smallest_ts = "$ts";
-      }
+      # $smallest_ts used to be about file names; now it's just for ordering (and now it actually might work)
+      $smallest_ts = time();
       while(<G>){
 	print F $_;
 	my $hapbug = $_;

@@ -68,8 +68,6 @@ my $start = time ();
 
 # Main
 $show_times && fileit ("Starting at " . localtime ($start));
-version_1 ();
-
 not_v1 ();
 
 my $time = time ();
@@ -90,47 +88,22 @@ bivalve (("p=/$main::g_host/stuffspersec${g_sep}t=$rrd_type${g_sep}i=$rrd_interv
 
 close ($stuffer_lock_fh);
 
-sub version_1 {
-  my (@host, $entry, $host, $file);
-  my ($dir) = "$g_server_logdir/1.0";
-
-  if ( @ARGV != 0 ) {
-    @host= @ARGV;
-  } else {
-    if ( ! opendir (LOGDIR, "$dir") ) {
-      fileit ("I can't open $dir: $!");
-    } else {
-      while ( $entry = readdir (LOGDIR) ) {
-	$file = "${dir}/${entry}";
-	if ( -f $file && $file !~ /lock$/ ) {
-	  debug ("Adding host $entry to list", 100);
-	  push(@host,$entry);
-	}
-      }
-    }
-    closedir(LOGDIR);
-    foreach $host ( @host ) {
-      readlog ("", $host, "1.0");
-    }
-  }
-}
-
 sub not_v1 {
   my (@versions, @hosts, @files, $version, $base_version, $host, $file);
 
   # For every dir in $g_server_logdir,
   debug ("Looking in $g_server_logdir.", 100);
-  @versions = list_dir_entries ($g_server_logdir, \&S_IFDIR, 1);
+  @versions = list_dir_entries ($g_server_logdir, "dir", 1);
   foreach $version (@versions) {
     debug ("Working on $version", 50);
     $base_version = basename ($version);
     if ( string_member ($base_version, @g_known_versions) ) {
       if ( $base_version eq "1.3" ) {
-	@hosts = list_dir_entries ("$version", \&S_IFDIR, 1);
+	@hosts = list_dir_entries ("$version", "dir", 1);
 	#     For each dir in $dir/$v,
 	foreach $host (@hosts) {
 	  debug ("Working on host $host", 50);
-	  @files = list_dir_entries ("$host", \&S_IFREG, 1);
+	  @files = list_dir_entries ("$host", "file", 1);
 	  debug ("Files are @files", 50);
 	  foreach $file (@files) {
 	    #       For each file,
@@ -155,43 +128,11 @@ sub readlog {
   my ($cmd, $status, @data, $line, $ip, $uri);
   my ($value, $timestamp, $stat, $path, $type, $interval, $pos, $opos, $now,
       $lock);
-  my ($start, $end, $fh, $lockit);
+  my ($start, $end);
   local *F;
 
-  $lockit = 1;
   $now = time();
-
-  # Only allow one log2rrds process to run at a time
-  #
-  # If it's v1.0, lock in $g_server_logdir.
-  $fh = return_fh ();
-  if ( $version eq "1.0" ) {
-    $lock = "$g_server_logdir/1.0/$host.lock";
-  } else {
-    # If it's v1.3, no locking needed!
-    if ( $version eq "1.3" ) {
-      $lockit = 0;
-    } else {
-      die "Hey, I don't know version $version.";
-    }
-  }
-  if ( $lockit == 1 ) {
-    debug ("Locking $lock.", 50);
-    open ($fh, ">$lock") || die "Can't open $lock: $!";
-    if ( lock_fh ($fh) != 1 ) {
-      fileit ("Could not get lock ($lock).  Bailing.");
-      exit (23);
-    }
-  }
-
-  # Move file to rolledstats dir
-  if ( $version eq "1.0" ) {
-    $file = "$g_deadlog_dir/1.0/$host.$now";
-    if ( ! rename("$g_server_logdir/1.0/$host", "$file") ) {
-      fileit ("rename($g_server_logdir/1.0/$host, $file) failed: $!.  Ack!");
-      return ();
-    }
-  }
+  # It's v1.3, no locking needed!
 
   debug ("before reading $file log", 100);
 
@@ -238,32 +179,21 @@ sub readlog {
 
   dump_data ();
 
-  if ( $lockit == 1 ) {
-    debug ("Unlocking $lock.", 50);
-    unlock_fh ($fh);
-    close ($fh);
-    unlink ($lock);
-  }
   close (F);
 
   # Keep the file around in case it's needed for debugging.  Cleanup script should be run too.
-  if ( $version eq "1.3" ) {
-    my $dir = "$g_deadlog_dir/" . basename ($host);
-    mkdirp ($dir);
-    my $basename = basename ($file);
-    my $new = "$basename.$now";
-    debug ("Renaming $file to $dir/$new");
-    if ( ! rename ($file, "$dir/$new") ) {
-      fileit ("rename($file, $dir/$new) failed.  Ack!");
-    }
+  my $dir = "$g_deadlog_dir/" . basename ($host);
+  mkdirp ($dir);
+  my $basename = basename ($file);
+  my $new = "$basename.$now";
+  debug ("Renaming $file to $dir/$new");
+  if ( ! rename ($file, "$dir/$new") ) {
+    fileit ("rename($file, $dir/$new) failed.  Ack!");
   }
 }
 
 # Want to return:
 #  ($path, $type, $interval, $timestamp, $value)
-#
-# v1.0 line looks like this:
-#  168.24.82.53 03/22/05:16:14:07 /stats/stappend.php?path=/jojo.edu/net/lo/tx_err&dstype=DERIVE&interval=60&timestamp=1111520139&value=0
 #
 # v1.3 line looks like this where '^_' represents the Unit Separator character ($g_sep == ASCII 31):
 # path=/jojo.edu/load/1-minute^_dst=GAUGE^_int=60^_ts=1146676981^_val=0.00
@@ -273,25 +203,11 @@ sub parse_logline {
   my ($prev_exit) = $g_exit;
 
   chomp ($line);
-  # v1.0
-  if ( $version eq "1.0" ) {
-    (undef, undef, $line) = split (/\s+/, $line);
-    if ( $line =~ /Lady&Tramp/ ) {
-      return (undef);
-    }
-    if ( $line !~ /^path=/ && $line !~ /^$g_server_uri/ ) {
-      fileit ("Help me!  I can't handle line: $line\n");
-      return (undef);
-    }
-    $line =~ s/$g_server_uri\?//;
-    $sep = '&';
+  if ( $version eq "1.3" ) {
+    $sep = $g_sep;
   } else {
-    if ( $version eq "1.3" ) {
-      $sep = $g_sep;
-    } else {
-      fileit ("What version is $version?!?  Skipping $line");
-      return (undef);
-    }
+    fileit ("What version is $version?!?  Skipping $line");
+    return (undef);
   }
 
   @pairs = split ($sep, $line);
@@ -302,21 +218,20 @@ sub parse_logline {
       return (undef);
     }
     # This may seem clumsy.  But it's not insecure like eval would be :)
-    # Long keys are for version v1.0, short ones are for v1.3
     SWITCH: {
-      if ( $k eq "path" || $k eq "p" ) {
+      if ( $k eq "p" ) {
 	$path = $v; last SWITCH;
       }
-      if ( $k eq "dstype" || $k eq "t" ) {
+      if ( $k eq "t" ) {
 	$type = $v; last SWITCH;
       }
-      if ( $k eq "interval" || $k eq "i" ) {
+      if ( $k eq "i" ) {
 	$interval = $v; last SWITCH;
       }
-      if ( $k eq "timestamp" || $k eq "ts" ) {
+      if ( $k eq "ts" ) {
 	$timestamp = $v; last SWITCH;
       }
-      if ( $k eq "value" ||$k eq "v" ) {
+      if ( $k eq "v" ) {
 	$value = $v; last SWITCH;
       }
     }

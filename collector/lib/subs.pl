@@ -712,7 +712,7 @@ sub bivalve {
       sleep(2);
     }
     if ( $lock == 1 ) {
-      $outfile = "$g_incoming/${g_host}.${g_collector}.${start}";
+      $outfile = "$g_incoming/${start}.${g_host}.${g_collector}";
       if ( open (F, ">$outfile") ) {
 	if ( defined ($data[0]) ) {
 	  print F @data;
@@ -741,7 +741,7 @@ sub bivalve {
 sub list_dir_entries {
   my ($dir, $type, $sort) = @_;
   local *F;
-  my ($entry, $entry_type, $time, @return);
+  my ($entry, $entry_type, @return);
 
   if ( !opendir (F, $dir) ) {
     fileit ("Can't open $dir: $!");
@@ -750,8 +750,9 @@ sub list_dir_entries {
     while ( ($entry = readdir (F)) ) {
       if ( $entry !~ /^[.]/ ) {
 	if ( defined ($type) ) {
-	  ($entry_type, $time) = (stat ("$dir/$entry"))[2, 9];
-	  if ( $entry_type & $type ) {
+	  ($entry_type) = (stat ("$dir/$entry"))[2];
+	  if ( ($type eq "file" && S_ISREG($entry_type)) ||
+	       ($type eq "dir" && S_ISDIR($entry_type)) ) {
 	    push (@return, "$dir/$entry");
 	  }
 	} else {
