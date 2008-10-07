@@ -712,7 +712,7 @@ sub bivalve {
       sleep(2);
     }
     if ( $lock == 1 ) {
-      $outfile = "$g_incoming/${g_host}.${g_collector}.${start}";
+      $outfile = "$g_incoming/${start}.${g_host}.${g_collector}";
       if ( open (F, ">$outfile") ) {
 	if ( defined ($data[0]) ) {
 	  print F @data;
