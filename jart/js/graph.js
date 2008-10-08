@@ -67,11 +67,12 @@ var G = (function() {
 
         var sas = $('setallsizesbutton');
         Event.observe(sas,'click',function(e){dsPicker.toggleControl(e,'containerforallgraphsizes')}.bindAsEventListener());
+
+        var rag = $('redrawallgraphsbutton');
+        Event.observe(rag,'click',createAllGraphImages.bindAsEventListener());
+
         var smile = $('smiley');
         Event.observe(smile,'click',showTimePresets.bindAsEventListener());
-
-        var rel   = $('reloadpresetbutton');
-        Event.observe(rel,'click',createAllGraphImages.bindAsEventListener());
 
         var db    = $('daybutton');
         Event.observe(db,'click',function(e){setAllGraphTimes('1 day ago','now')}.bindAsEventListener());
@@ -601,7 +602,9 @@ var G = (function() {
         $('graph-' + me).style.zIndex = 1;
     }
     function createGraphImage(me,dooverlay){
-        Element.show('spinnerfor-' + me);
+        var spin = $('spinnerfor-' + me);
+        if ( ! spin ){ return; }
+        Element.show(spin);
         var paths = G.graphs[me].toJSONString();
         x_createGraphImage(me,paths,dooverlay,debuglog,createGraphImageCB);
     }
@@ -801,12 +804,21 @@ var G = (function() {
         var div            = document.createElement('div');
         div.id             = 'uifor-' + me;
 
+        //Redraw sc27019.png
+        var span           = document.createElement('span');
+        span.className     = 'redrawgraphbutton';
+        var img            = document.createElement('img');
+        img.src            = 'img/sc27019.png';
+        img.title          = 'Redraw Graph';
+        Event.observe(img,'click',function(){createGraphImage(me,0)}.bindAsEventListener());
+        span.appendChild(img);
+        div.appendChild(span);
+
         //GEAR
         var span           = document.createElement('span');
         span.className     = 'showgraphuibutton';
         var img            = document.createElement('img');
         img.src            = 'img/stock_exec-16.png';
-        img.border         = '0';
         img.title          = 'Show Graph UI';
         Event.observe(img,'click',function(){showGraphUI(me)}.bindAsEventListener());
         span.appendChild(img);

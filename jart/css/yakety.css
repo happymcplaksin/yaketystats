@@ -1,5 +1,12 @@
     <style type="text/css">
     <!--
+    img {
+        padding: 0px;
+    }
+    .redrawgraphbutton {
+        float: right;
+        margin-right: 2em;
+    }
     .colorblendicon{
         margin-left: 2em;
     }

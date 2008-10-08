@@ -1745,7 +1745,7 @@ $version = "2.0";
                 <span id="playlistdisplay" style="display:none"></span>
             </div>
             <div id="timepresetscontainer" style="display:none">
-            <span class="clickable button" id="reloadpresetbutton"><img src="img/stock_repeat-16.png" height="16" width="16"></span>&nbsp;<span class="clickable button" id="daybutton">Day</span>&nbsp;<span class="clickable button" id="twodaysbutton">2 Days</span>&nbsp;<span class="clickable button" id="weekbutton">Week</span>&nbsp;<span class="clickable button" id="monthbutton">Month</span>
+            <span class="clickable button" id="daybutton">Day</span>&nbsp;<span class="clickable button" id="twodaysbutton">2 Days</span>&nbsp;<span class="clickable button" id="weekbutton">Week</span>&nbsp;<span class="clickable button" id="monthbutton">Month</span>
             </div>
             <br>
             <div style="display:none" id="containerforplaylistdialog">
@@ -1808,6 +1808,7 @@ $version = "2.0";
                 <span class="clickable" id="saveplaylistbutton"><img src="img/stock_data-save.png" title="Save Playlist"></span>
                 <span class="clickable" id="setalltimesbutton"><img src="img/stock_timer.png" title="Set Times for All Graphs"></span>
                 <span class="clickable" id="setallsizesbutton"><img src="img/stock_handles-simple.png" title="Set Sizes for All Graphs"></span>
+                <span class="clickable" id="redrawallgraphsbutton"><img src="img/lc27019.png" title="Redraw All Graphs"></span>
                 <br>
             <br class="clear"><br>
             <label for="autorefresh" id="arl">Auto-Refresh</label>
