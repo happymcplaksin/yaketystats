@@ -804,11 +804,11 @@ var G = (function() {
         var div            = document.createElement('div');
         div.id             = 'uifor-' + me;
 
-        //Redraw sc27019.png
+        //Redraw
         var span           = document.createElement('span');
         span.className     = 'redrawgraphbutton';
         var img            = document.createElement('img');
-        img.src            = 'img/sc27019.png';
+        img.src            = 'img/sc_formatpaintbrush.png';
         img.title          = 'Redraw Graph';
         Event.observe(img,'click',function(){createGraphImage(me,0)}.bindAsEventListener());
         span.appendChild(img);
