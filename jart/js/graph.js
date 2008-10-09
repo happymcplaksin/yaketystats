@@ -12,6 +12,9 @@ var G = (function() {
     var defaultstarttime   = '4 days ago';
     var defaultendtime     = 'now';
     var defaultpathlimit   = 15;
+    var defaultconfirmcloseallgraphs = 1;
+    var defaultconfirmdeleteplaylist = 1;
+    var defaultsize        = 50;
     // 0 == drag&CtC
     // 1 == highlight
     var tool               = 1;
@@ -19,7 +22,8 @@ var G = (function() {
     var gsliders           = new Array();
     var overlayoffset      = new Array();
     var selectoffset       = new Array();
-    var selColor           = '#000000';
+    var selColor           = '#ff0000';
+    var defaultCanvasColor = 'ffffff';
 
     var mydrag;
 
@@ -33,7 +37,7 @@ var G = (function() {
     function Graph(){
         this.avg         = 0;
         this.bglastdrawn = 0;
-        this.canvas      = 'FFFFFF';
+        this.canvas      = defaultCanvasColor;
         this.end         = defaultendtime;
         this.graphlabel  = '';
         this.max         = 'nan';
@@ -43,7 +47,7 @@ var G = (function() {
         this.ollastdrawn = 0;
         this.paths       = new Array();
         this.pathlimit   = '';
-        this.size        = 50;
+        this.size        = defaultsize;
         this.start       = defaultstarttime;
         this.total       = 0;
         this.vertlabel   = '';
@@ -97,10 +101,13 @@ var G = (function() {
         setOpacity(dti,3);
 
         var sci = $('selcolorinp');
+        sci.value = selColor.replace(/^#/,'');
         var ces = $('colorexampleCANVAS-sel');
+        ces.style.backgroundColor = selColor;
         new Control.ColorPicker( sci, { 'swatch':ces, 'onUpdate':updateSelColor });
 
         slider = new Control.Slider('slidehandleforall','slidedivforall', {sliderValue: 50,range:$R(0,200),values:[0,50,100,150,200], onSlide: function(v){$('sizeindicatorforall').innerHTML = v}, onChange:function(v){G.setAllGraphSizes(v); Element.hide('containerforallgraphsizes');}});
+        userPrefsInit();
     }
 
     function handleKeys(e){
@@ -1586,6 +1593,46 @@ var G = (function() {
         //console.log(a);
         updateTimes(a[0],a[1],a[2]);
         createGraphImage(a[0],1);
+    }
+    function userPrefsInit(){
+        //load pref or inline via php?
+        //or do the whole thing via a php function
+        //set the defaults
+        ups=$('userpstart');
+        ups.value=defaultstarttime;
+
+        upe=$('userpend');
+        upe.value=defaultendtime;
+
+        upsize=$('userpsize');
+        upsize.value=defaultsize;
+
+        upt=$('userptool');
+        upt.value=tool;
+
+        upc=$('upserpcanvasinp');
+        upc.value=defaultCanvasColor.replace(/^#/,'');
+        upcl=$('userpcanvaslab');
+        upcl.style.backgroundColor = '#' + defaultCanvasColor;
+
+        uphc=$('upserphighinp');
+        uphc.value=selColor.replace(/^#/,'');
+        uphcl=$('userphighlab');
+        uphcl.style.backgroundColor = selColor;
+
+        upccg=$('userpconfirmcloseall');
+        upccg.checked = defaultconfirmcloseallgraphs;
+        //Event.observe(upccg....
+        upcdp=$('userpconfirmdeletepl');
+        upcdp.checked = defaultconfirmdeleteplaylist;
+        //Event.observe(upcdp....
+        //Event.observe('userpsave',...
+        //Event.observe('userpcancel','click',Element.hide('userprefsdiv').bindAsEventListener());
+        $('userpcancel').onclick = function(){Element.hide('userprefsdiv')};
+        $('userprefsbutton').onclick = function(){Element.toggle('userprefsdiv')};
+        //handlekeys!
+
+        return;
     }
     function blendColors(me,e){
         var c1 = G.graphs[me].paths[0].color.replace(/#/,'');

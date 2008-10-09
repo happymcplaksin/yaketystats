@@ -303,5 +303,9 @@
         white-space: nowrap;
         overflow: hidden;
     }
+    .prefsbutton{
+        float: right;
+        margin-top: 4px;
+    }
     -->
     </style>

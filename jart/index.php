@@ -1738,6 +1738,7 @@ $version = "2.0";
         <div id="picker" class="yui-b">
             <div style="border-bottom: 1px solid black; margin-bottom: 1em;">
                 <img src="img/stock_unknown-24.png" id="pickerregexerhelp" class="helpbutton">
+                <img src="img/lc_setdocumentproperties.png" id="userprefsbutton" class="prefsbutton" title="Preferences">
                 <br><span id="pickerbutton" class="clickable"><img src="img/stock_form-file-selection.png" title="Picker"></span> <span id="regexerbutton" class="clickable"><img src="img/stock_macro-stop-after-procedure.png" title="Regexer"></span>
                 <span id="prefsbutton" class="clickable"><img src="img/stock_edit-contour.png" title="Preferences" style="display:none"></span>
                 <br>
@@ -1917,6 +1918,34 @@ $version = "2.0";
             </div>
         </div>
     </div>
+</div>
+<div id="userprefsdiv" class="help" style="display: none">
+<p>Set Defaults:</p>
+<label for="userpstart">Start:</label><input type="text" id="userpstart"><br>
+<label for="userpend">End:</label><input type="text" id="userpend"><br>
+<label for="userpsize">Size:</label><select name="userpsize" id="userpsize">
+    <option value="0">0</option>
+    <option value="50">50</option>
+    <option value="100">100</option>
+    <option value="150">150</option>
+    <option value="200">200</option>
+</select><br>
+<label for="userptool">Tool</lable><select name="userptool" id="userptool">
+    <option value="0">Drag/CtC</option>
+    <option value="1">Highlight</option
+</select><br>
+<strong>Canvas Color</strong>
+<label for="userpcanvas" class="colorexample" id="userpcanvaslab"> </label>
+<input type="text" id="upserpcanvasinp" style="display:none;"><br>
+<strong>Highlight Color</strong>
+<label for="userphigh" class="colorexample" id="userphighlab"> </label>
+<input type="text" id="upserphighinp" style="display:none;"><br>
+<label for="userpconfirmcloseall">Confirm Close All Graphs?</label>
+<input type="checkbox" id="userpconfirmcloseall"><br>
+<label for="userpconfirmdeletepl">Confirm Delete Playlist</label>
+<input type="checkbox" id="userpconfirmdeletepl"><br>
+<input type="button" value="Save" id="userpsave">
+<input type="button" value="Cancel" id="userpcancel">
 </div>
 <div id="pathbreaksgraphhelpd" style="display: none" class="help">
 <dl>
