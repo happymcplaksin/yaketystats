@@ -1273,6 +1273,11 @@ $version = "2.0";
         }
         function findAndLoadCB(s){
             var list = s.parseJSON();
+            if ( G.graphs[0].regexavg == 'on' ){
+                var doavg = 1;
+            }else{
+                var doavg = 0;
+            }
             if ( G.graphs[0].regextotals == 'on' ){
                 var dototals = 1;
             }else{
@@ -1295,6 +1300,9 @@ $version = "2.0";
                     G.addRrdToGraph(path,0);
                 });
             });
+            if ( doavg == 1 ){
+                regexAddAvg();
+            }
             if ( dototals == 1 ){
                 regexAddTotal();
             }
@@ -1348,6 +1356,15 @@ $version = "2.0";
                 G.defaultpathlimit = 15;
             }
             //console.log(G.defaultpathlimit);
+        }
+        function regexAddAvg(){
+            G.graphs.each(function(graph,key){
+                if ( G.graphs[key].total == 0 ){
+                    G.graphs[key].avg = 1;
+                    G.cg = key;
+                    G.addRrdToGraph('avg',0);
+                }
+            })
         }
         function regexAddTotal(){
             G.graphs.each(function(graph,key){
@@ -1537,6 +1554,11 @@ $version = "2.0";
                 G.graphs[0].unlimited = $F('regexunlimited');
                 G.graphs[0].regextotals = $F('regextotal');
                 G.graphs[0].regexjusttotals = $F('regexjusttotal');
+                G.graphs[0].regexavg = $F('regexavg');
+            }
+            var avg = $('regexavg');
+            if ( avg.checked ){
+                regexAddAvg();
             }
             var ts = $('regextotal');
             if ( ts.checked ){
@@ -1934,6 +1956,8 @@ $version = "2.0";
                 <div id="regexersaver" style="display:none">
                 <img src="img/stock_unknown-24.png" id="regexsaver" class="helpbutton">
                     <form onSubmit="return false;">
+                        <label for="regexavg">Avg(<strong>s</strong>)</label>
+                        <input id="regexavg" type="checkbox">
                         <label for="regextotal">Total(<strong>s</strong>)</label>
                         <input id="regextotal" type="checkbox">
                         <br>
