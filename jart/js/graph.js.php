@@ -1653,27 +1653,27 @@ include $file;
         Element.hide('userprefsdiv');
         var ups=$('userpstart').value;
         var out="var defaultstarttime = '" + ups + "';\n";
-        defaultstarttime = ups;
+        this.defaultstarttime = ups;
 
         var upe=$('userpend').value;
         out = out + "var defaultendtime = '" + upe + "';\n";
-        defaultendtime = upe;
+        this.defaultendtime = upe;
 
         var upsize=$('userpsize').value;
         out = out + "var defaultsize = " + upsize + ";\n";
-        defaultsize = upsize;
+        this.defaultsize = upsize;
 
         var upt=$('userptool').value;
         out = out + "var tool = " + upt + ";\n";
-        tool = upt;
+        this.tool = upt;
 
         var upc=$('upserpcanvasinp').value;
         out = out + "var defaultCanvasColor = '" + upc + "';\n";
-        defaultCanvasColor = upc;
+        this.defaultCanvasColor = upc;
 
         var uphc=$('upserphighinp').value;
         out = out + "var selColor = '#" + uphc + "';\n";
-        selColor = "#" + uphc;
+        this.selColor = "#" + uphc;
         $('selcolorinp').value = selColor.replace(/^#/,'');
         $('colorexampleCANVAS-sel').style.backgroundColor = selColor;
 
@@ -1683,7 +1683,7 @@ include $file;
             uca = 1;
         }
         out = out + "var defaultconfirmcloseallgraphs = " + uca + ";\n";
-        defaultconfirmcloseallgraphs = uca;
+        this.defaultconfirmcloseallgraphs = uca;
 
         var ucd = 0;
         var upcdp=$('userpconfirmdeletepl').checked;
@@ -1691,7 +1691,7 @@ include $file;
             ucd = 1;
         }
         out = out + "var defaultconfirmdeleteplaylist = " + ucd + ";\n";
-        defaultconfirmdeleteplaylist = ucd;
+        this.defaultconfirmdeleteplaylist = ucd;
 
         x_saveUserPrefs(out,saveUserPrefsCB);
     }
