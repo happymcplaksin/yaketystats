@@ -1820,6 +1820,7 @@ $version = "2.0";
                 <span id="prefsbutton" class="clickable"><img src="img/stock_edit-contour.png" title="Preferences" style="display:none"></span>
                 <br>
                 <br>
+<input type="button" value="fuck" onClick="alert(G.defaultsize)">
                 <span id="playlistdisplay" style="display:none"></span>
             </div>
             <div id="timepresetscontainer" style="display:none">

@@ -55,7 +55,7 @@ include $file;
         this.ollastdrawn = 0;
         this.paths       = new Array();
         this.pathlimit   = '';
-        this.size        = G.defaultsize;
+        this.size        = parseInt(G.defaultsize);
         this.start       = G.defaultstarttime;
         this.total       = 0;
         this.vertlabel   = '';
@@ -735,25 +735,25 @@ include $file;
         // nothing at this point
         switch(G.graphs[me].size){
             case 0:
-            fw = 287;
-            fh = 300;
-            break;
+                fw = 287;
+                fh = 300;
+                break;
             case 50:
-            fw = 487;
-            fh = 500;
-            break;
+                fw = 487;
+                fh = 500;
+                break;
             case 100:
-            fw = 588;
-            fh = 600;
-            break;
+                fw = 588;
+                fh = 600;
+                break;
             case 150:
-            fw = 662;
-            fh = 650;
-            break;
+                fw = 662;
+                fh = 650;
+                break;
             case 200:
-            fw = 737;
-            fh = 725;
-            break;
+                fw = 737;
+                fh = 725;
+                break;
             default:
         }
         var contain         = document.createElement('div');
