@@ -45,8 +45,8 @@ include $file;
     function Graph(){
         this.avg         = 0;
         this.bglastdrawn = 0;
-        this.canvas      = defaultCanvasColor;
-        this.end         = defaultendtime;
+        this.canvas      = G.defaultCanvasColor;
+        this.end         = G.defaultendtime;
         this.graphlabel  = '';
         this.max         = 'nan';
         this.min         = 'nan';
@@ -55,8 +55,8 @@ include $file;
         this.ollastdrawn = 0;
         this.paths       = new Array();
         this.pathlimit   = '';
-        this.size        = defaultsize;
-        this.start       = defaultstarttime;
+        this.size        = G.defaultsize;
+        this.start       = G.defaultstarttime;
         this.total       = 0;
         this.vertlabel   = '';
         this.xsize       = 'nan';
@@ -1653,27 +1653,27 @@ include $file;
         Element.hide('userprefsdiv');
         var ups=$('userpstart').value;
         var out="var defaultstarttime = '" + ups + "';\n";
-        this.defaultstarttime = ups;
+        G.defaultstarttime = ups;
 
         var upe=$('userpend').value;
         out = out + "var defaultendtime = '" + upe + "';\n";
-        this.defaultendtime = upe;
+        G.defaultendtime = upe;
 
         var upsize=$('userpsize').value;
         out = out + "var defaultsize = " + upsize + ";\n";
-        this.defaultsize = upsize;
+        G.defaultsize = upsize;
 
         var upt=$('userptool').value;
         out = out + "var tool = " + upt + ";\n";
-        this.tool = upt;
+        G.tool = upt;
 
         var upc=$('upserpcanvasinp').value;
         out = out + "var defaultCanvasColor = '" + upc + "';\n";
-        this.defaultCanvasColor = upc;
+        G.defaultCanvasColor = upc;
 
         var uphc=$('upserphighinp').value;
         out = out + "var selColor = '#" + uphc + "';\n";
-        this.selColor = "#" + uphc;
+        G.selColor = "#" + uphc;
         $('selcolorinp').value = selColor.replace(/^#/,'');
         $('colorexampleCANVAS-sel').style.backgroundColor = selColor;
 
@@ -1683,7 +1683,7 @@ include $file;
             uca = 1;
         }
         out = out + "var defaultconfirmcloseallgraphs = " + uca + ";\n";
-        this.defaultconfirmcloseallgraphs = uca;
+        G.defaultconfirmcloseallgraphs = uca;
 
         var ucd = 0;
         var upcdp=$('userpconfirmdeletepl').checked;
@@ -1691,7 +1691,10 @@ include $file;
             ucd = 1;
         }
         out = out + "var defaultconfirmdeleteplaylist = " + ucd + ";\n";
-        this.defaultconfirmdeleteplaylist = ucd;
+        G.defaultconfirmdeleteplaylist = ucd;
+        if ( G.graphs[0].paths[0] === undefined ){
+            closeAllGraphs(0);
+        }
 
         x_saveUserPrefs(out,saveUserPrefsCB);
     }
@@ -1774,6 +1777,6 @@ include $file;
                             '#F5F800', '#CDCFC4', '#BCBEB3', '#AAABA1',
                             '#8F9286', '#797C6E', '#2E3127', '#0000FF');
     return {
-        'init': init, 'drawGraph': drawGraph, 'addRrdToGraph': addRrdToGraph, 'cg': cg, 'graphs': graphs, 'selColor': selColor, 'addGraph': addGraph, 'defaultpathlimit': defaultpathlimit, 'closeAllGraphs': closeAllGraphs, 'drawAllGraphs': drawAllGraphs, 'setAllGraphTimes':setAllGraphTimes, 'autoRefreshReal':autoRefreshReal, 'createAllGraphImages':createAllGraphImages, 'createGraphImage':createGraphImage, 'autoRefreshSetup':autoRefreshSetup, setAllGraphSizes:setAllGraphSizes, tool:tool, resetSizeForAll:resetSizeForAll, defaultconfirmcloseallgraphs:defaultconfirmcloseallgraphs, defaultconfirmdeleteplaylist:defaultconfirmdeleteplaylist
+        'init': init, 'drawGraph': drawGraph, 'addRrdToGraph': addRrdToGraph, 'cg': cg, 'graphs': graphs, 'selColor': selColor, 'addGraph': addGraph, 'defaultpathlimit': defaultpathlimit, 'closeAllGraphs': closeAllGraphs, 'drawAllGraphs': drawAllGraphs, 'setAllGraphTimes':setAllGraphTimes, 'autoRefreshReal':autoRefreshReal, 'createAllGraphImages':createAllGraphImages, 'createGraphImage':createGraphImage, 'autoRefreshSetup':autoRefreshSetup, setAllGraphSizes:setAllGraphSizes, 'tool':tool, resetSizeForAll:resetSizeForAll, 'defaultconfirmcloseallgraphs':defaultconfirmcloseallgraphs, 'defaultconfirmdeleteplaylist':defaultconfirmdeleteplaylist, 'defaultstarttime':defaultstarttime, 'defaultendtime':defaultendtime, 'defaultsize':defaultsize, 'defaultCanvasColor':defaultCanvasColor
     }
 })();
