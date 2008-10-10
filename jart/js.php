@@ -16,8 +16,8 @@ $jsfiles = array(
                 'prototype-plus.js',
                 //'scriptaculous.js',
                 'yahoo.color.js',
-                'colorPicker.js',
-                'graph.js'
+                'colorPicker.js'
+                //'graph.js'
             );
 if ( file_exists($cache) ){
     $cachemt = filemtime($cache);

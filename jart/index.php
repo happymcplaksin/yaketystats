@@ -892,6 +892,41 @@ function recurseForMassAdd($path,$limit,$out){
     return $out;
 }
 
+function saveUserPrefs($str){
+    global $webdir;
+    $user = $_SERVER['PHP_AUTH_USER'];
+    $dir  = $webdir.'/playlists/';
+    if ( is_writable($dir) ){
+        $dir .= $user;
+        if ( ! file_exists($dir) ){
+            $md = mkdir($dir,0755);
+            if ( ! $md ){
+                return "can't make playlists dir, check permissions";
+            }
+        }
+        $dir .= '/';
+    }else{
+        return "playlists dir isn't writable";
+    }
+    $bd = "$webdir/playlists/$user/";
+    if ( ! is_writable($bd)){
+        return "can't write to your playlist dir";
+    }
+    $file = $bd.".prefs";
+    $str  = stripslashes($str);
+    // I really should verify this input
+    if ( empty($str) ){
+        return "empty prefs";
+    }
+    $fp   = @fopen($file,'w');
+    if ($fp==0){
+        return "can't open prefs file for writing";
+    }
+    $blah = fwrite($fp,"$str");
+    fclose($fp);
+    return "saved";
+}
+
 function savePlaylist($name,$pldir,$str){
     global $webdir;
     $name = preg_replace('`\W`','',$name);
@@ -1018,7 +1053,7 @@ function zoomTimes($start,$end,$action,$graph){
 
 sajax_init();
 //$sajax_debug_mode = 1;
-$exports = array('clickToCenterTime','convertAllTimes','convertTime','createGraphDragOverlay','createGraphImage','deletePlaylist','dragTime','findMatches','loadPlaylist','massAdd','newPlSub','savePlaylist','selTime','showTreeChild','zoomTimes');
+$exports = array('clickToCenterTime','convertAllTimes','convertTime','createGraphDragOverlay','createGraphImage','deletePlaylist','dragTime','findMatches','loadPlaylist','massAdd','newPlSub','savePlaylist','saveUserPrefs','selTime','showTreeChild','zoomTimes');
 if ( in_array($_SERVER['PHP_AUTH_USER'],$admins) ){
     array_push($exports,'debugLogfiles','debugLoadLog','debugZeroFile');
 }
@@ -1049,7 +1084,7 @@ $version = "2.0";
     <script type="text/javascript" src="js/scriptaculous.js"></script>
     <script type="text/javascript" src="js/yahoo.color.js"></script>
     <script type="text/javascript" src="js/colorPicker.js"></script>
-    <script type="text/javascript" src="js/graph.js"></script>
+    <script type="text/javascript" src="js/graph.js.php"></script>
     <script type="text/javascript">
 <?php
     sajax_show_javascript();
@@ -1923,6 +1958,7 @@ $version = "2.0";
 <p>Set Defaults:</p>
 <label for="userpstart">Start:</label><input type="text" id="userpstart"><br>
 <label for="userpend">End:</label><input type="text" id="userpend"><br>
+
 <label for="userpsize">Size:</label><select name="userpsize" id="userpsize">
     <option value="0">0</option>
     <option value="50">50</option>
@@ -1930,24 +1966,30 @@ $version = "2.0";
     <option value="150">150</option>
     <option value="200">200</option>
 </select><br>
-<label for="userptool">Tool</lable><select name="userptool" id="userptool">
+
+<label for="userptool">Tool:</label><select name="userptool" id="userptool">
     <option value="0">Drag/CtC</option>
     <option value="1">Highlight</option
 </select><br>
+
 <strong>Canvas Color</strong>
 <label for="userpcanvas" class="colorexample" id="userpcanvaslab"> </label>
 <input type="text" id="upserpcanvasinp" style="display:none;"><br>
+
 <strong>Highlight Color</strong>
 <label for="userphigh" class="colorexample" id="userphighlab"> </label>
 <input type="text" id="upserphighinp" style="display:none;"><br>
-<label for="userpconfirmcloseall">Confirm Close All Graphs?</label>
+
+<label for="userpconfirmcloseall">Confirm Close All Graphs</label>
 <input type="checkbox" id="userpconfirmcloseall"><br>
+
 <label for="userpconfirmdeletepl">Confirm Delete Playlist</label>
 <input type="checkbox" id="userpconfirmdeletepl"><br>
+
 <input type="button" value="Save" id="userpsave">
 <input type="button" value="Cancel" id="userpcancel">
 </div>
-<div id="pathbreaksgraphhelpd" style="display: none" class="help">
+<div id="pathbreaksgraphhelpd" style="display: none" class="help smaller">
 <dl>
     <dt>Regex</dt>
     <dd>Enter your regular expression into this field. After optionally selecting either of the checkboxes below, click Go to see the results of your regular expression in the textarea to the left. Note that this textarea is for display purposes and not editing. Also note that the output will be divided by graph and the number of lines and graphs are displayed. If the output doesn't match what you expect, try refining your regex or using different options.</dd>
@@ -1958,7 +2000,7 @@ $version = "2.0";
 </dl>
 </div>
 
-<div id="regexsaverd" style="display: none" class="help">
+<div id="regexsaverd" style="display: none" class="help smaller">
 <dl>
     <dt>Totals</dt>
     <dd>Enabling this option will add a total line to each graph.</dd>
@@ -1969,7 +2011,7 @@ $version = "2.0";
 </dl>
 </div>
 
-<div id="pickerregexerhelpd" style="display: none" class="help">
+<div id="pickerregexerhelpd" style="display: none" class="help smaller">
 <dl>
     <dt><img src="img/stock_form-file-selection.png" title="Picker"></dt>
     <dd>Selects the Picker controls. These controls allow interactive building of graphs and playlists.</dd>

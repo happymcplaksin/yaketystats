@@ -7,23 +7,31 @@ var G = (function() {
 
     var graphs       = new Array();
     var cg           = 0;
-    // pref-ables FIX
     var defaultdrawtype    = 'LINE1';
+    var defaultpathlimit   = 15;
+<?php
+include("../conf.php");
+$user  = $_SERVER['PHP_AUTH_USER'];
+$file = "$webdir/playlists/$user/.prefs";
+if ( file_exists($file) && is_readable($file) ){
+include $file;
+}else{
+?>
     var defaultstarttime   = '4 days ago';
     var defaultendtime     = 'now';
-    var defaultpathlimit   = 15;
+    var defaultsize        = 50;
+    var tool               = 1;
+    var selColor           = '#ff0000';
+    var defaultCanvasColor = 'ffffff';
     var defaultconfirmcloseallgraphs = 1;
     var defaultconfirmdeleteplaylist = 1;
-    var defaultsize        = 50;
+<?php } ?>
     // 0 == drag&CtC
     // 1 == highlight
-    var tool               = 1;
     var slider;
     var gsliders           = new Array();
     var overlayoffset      = new Array();
     var selectoffset       = new Array();
-    var selColor           = '#ff0000';
-    var defaultCanvasColor = 'ffffff';
 
     var mydrag;
 
@@ -58,6 +66,7 @@ var G = (function() {
     }
 
     function init(){
+        userPrefsInit();
         var tpc = $('timepresetscontainer');
 
         addGraph();
@@ -107,7 +116,6 @@ var G = (function() {
         new Control.ColorPicker( sci, { 'swatch':ces, 'onUpdate':updateSelColor });
 
         slider = new Control.Slider('slidehandleforall','slidedivforall', {sliderValue: 50,range:$R(0,200),values:[0,50,100,150,200], onSlide: function(v){$('sizeindicatorforall').innerHTML = v}, onChange:function(v){G.setAllGraphSizes(v); Element.hide('containerforallgraphsizes');}});
-        userPrefsInit();
     }
 
     function handleKeys(e){
@@ -129,6 +137,10 @@ var G = (function() {
                 break;
             case "regexsavename":
                 dsPicker.regexSavePlaylist();
+                break;
+            case "userpstart":
+            case "userpend":
+                saveUserPrefs();
                 break;
             default:
                 return;
@@ -1595,44 +1607,86 @@ var G = (function() {
         createGraphImage(a[0],1);
     }
     function userPrefsInit(){
-        //load pref or inline via php?
-        //or do the whole thing via a php function
-        //set the defaults
-        ups=$('userpstart');
+        var ups=$('userpstart');
         ups.value=defaultstarttime;
 
-        upe=$('userpend');
+        var upe=$('userpend');
         upe.value=defaultendtime;
 
-        upsize=$('userpsize');
+        var upsize=$('userpsize');
         upsize.value=defaultsize;
 
-        upt=$('userptool');
-        upt.value=tool;
+        var upt=$('userptool');
+        upt.value=G.tool;
 
-        upc=$('upserpcanvasinp');
+        var upc=$('upserpcanvasinp');
         upc.value=defaultCanvasColor.replace(/^#/,'');
-        upcl=$('userpcanvaslab');
+        var upcl=$('userpcanvaslab');
         upcl.style.backgroundColor = '#' + defaultCanvasColor;
+        new Control.ColorPicker( upc, { 'swatch':upcl, });
 
-        uphc=$('upserphighinp');
-        uphc.value=selColor.replace(/^#/,'');
-        uphcl=$('userphighlab');
-        uphcl.style.backgroundColor = selColor;
+        var uphc=$('upserphighinp');
+        uphc.value=G.selColor.replace(/^#/,'');
+        var uphcl=$('userphighlab');
+        uphcl.style.backgroundColor = G.selColor;
+        new Control.ColorPicker( uphc, { 'swatch':uphcl, });
 
-        upccg=$('userpconfirmcloseall');
+        var upccg=$('userpconfirmcloseall');
         upccg.checked = defaultconfirmcloseallgraphs;
-        //Event.observe(upccg....
-        upcdp=$('userpconfirmdeletepl');
+        var upcdp=$('userpconfirmdeletepl');
         upcdp.checked = defaultconfirmdeleteplaylist;
-        //Event.observe(upcdp....
-        //Event.observe('userpsave',...
-        //Event.observe('userpcancel','click',Element.hide('userprefsdiv').bindAsEventListener());
+        $('userpsave').onclick = function(){saveUserPrefs()};
         $('userpcancel').onclick = function(){Element.hide('userprefsdiv')};
         $('userprefsbutton').onclick = function(){Element.toggle('userprefsdiv')};
-        //handlekeys!
+    }
+    function saveUserPrefs(){
+        Element.hide('userprefsdiv');
+        var ups=$('userpstart').value;
+        var out="var defaultstarttime = '" + ups + "';\n";
+        defaultstarttime = ups;
 
-        return;
+        var upe=$('userpend').value;
+        out = out + "var defaultendtime = '" + upe + "';\n";
+        defaultendtime = upe;
+
+        var upsize=$('userpsize').value;
+        out = out + "var defaultsize = " + upsize + ";\n";
+        defaultsize = upsize;
+
+        var upt=$('userptool').value;
+        out = out + "var tool = " + upt + ";\n";
+        tool = upt;
+
+        var upc=$('upserpcanvasinp').value;
+        out = out + "var defaultCanvasColor = '" + upc + "';\n";
+        defaultCanvasColor = upc;
+
+        var uphc=$('upserphighinp').value;
+        out = out + "var selColor = '#" + uphc + "';\n";
+        selColor = "#" + uphc;
+        $('selcolorinp').value = selColor.replace(/^#/,'');
+        $('colorexampleCANVAS-sel').style.backgroundColor = selColor;
+
+        var uca = 0;
+        var upccg=$('userpconfirmcloseall').checked;
+        if ( upccg ){
+            uca = 1;
+        }
+        out = out + "var defaultconfirmcloseallgraphs = " + uca + ";\n";
+        defaultconfirmcloseallgraphs = uca;
+
+        var ucd = 0;
+        var upcdp=$('userpconfirmdeletepl').checked;
+        if ( upcdp ){
+            ucd = 1;
+        }
+        out = out + "var defaultconfirmdeleteplaylist = " + ucd + ";\n";
+        defaultconfirmdeleteplaylist = ucd;
+
+        x_saveUserPrefs(out,saveUserPrefsCB);
+    }
+    function saveUserPrefsCB(s){
+        alert('Preferences:' + s + ', bro!');
     }
     function blendColors(me,e){
         var c1 = G.graphs[me].paths[0].color.replace(/#/,'');
@@ -1710,7 +1764,6 @@ var G = (function() {
                             '#F5F800', '#CDCFC4', '#BCBEB3', '#AAABA1',
                             '#8F9286', '#797C6E', '#2E3127', '#0000FF');
     return {
-        //FIX make sure this is the right list after test phase
         'init': init, 'drawGraph': drawGraph, 'addRrdToGraph': addRrdToGraph, 'cg': cg, 'graphs': graphs, 'selColor': selColor, 'addGraph': addGraph, 'defaultpathlimit': defaultpathlimit, 'closeAllGraphs': closeAllGraphs, 'drawAllGraphs': drawAllGraphs, 'setAllGraphTimes':setAllGraphTimes, 'autoRefreshReal':autoRefreshReal, 'createAllGraphImages':createAllGraphImages, 'createGraphImage':createGraphImage, 'autoRefreshSetup':autoRefreshSetup, setAllGraphSizes:setAllGraphSizes, tool:tool, resetSizeForAll:resetSizeForAll
     }
 })();
