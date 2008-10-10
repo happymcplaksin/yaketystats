@@ -209,7 +209,7 @@ class Graph {
         // the default Ystats DS
         $a         = 0;
         $ds        = 'yabba';
-        $fakerrds  = array('total','av');
+        $fakerrds  = array('total','avg');
         $i         = 0;
         $last      = '';
         $rra       = 'MAX';

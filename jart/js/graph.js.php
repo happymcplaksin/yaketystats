@@ -115,6 +115,16 @@ include $file;
         ces.style.backgroundColor = selColor;
         new Control.ColorPicker( sci, { 'swatch':ces, 'onUpdate':updateSelColor });
 
+        var ctc = $('dragtoolicon');
+        var hil = $('seltoolicon');
+        if ( tool == 1 ){
+            setOpacity(hil,10);
+            setOpacity(ctc,4);
+        }else{
+            Element.hide('seltools');
+            setOpacity(ctc,10);
+            setOpacity(hil,4);
+        }
         slider = new Control.Slider('slidehandleforall','slidedivforall', {sliderValue: 50,range:$R(0,200),values:[0,50,100,150,200], onSlide: function(v){$('sizeindicatorforall').innerHTML = v}, onChange:function(v){G.setAllGraphSizes(v); Element.hide('containerforallgraphsizes');}});
     }
 
@@ -176,7 +186,7 @@ include $file;
                     Element.hide('seltools');
                 }
             }else{
-                setOpacity(me,2);
+                setOpacity(me,4);
             }
         });
         for (key in G.graphs){
