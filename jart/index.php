@@ -45,6 +45,7 @@ class Graph {
     public $defs      = array();
     public $debug     = '';
     public $json      = '';
+    public $last      = '';
     public $lines     = array();
     public $minusb    = '';
     public $naniszero = 0;
@@ -69,7 +70,7 @@ class Graph {
         $this->comments[] = "' ";
         $this->comments[] = "'COMMENT:\\n' ";
         $this->comments[] = "'COMMENT:Most recent RRD update\\:  ";
-        $this->comments[] = $this->dateEscape( $dateformat, $last)."' ";
+        $this->comments[] = $this->dateEscape( $dateformat, $this->rrdlast)."' ";
         $this->comments[] = "'COMMENT:\\n' ";
         $this->comments[] = "'COMMENT:Graph created ";
         $this->comments[] =  $this->dateEscape( $dateformat, time() ). "' ";
@@ -211,7 +212,6 @@ class Graph {
         $ds        = 'yabba';
         $fakerrds  = array('total','avg');
         $i         = 0;
-        $last      = '';
         $rra       = 'MAX';
         if ($this->paths->total == 1 || $this->paths->total == 1 ){
             $this->naniszero = 1;
@@ -256,8 +256,8 @@ class Graph {
                 $defid = 'average';
                 $this->lines[] = " $drawt:$defid#$color:Average$stack ";
             }else{
-                if ( ! $last ){
-                    $last = my_rrd_last($path);
+                if ( ! $this->rrdlast ){
+                    $this->rrdlast = my_rrd_last($path);
                 }
                 // $i adds some uniqueness in case someone dupes a color
                 $defid  = "WUB$i";
