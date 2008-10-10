@@ -82,8 +82,8 @@ my $rrd_type = 'GAUGE';
 my $rrd_interval = 300;
 $main::g_host = get_hostname ();
 # TODO: Come up with a way to get useful stuffer stats
-#bivalve (("p=/$main::g_host/stuffspersec${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$stuffs_per_sec\n",
-#	  "p=/$main::g_host/numstuffs${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$stuffies\n"
+#bivalve (("p=/$main::g_host/stuffer/stuffspersec${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$stuffs_per_sec\n",
+#	  "p=/$main::g_host/stuffer/numstuffs${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$stuffies\n"
 #	 ));
 # End main
 
