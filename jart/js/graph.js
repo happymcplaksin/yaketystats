@@ -757,8 +757,7 @@ var G = (function() {
         span.appendChild(dimg);
         titlebar.appendChild(span);
         var span           = document.createElement('span');
-        span.style.cssFloat = 'left';
-        span.style.styleFloat = 'left';
+        span.className     = "graphtitletext";
         span.id            = 'titlebartextfor-' + me;
         var txt            = document.createTextNode('Graph #' + me );
         span.appendChild(txt);
