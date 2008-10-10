@@ -1237,7 +1237,7 @@ $version = "2.0";
                 img.src = 'img/stock_stop-16.png';
                 img.title = 'Delete this playlist';
                 sp.appendChild(img);
-                Event.observe(img,'click',function(e){ deletePlaylist(path,div.id) }.bindAsEventListener());
+                Event.observe(img,'click',function(e){ if (dsPicker.verify('deleteplaylist') ){deletePlaylist(path,div.id);} }.bindAsEventListener());
                 div.appendChild(sp);
             }
             var span = document.createElement('span');
@@ -1709,6 +1709,26 @@ $version = "2.0";
                 $('errorspace').removeChild(child);
             })
         }
+        function verify(s,arg){
+            switch ( s ){
+                case "closeallgraphs":
+                    if ( G.defaultconfirmcloseallgraphs ){
+                        return confirm('You sure?');
+                    }else{
+                        return true;
+                    }
+                    break;
+                case "deleteplaylist":
+                    if ( G.defaultconfirmdeleteplaylist ){
+                        return confirm('You sure?');
+                    }else{
+                        return true;
+                    }
+                    break;
+                default:
+                    return;
+            }
+        }
         function convertAllTimes(){
             var a = [];
             G.graphs.each(function(graph,key){
@@ -1769,7 +1789,7 @@ $version = "2.0";
             G.closeAllGraphs(0);
         }
 
-        return{ 'navVis': navVis, 'initialPaths': initialPaths, 'init': init, 'toggleControl':toggleControl, 'savePlaylist':savePlaylist, 'loadPlaylist':loadPlaylist, 'handleError':handleError, 'newPlSub':newPlSub, 'help':help, 'hidehelp':hidehelp ,'findMatches':findMatches,'regexSavePlaylist':regexSavePlaylist}
+        return{ 'navVis': navVis, 'initialPaths': initialPaths, 'init': init, 'toggleControl':toggleControl, 'savePlaylist':savePlaylist, 'loadPlaylist':loadPlaylist, 'handleError':handleError, 'newPlSub':newPlSub, 'help':help, 'hidehelp':hidehelp ,'findMatches':findMatches,'regexSavePlaylist':regexSavePlaylist, verify:verify}
     })();
 
 
@@ -1894,14 +1914,7 @@ $version = "2.0";
 <?php } ?>
             </div>
             <div class="yui-u">
-<?php 
-    if ( in_array($_SERVER['PHP_AUTH_USER'],$admins) ){
-?>
-                <span class="clickable" style="float: right" onClick="G.closeAllGraphs(0);"><img src="img/stock_delete.png" title="Delete All Graphs"></span>
-<?php }else{ ?>
-
-                <span class="clickable" style="float: right" onClick="var answer=confirm('You sure?'); if (answer){ G.closeAllGraphs(0)};"><img src="img/stock_delete.png" title="Delete All Graphs"></span>
-<?php } ?>
+                <span class="clickable" style="float: right" onClick="if ( dsPicker.verify('closeallgraphs')){ G.closeAllGraphs(0);};"><img src="img/stock_delete.png" title="Close All Graphs"></span>
             </div>
             <img src="img/stock_help-chat.png" height="24" width="24" id="smiley">
         </div>
