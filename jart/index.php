@@ -1934,10 +1934,10 @@ $version = "2.0";
                 <div id="regexersaver" style="display:none">
                 <img src="img/stock_unknown-24.png" id="regexsaver" class="helpbutton">
                     <form onSubmit="return false;">
-                        <label for="regextotal">Total<strong>s</strong></label>
+                        <label for="regextotal">Total(<strong>s</strong>)</label>
                         <input id="regextotal" type="checkbox">
                         <br>
-                        <label for="regexjusttotal">JUST Total<em>s</em></label>
+                        <label for="regexjusttotal">JUST Total(<strong>s</strong>)</label>
                         <input id="regexjusttotal" type="checkbox">
                         <br>
                         <label for="regexonly">Regex ONLY</label>
@@ -2002,9 +2002,9 @@ $version = "2.0";
 
 <div id="regexsaverd" style="display: none" class="help smaller">
 <dl>
-    <dt>Totals</dt>
+    <dt>Total(s)</dt>
     <dd>Enabling this option will add a total line to each graph.</dd>
-    <dt>Just Totals</dt>
+    <dt>Just Total(s)</dt>
     <dd>Enabling this option displays only the total line on the graph(s). Enabling this option has no effect unless Totals is also checked.</dd>
     <dt>Regex ONLY</dt>
     <dd>Enabling this option saves the playlist in a format such that the playlist is always dynamically generated from the provided regular expression. If this option is not checked, the graphs described in the output window will be saved. If the option is checked, matches that come into existance in the future could create new graphs or modify existing ones.</dd>
