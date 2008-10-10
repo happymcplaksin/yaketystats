@@ -1696,7 +1696,7 @@ include $file;
         x_saveUserPrefs(out,saveUserPrefsCB);
     }
     function saveUserPrefsCB(s){
-        alert('Preferences:' + s + ', bro!');
+        dsPicker.handleError('Preferences:' + s + ', bro!');
     }
     function blendColors(me,e){
         var c1 = G.graphs[me].paths[0].color.replace(/#/,'');
