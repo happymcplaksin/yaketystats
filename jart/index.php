@@ -1061,7 +1061,7 @@ if ( in_array($_SERVER['PHP_AUTH_USER'],$admins) ){
 call_user_func_array('sajax_export',$exports);
 //sajax_export(&$exports);
 sajax_handle_client_request();
-$version = "2.0";
+$version = "2.1";
 
 ?>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
