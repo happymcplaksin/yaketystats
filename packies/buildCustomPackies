@@ -382,7 +382,7 @@ else
             ask "What's your server admin mail address?" serveradmin
         fi
         ask "Inbound stat directory" inbound
-        ask "Rolled stats direcotry" rolled
+        ask "Rolled stats directory" rolled
         ask "RRD files directory" rrddir
     fi
 
