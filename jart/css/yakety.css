@@ -290,7 +290,7 @@
     }
     #playlistdisplay{
         padding: .5em;
-        background: #ddd;
+        background: #fff;
         border: 1px solid black;
         font-size: smaller;
         white-space: nowrap;
