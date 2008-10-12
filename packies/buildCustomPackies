@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Copyright (C) 2008 Board of Regents of the University of Georgia
+# Copyright (C) 2008 Board of Regents of the University System of Georgia
 
 # This file is part of YaketyStats (see http://yaketystats.org/).
 #
@@ -382,7 +382,7 @@ else
             ask "What's your server admin mail address?" serveradmin
         fi
         ask "Inbound stat directory" inbound
-        ask "Rolled stats direcotry" rolled
+        ask "Rolled stats directory" rolled
         ask "RRD files directory" rrddir
     fi
 
