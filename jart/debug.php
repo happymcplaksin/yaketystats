@@ -4,7 +4,7 @@ var debugLogfiles = <?php $o = debugLogfiles(); print($o); ?>
 function debugShow(me){
     var cont    = document.createElement('div');
     cont.id     = "debugZone-" + me;
-    cont.style.width = 590 + 'px';
+    cont.style.width = 690 + 'px';
     cont.className = "offcolor";
 
     var img   = document.createElement('img');
