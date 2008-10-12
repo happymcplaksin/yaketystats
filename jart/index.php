@@ -1815,7 +1815,7 @@ $version = "2.1";
         <div id="picker" class="yui-b">
             <div style="border-bottom: 1px solid black; margin-bottom: 1em;">
                 <img src="img/stock_unknown-24.png" id="pickerregexerhelp" class="helpbutton">
-                <img src="img/lc_setdocumentproperties.png" id="userprefsbutton" class="prefsbutton" title="Preferences">
+                <img src="img/gtk-preferences.png" id="userprefsbutton" class="prefsbutton" title="Preferences">
                 <br><span id="pickerbutton" class="clickable"><img src="img/stock_form-file-selection.png" title="Picker"></span> <span id="regexerbutton" class="clickable"><img src="img/stock_macro-stop-after-procedure.png" title="Regexer"></span>
                 <span id="prefsbutton" class="clickable"><img src="img/stock_edit-contour.png" title="Preferences" style="display:none"></span>
                 <br>
