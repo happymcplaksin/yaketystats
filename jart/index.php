@@ -1401,13 +1401,15 @@ $version = "2.1";
         function init(){
             var pickerButton    = $('pickerbutton');
             var regexerButton   = $('regexerbutton');
-            Event.observe(pickerButton,'click',showPicker.bindAsEventListener());
+            Event.observe(pickerButton,'click',function(){showPicker()}.bindAsEventListener());
             Event.observe(regexerButton,'click',showRegexer.bindAsEventListener());
             // regexer
             var go = $('regexgo');
             Event.observe(go,'click',findMatches.bindAsEventListener());
             var save = $('regexsaveit');
             Event.observe(save,'click',regexSavePlaylist.bindAsEventListener());
+            var regdraw = $('regexdraw');
+            Event.observe(regdraw,'click',regexDraw.bindAsEventListener());
             var u  = $('regexunlimited');
             u.checked = false;
             $('regexgraphpathbreaks').checked = false;
@@ -1540,6 +1542,22 @@ $version = "2.1";
             if ( jt.checked ){
                 ts.checked = true;
             }
+        }
+        function regexDraw(){
+            showPicker(1);
+            var avg = $('regexavg');
+            if ( avg.checked ){
+                regexAddAvg();
+            }
+            var ts = $('regextotal');
+            if ( ts.checked ){
+                regexAddTotal();
+            }
+            var jt = $('regexjusttotal');
+            if ( jt.checked ){
+                regexJustTotal();
+            }
+            G.drawAllGraphs();
         }
         function regexSavePlaylist(){
             var plname = $F('regexsavename');
@@ -1768,19 +1786,21 @@ $version = "2.1";
             Element.hide('timepresetscontainer');
             Element.hide('toolmenu');
         }
-        function showPicker(){
-            hideRegexer();
+        function showPicker(r){
+            hideRegexer(r);
             Element.show('allgraphcontrols');
             Element.show('alphanav');
             Element.show('hostlist');
             Element.show('toolmenu');
         }
-        function hideRegexer(){
+        function hideRegexer(r){
             Element.hide('regexernav');
             Element.hide('regexerout');
             Element.hide('regexersaver');
             $('regexerlist').value = '';
-            G.graphs = [];
+            if ( r == 0 ){
+                G.graphs = [];
+            }
         }
         function showRegexer(){
             hidePicker();
@@ -1983,6 +2003,7 @@ $version = "2.1";
                         <label for="regexsavename">Playlist Name</label>
                         <input id="regexsavename" type="text" size="20" value="">
                         <input id="regexsaveit"   type="button" value="Save">
+                        <input id="regexdraw"     type="button" value="Draw">
                     </form>
                 </div>
                 <div id="graphspace">
