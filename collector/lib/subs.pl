@@ -630,6 +630,28 @@ our ($g_server_fqdn, $g_server_protocol, $g_server_uri, $g_max_log_entries,
      $g_max_rrd_entries, $g_server_logdir, $g_deadlog_dir,
      $g_client_config, $g_server_config, $g_rrddir);
 
+# econfig = eval_config
+our (%econfig);
+sub get_eval_config {
+  my ($file) = @_;
+  my (@config);
+  local *F;
+
+  if ( ! open (F, $file) ) {
+    fileit ("Can't open $file: $!\n");
+    exit (33);
+  }
+  @config = <F>;
+  eval "@config";
+  if ( $@ ) {
+    print "Eval error:  $@\n";
+    exit 3;
+  }
+  if ( $g_debug ) {
+    dumphash (%econfig);
+  }
+}
+
 sub get_config {
   my ($role) = @_;
   my ($line, $file);

@@ -1,0 +1,285 @@
+#!/usr/bin/perl
+
+$|=1;
+use strict;
+use warnings;
+
+use Cwd 'realpath';
+our $g_dir = __FILE__;
+$g_dir =~ s/\/[^\/]+$//;
+$g_dir = realpath("$g_dir/..");
+require "$g_dir/lib/include";
+
+use HTTP::Request::Common qw(POST);
+use LWP::UserAgent;
+use HTTP::Cookies;
+#use LWP::Debug qw(+conns);
+use Time::HiRes;
+
+my (@data, $line);
+
+# These are the defaults.  They could be semi-overridden by specifying a
+# different interval in the client config file, but the RRD file would still have
+# space for updates every $interval as defined below.
+my $rrd_type = "GAUGE";
+my $rrd_interval;
+
+our ($g_exit, $g_default_timeout, $g_host, $g_sep, $g_collector);
+our ($g_user_agent, $g_tmp, $g_etc, $g_debug);
+
+our (%econfig);
+my ($cluster, $user, $password, $insname, $domain, $drop_from_name);
+
+# Determine these automatic-like
+my $glcid;
+my $insid;
+
+my $login_url = "webct/authenticateUser.dowebct";
+my $login_referer = "webct/logonDisplay.dowebct";
+my $logout_url = "webct/logout.dowebct";
+my $logout_referer = "webct/viewMyWebCTNavFrame.dowebct";
+my $login_expected = "$g_etc/vista.login.expected";
+my $logout_expected = "$g_etc/vista.logout.expected";
+my $nagios = 1;
+my ($nagios_msg, $nagios_status);
+
+$main::g_host = get_hostname ();
+#$g_debug = 1;
+
+## Just assume we get called from Nagios and the full name (before $domain) is specified
+## if ( defined ($ARGV[2]) ) {
+##   # Assume we were called from Nagios
+##   $main::g_collector = "$ARGV[2]-direct";
+## } else {
+##   $main::g_collector = basename ($0);
+##   $nagios = 0;
+## }
+$main::g_collector = $ARGV[2];
+if ( ! defined ($ARGV[3]) ) {
+  fileit ("No cluster defined.  Wilt.");
+  exit (23);
+}
+$cluster = $ARGV[3];
+
+# If we haven't loaded subs.pl, then we've been run from the command-line.  That
+# means we're in test mode.  So load include, define $g_host, and print results.
+if (! defined (@ARGV) || (! defined ($ARGV[1]) && $ARGV[1] eq "calledfromcollect") ) {
+  # TODO: There must be a better way to get this path!  I think the better
+  # way is called "perl module" :)
+  local $main::g_fileit_mode = "test";
+  # Silence warning
+  $main::g_fileit_mode = $main::g_fileit_mode;
+  get_ignores ();
+  $rrd_interval = 300;
+  fileit ("You ran $g_collector manually; setting interval to $rrd_interval.");
+  @data = doit ();
+  foreach my $line (@data) {
+    print "$line";
+  }
+  print "\n";
+} else {
+  if ( defined ($ARGV[0]) && $ARGV[0] =~ /^\d+$/ ) {
+    $rrd_interval = $ARGV[0];
+  } else {
+    fileit ("Ack!  No interval for $g_collector.  Bailing.");
+    exit ();
+  }
+  get_ignores ();
+  @data = doit ();
+  if ( defined ($data[0]) ) {
+    bivalve (@data);
+  } else {
+    fileit ("Warning:  No data for $g_collector");
+  }
+  if ( $nagios == 1 ) {
+    tell_nagios ($g_collector, $nagios_status, $nagios_msg);
+  }
+}
+
+sub doit {
+  my ($base_url, $ua, $req, $resp, $time, $start, $host, $timeout,
+      @html, $line, @return, $reporthost, $status, @data);
+
+  get_eval_config ("$ENV{HOME}/etc/vista.config");
+  if ( ! %econfig ) {
+    fileit ("No cluster hash.  You probably don't have a config file.  Death.");
+    exit (24);
+  }
+  $user = $econfig{$cluster}{'username'};
+  $password = $econfig{$cluster}{'password'};
+  $insname = $econfig{$cluster}{'insname'};
+  $domain = $econfig{$cluster}{'domain'};
+  check_vars ($g_exit, "user", $user, "password", $password, "insname", $insname, "domain", $domain);
+  if ( defined ($econfig{$cluster}{'drop_from_name'}) ) {
+    $drop_from_name = $econfig{$cluster}{'drop_from_name'};
+  }
+
+  $time = time ();
+  $timeout = 120;
+
+  # - Figure out base URL based on $g_collector; it will look like vista_dvw1-direct
+  #$host = basename ($0);
+  #$host =~ s/^vista_//;
+  $reporthost = $host = $g_collector;
+  if ( defined ($drop_from_name) ) {
+    $reporthost =~ s/${drop_from_name}//;
+  }
+  $reporthost = "${reporthost}.${domain}";
+  if ( $reporthost !~ /^[du]..[0-9][0-9][0-9]/ ) {
+    ($status, @data) = run_prg ("/usr/bin/dig +short -t cname $reporthost", 10);
+    # If the CNAME lookup failed, try an A record
+    # (dig returns 0 whether it finds the requested record or not)
+    if ( ! @data ) {
+      ($status, @data) = run_prg ("/usr/bin/dig +short -t a $reporthost", 10);
+      if ( ! @data ) {
+	# If both lookups fail, something is wrong
+	fileit ("Bad status for dig: $status.  Output was:  @data\n");
+	exit (49);
+      }
+    } else {
+      # Only change $reporthost if we found a CNAME
+      $reporthost = $data[0];
+      chomp($reporthost);
+      $reporthost =~ s/[.]$//;
+    }
+  }
+  debug ("reporthost is $reporthost");
+
+  $base_url = "https://${host}.${domain}";
+
+  # Get a browser
+  $ua = LWP::UserAgent->new (agent => $g_user_agent,
+			     requests_redirectable => ['GET', 'HEAD', 'POST']);
+  # Get an empty cookie jar
+  $ua->cookie_jar ( {} );
+
+  # Get some yummy cookies
+  $start = Time::HiRes::time();
+  $req = HTTP::Request->new(GET => $base_url);
+  $resp = $ua->request ($req);
+  if ( ! $resp->is_success () ) {
+    fileit ("Fetching $base_url failed:  " . $resp->status_line() . ".  Skipping.");
+    $nagios_status = 2;
+    $nagios_msg = "CRITICAL: Can't fetch $base_url";
+    return ();
+  }
+
+  my $ready = 0;
+  # Determine glcid and insid
+  @html = split (/\n/, $resp->as_string ());
+ FOR:
+  foreach $line (@html) {
+    # If we're ready, check for glcid1 and insid1:
+    if ( $ready ) {
+      if ( $line =~ /glcid1/i ) {
+	$glcid = $line;
+	$glcid =~ s/.*value ="//;
+	$glcid =~ s/".*//;
+      } elsif ( $line =~ /insid/i ) {
+	$insid = $line;
+	$insid =~ s/.*value ="//;
+	$insid =~ s/".*//;
+	last FOR;
+      }
+    } else {
+      # Look for our institution's link
+      if ($line =~ /<a href=".*">$insname<\/a>/ ) {
+	$ready = 1;
+      }
+    }
+  }
+
+  do_request ($base_url, 'login', $host, $reporthost, $ua, $start, $time, \@return);
+  do_request ($base_url, 'logout', $host, $reporthost, $ua, time(), $time, \@return);
+  return (@return);
+}
+
+sub do_request {
+  my ($base_url, $type, $host, $reporthost, $ua, $start, $time, $return_ref) = @_;
+  my ($url, $duration, $req, $resp);
+
+  if ( $type eq 'login' ) {
+    # Log in
+    $url = "$base_url/$login_url";
+    $req = POST "$url",
+      [ webctid => $user,
+	glcid => $glcid,
+	insId => $insid,
+	insName => $insname,
+	password => $password];
+    $req->header('Referer' => $login_referer);
+  } else {
+    if ( $type eq 'logout' ) {
+      $url = "$base_url/$logout_url";
+      $req = POST "$url";
+      $req->header('Referer' => $logout_referer);
+    } else {
+      fileit ("unknown type: $type.");
+      return (0);
+    }
+  }
+
+  $resp = $ua->request ($req);
+  if ( ! $resp->is_success () ) {
+    fileit ("Fetching $url failed:  " . $resp->status_line() . ".  Skipping.");
+    $nagios_status = 2;
+    $nagios_msg = "CRITICAL: Can't fetch $url";
+    return ();
+  }
+
+  if ( store_and_compare ($host, $type, $resp->as_string ()) == 1 ) {
+    $duration = Time::HiRes::time() - $start;
+    debug (sprintf ("$type took %.2f seconds.\n", $duration));
+    push (@$return_ref,
+	  "p=/happytest/${reporthost}/direct-login/${type}${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$duration\n");
+    $nagios_status = 0;
+    $nagios_msg = "OK";
+  } else {
+    fileit ("Didn't get expected output for $type to $url.  Skipping.");
+    $nagios_status = 2;
+    $nagios_msg = "CRITICAL: Didn't get expected output for $type to $url";
+  }
+}
+
+sub store_and_compare {
+  my ($host, $type, $response) = @_;
+  my ($expected);
+
+  # Fudge some insignificant diffs
+  $response =~ s/^(Date|Client-Date|Client-Peer|Content-Length|Client-SSL-Cert-Issuer|Client-SSL-Cert-Subject):.*$/$1: MUST FUDGE THIS/mg;
+  $response =~ s/uid=[0-9]+/uid=MUST FUDGE THIS/g;
+  $response =~ s|(/webct/urw/)(lc[0-9]*)(.tp0/appletgenerator.dowebct)|${1}MUST FUDGE THIS${3}|g;
+
+  if ( ! open (F, ">$g_tmp/vista.$host.$type.html") ) {
+    fileit ("Can't open $g_tmp/vista.$host.$type.html for writing: $!");
+    return (0);
+  }
+  print F "$response";
+  close (F);
+
+  # If $host.$type exists, use that, otherwise try $cluster.$type
+  if ( ! (open (F, "$g_etc/vista/$host.$type") ||
+	  open (F, "$g_etc/vista/$cluster.$type")) ) {
+    fileit ("Can't open $g_etc/vista/$host.$type or $g_etc/vista/$cluster.$type: $!");
+    return (0);
+  }
+  $expected = join ('', <F>);
+  close (F);
+  if ( ! defined ($expected) ) {
+    fileit ("No expected data for $host, $type");
+    return (0);
+  }
+  if ( $response eq $expected ) {
+    return (1);
+  } else {
+    fileit ("Did not get expected output for $host, $type.");
+    debug ("expected: $expected");
+    debug ("response: $response");
+    return (0);
+  }
+}
+
+sub dumpit {
+  my (%hash) = @_;
+  print Data::Dumper->Dump ( [\%hash], ['*hash'] );
+}

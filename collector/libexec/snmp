@@ -36,7 +36,7 @@ our ($g_exit, $g_default_timeout, $g_host, $g_sep, $g_collector, $g_debug);
 $main::g_host = get_hostname ();
 $main::g_collector = "snmp";
 
-my %snmp;
+our %econfig;
 our $snmp_community;
 
 # If we haven't loaded subs.pl, then we've been run from the command-line.  That
@@ -76,11 +76,12 @@ sub doit {
   my ($host, $oid, $cmd, $status, @data, @return, $path, $time);
   my (%stupid);
 
-  get_snmp_config ();
+  get_eval_config ("$ENV{HOME}/etc/snmp.config");
+
   $time = time ();
-  foreach $host (keys (%snmp)) {
-    foreach $oid (keys (%{ $snmp{$host} })) {
-      $path = $snmp{$host}{$oid}{path};
+  foreach $host (keys (%econfig)) {
+    foreach $oid (keys (%{ $econfig{$host} })) {
+      $path = $econfig{$host}{$oid}{path};
       if ( defined ($stupid{$path}) ) {
 	fileit ("Hey!  You already collected $path!  I refuse to do it again.");
       } else {
@@ -102,26 +103,6 @@ sub doit {
     }
   }
   return (@return);
-}
-
-sub get_snmp_config {
-  my (@config);
-  local *F;
-
-  my $file = "$ENV{HOME}/etc/snmp.config";
-  if ( ! open (F, $file) ) {
-    fileit ("Can't open $file: $!\n");
-    exit (33);
-  }
-  @config = <F>;
-  eval "@config";
-  if ( $@ ) {
-    print "Eval error:  $@\n";
-    exit 3;
-  }
-  if ( $g_debug == 1 ) {
-    dumpit (%snmp);
-  }
 }
 
 sub dumpit {

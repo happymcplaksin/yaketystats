@@ -1,0 +1,13 @@
+# Evals are oh so safe!
+$cluster{'cluster1'}{'username'} = 'username1';
+$cluster{'cluster1'}{'password'} = 'password2';
+$cluster{'cluster1'}{'insname'} = 'insname1';
+$cluster{'cluster1'}{'domain'} = 'v1.example.com';
+$cluster{'cluster1'}{'drop_from_name'} = '-direct';
+
+$cluster{'cluster2'}{'username'} = 'username2';
+$cluster{'cluster2'}{'password'} = 'password2';
+$cluster{'cluster2'}{'insname'} = 'insname2';
+$cluster{'cluster2'}{'domain'} = 'v2.example.com';
+# drop_from_name is optional
+#$cluster{'cluster2'}{'drop_from_name'} = '-direct';
