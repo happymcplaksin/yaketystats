@@ -768,6 +768,8 @@ function ls_dir($dir){
     }
     if ( is_dir($dir) && is_readable($dir) && is_executable($dir) && $dir != 'lost+found' ){
         $dh = opendir($dir) or die('can not open dir, pal');
+        $nodes['dirs'] = array();
+        $nodes['files'] = array();
         while (($file = readdir($dh)) != false) {
             if ( $file != '.' && $file != '..' && $file{0} != '.' && $file != 'lost+found' ){
                 if ( is_dir($dir.'/'.$file) ){
