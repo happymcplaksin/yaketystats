@@ -37,6 +37,7 @@ if ( ! is_dir("graphs") || ! is_writable("graphs") ){
     print "Unable to find or write to the graphs directory. Please check permissions.\n";
     exit;
 }
+error_reporting(0);
 
 class Graph {
     public $args      = array("-i -W 'YaketyStats' -E --rigid ");
@@ -768,8 +769,6 @@ function ls_dir($dir){
     }
     if ( is_dir($dir) && is_readable($dir) && is_executable($dir) && $dir != 'lost+found' ){
         $dh = opendir($dir) or die('can not open dir, pal');
-        $nodes['dirs'] = array();
-        $nodes['files'] = array();
         while (($file = readdir($dh)) != false) {
             if ( $file != '.' && $file != '..' && $file{0} != '.' && $file != 'lost+found' ){
                 if ( is_dir($dir.'/'.$file) ){
@@ -1098,6 +1097,7 @@ $version = "2.0";
 
         function massAddCB(s){
             var mypaths = s.parseJSON();
+            console.log(mypaths);
             mypaths.each(function(paths){
                 G.addGraph();
                 var label = paths[0].replace(/.*\/([^/]+\/[^/]+)\/[^/]+.rrd/,'$1');
