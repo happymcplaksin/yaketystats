@@ -38,6 +38,7 @@ if ( ! is_dir("graphs") || ! is_writable("graphs") ){
     exit;
 }
 
+error_reporting(0);
 class Graph {
     public $args      = array("-i -W 'YaketyStats' -E --rigid ");
     public $comments  = array();
@@ -768,8 +769,6 @@ function ls_dir($dir){
     }
     if ( is_dir($dir) && is_readable($dir) && is_executable($dir) && $dir != 'lost+found' ){
         $dh = opendir($dir) or die('can not open dir, pal');
-        $nodes['dirs'] = array();
-        $nodes['files'] = array();
         while (($file = readdir($dh)) != false) {
             if ( $file != '.' && $file != '..' && $file{0} != '.' && $file != 'lost+found' ){
                 if ( is_dir($dir.'/'.$file) ){
