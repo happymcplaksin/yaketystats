@@ -1,7 +1,7 @@
 <?php
 # vim: set sw=4 sts=4 et tw=0 :
 
-# Copyright (C) 2008 Board of Regents of the University of Georgia
+# Copyright (C) 2008 Board of Regents of the University System of Georgia
 #
 # This file is part of YaketyStats (see http://yaketystats.org/).
 # YaketyStats is free software: you can redistribute it and/or modify

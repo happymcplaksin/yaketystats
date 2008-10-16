@@ -1,6 +1,6 @@
 <?php
 
-# Copyright (C) 2008 Board of Regents of the University of Georgia
+# Copyright (C) 2008 Board of Regents of the University System of Georgia
 #
 # This file is part of YaketyStats (see http://yaketystats.org/).
 # YaketyStats is free software: you can redistribute it and/or modify
@@ -38,6 +38,7 @@ if ( ! is_dir("graphs") || ! is_writable("graphs") ){
     exit;
 }
 
+error_reporting(0);
 class Graph {
     public $args      = array("-i -W 'YaketyStats' -E --rigid ");
     public $comments  = array();
