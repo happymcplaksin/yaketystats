@@ -231,7 +231,7 @@ sub do_request {
     $duration = Time::HiRes::time() - $start;
     debug (sprintf ("$type took %.2f seconds.\n", $duration));
     push (@$return_ref,
-	  "p=/happytest/${reporthost}/direct-login/${type}${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$duration\n");
+	  "p=/${reporthost}/direct-login/${type}${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$duration\n");
     $nagios_status = 0;
     $nagios_msg = "OK";
   } else {
