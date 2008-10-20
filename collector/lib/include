@@ -18,6 +18,9 @@
 
 $|=1;
 
+$ENV{'LANG'} = '';
+$ENV{'LC_ALL'} = '';
+
 # TODO:  Perhaps all of these should come from a config file!
 
 # Globals.  They all start with 'g_'.
