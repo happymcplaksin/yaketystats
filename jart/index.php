@@ -27,6 +27,7 @@ if ( ! is_dir("graphs") || ! is_writable("graphs") ){
     print "Unable to find or write to the graphs directory. Please check permissions.\n";
     exit;
 }
+error_reporting(0);
 
 error_reporting(0);
 
@@ -410,9 +411,6 @@ function clickToCenterTime($start,$end,$graph,$xsize,$xoff){
 function convertAllTimes($str){
     global $dateformat;
     $json = new Services_JSON();
-    if ( get_magic_quotes_gpc() ){
-        $str = stripslashes($str);
-    }
     $arr  = $json->decode($str);
     $a    = array();
     foreach ($arr as $v) {
@@ -439,9 +437,6 @@ function convertAllTimes($str){
 function convertTime($id,$str){
     global $dateformat;
     $json = new Services_JSON();
-    if ( get_magic_quotes_gpc() ){
-        $str = stripslashes($str);
-    }
     $time = strtotime($str);
     if ( $time ){
         $time = date($dateformat,$time);
@@ -495,6 +490,7 @@ function debugLogfiles(){
         }
     }
     $out = stripslashes($json->encode($out));
+    $out = $json->encode($out);
     $out .= "\n";
     return $out;
 }
@@ -516,7 +512,6 @@ function deletePlaylist($path,$divtoclear){
     global $webdir;
     $json = new Services_JSON();
     $user = $_SERVER['PHP_AUTH_USER'];
-    $path = stripslashes($path);
     $path = trim($path);
     $re   = '^'.$webdir.'/playlists/'.$user.'.*';
     if ( preg_match("`$re`",$path) ){
@@ -954,7 +949,6 @@ function savePlaylist($name,$pldir,$str){
         return $json->encode(array('ERROR',"Your name sucked so I threw it out. I also didn't save your data. Life is hard."));
     }
     $file = $dir.$pldir.$name.'.pspl';
-    $str  = stripslashes($str);
     if ( empty($str) ){
         return $json->encode(array('ERROR','Empty playlist!'));
     }
@@ -1123,6 +1117,7 @@ $version = "2.1";
 
         function massAddCB(s){
             var mypaths = s.parseJSON();
+            //console.log(mypaths);
             mypaths.each(function(paths){
                 G.addGraph();
                 var label = paths[0].replace(/.*\/([^/]+\/[^/]+)\/[^/]+.rrd/,'$1');

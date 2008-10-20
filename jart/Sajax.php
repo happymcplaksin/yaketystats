@@ -1,4 +1,4 @@
-<?php	
+<?php
 if (!isset($SAJAX_INCLUDED)) {
 
 	/*  
@@ -65,6 +65,9 @@ if (!isset($SAJAX_INCLUDED)) {
 			echo "-:$func_name not callable";
 		else {
 			echo "+:";
+                    if( get_magic_quotes_gpc() ){
+                        $args = array_map('stripslashes',$args);
+                    }
 			$result = call_user_func_array($func_name, $args);
 			echo $result;
 		}
