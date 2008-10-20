@@ -9,16 +9,6 @@ require("Sajax.php");
 require("JSON.php");
 require("conf.php");
 
-if ( ! is_file($font) ){
-    print "Unable to find the specified font. Please update conf.php\n";
-    exit;
-}
-
-if ( ! is_readable($font) ){
-    print "Unable to read the specified font. Please update conf.php\n";
-    exit;
-}
-
 if ( ! is_file($rrdtool) ){
     print "Unable to find your rrdtool. Please update conf.php\n";
     exit;
@@ -39,6 +29,7 @@ if ( ! is_dir("graphs") || ! is_writable("graphs") ){
 }
 
 error_reporting(0);
+
 class Graph {
     public $args      = array("-i -W 'YaketyStats' -E --rigid ");
     public $comments  = array();

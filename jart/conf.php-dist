@@ -5,7 +5,7 @@ $admins = array();
 
 $dateformat = 'r';
 # Debian:
-$font  = '/usr/share/fonts/truetype/freefont/FreeSans.ttf';
+$font  = 'Mono';
 # Red Hat:
 # $font  = '/usr/share/fonts/bitstream-vera/Vera.ttf';
 
