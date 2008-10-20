@@ -99,7 +99,7 @@ sub net_linux {
 
   # Match letters followed by 0 or more numbers at the beginning of the line,
   # and no colons allowed because those are IP aliases.
-  @ifaces  = parse_cmd ("$cmd -i", $g_default_timeout, '^[a-z]+[0-9]+[.]*[0-9]*\s',
+  @ifaces  = parse_cmd ("$cmd -in", $g_default_timeout, '^[a-z]+[0-9]+[.]*[0-9]*\s',
                         undef, '\s+', undef, 0, (0));#'
   LOOP: foreach $iface (@ifaces) {
       if ( ignoreit ('net', $iface) ) {
@@ -310,7 +310,7 @@ sub net_solaris {
   $cmd = get_path ('netstat');
   # Match letters followed by 0 or more numbers at the beginning of the line,
   # and no colons allowed because those are IP aliases.
-  @ifaces  = parse_cmd ("$cmd -i", $g_default_timeout, '^[a-z]+[0-9]*\s', undef,
+  @ifaces  = parse_cmd ("$cmd -in", $g_default_timeout, '^[a-z]+[0-9]*\s', undef,
                         '\s+', undef, 0, (0));#'
 
  LOOP: foreach $iface (@ifaces) {
