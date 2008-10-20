@@ -9,14 +9,6 @@ var G = (function() {
     var cg           = 0;
     var defaultdrawtype    = 'LINE1';
     var defaultpathlimit   = 15;
-<?php
-include("../conf.php");
-$user  = $_SERVER['PHP_AUTH_USER'];
-$file = "$webdir/playlists/$user/.prefs";
-if ( file_exists($file) && is_readable($file) ){
-include $file;
-}else{
-?>
     var defaultstarttime   = '4 days ago';
     var defaultendtime     = 'now';
     var defaultsize        = 50;
@@ -26,7 +18,14 @@ include $file;
     var defaultCanvasColor = 'ffffff';
     var defaultconfirmcloseallgraphs = 1;
     var defaultconfirmdeleteplaylist = 1;
-<?php } ?>
+<?php
+include("../conf.php");
+$user  = $_SERVER['PHP_AUTH_USER'];
+$file = "$webdir/playlists/$user/.prefs";
+if ( file_exists($file) && is_readable($file) ){
+include $file;
+}
+?>
     // 0 == drag&CtC
     // 1 == highlight
     var slider;
@@ -1663,9 +1662,12 @@ include $file;
 
         var uphc=$('upserphighinp');
         var uphoc=$('upserphighopacityinp');
+        var upo=$('upserphighopacityinp');
+        upo.value = G.selOpacity;
         uphc.value=G.selColor.replace(/^#/,'');
         var uphcl=$('userphighlab');
         uphcl.style.backgroundColor = G.selColor;
+        uphcl.style.opacity         = parseInt(G.selOpacity,16) /255;
         new Control.ColorPicker( uphc, { 'swatch':uphcl, 'opacityField':uphoc });
 
         var upccg=$('userpconfirmcloseall');
@@ -1701,11 +1703,12 @@ include $file;
         var uphc=$('upserphighinp').value;
         var upho=$('upserphighopacityinp').value;
         out = out + "var selColor = '#" + uphc + "';\n";
-        out = out + "var selOpacity = " + upho + "';\n";
+        out = out + "var selOpacity = '" + upho + "';\n";
         G.selColor = "#" + uphc;
         G.selOpacity = upho;
         var soi = $('selopacityinp');
         soi.value = G.selOpacity;
+        updateSelColor(uphc,upho,'x');
         $('selcolorinp').value = selColor.replace(/^#/,'');
         var ces = $('colorexampleCANVAS-sel');
         ces.style.backgroundColor = selColor;
