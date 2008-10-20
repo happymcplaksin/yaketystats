@@ -27,6 +27,7 @@ Control.ColorPicker.prototype = {
     }, options || {});
     //this.swatch = $(this.options.swatch) || this.field;
     this.swatch = this.options.swatch
+    this.opacityField = this.options.opacityField
     this.rgb = {};
     this.hsv = {};
     this.isOpen = false;
@@ -48,7 +49,8 @@ Control.ColorPicker.prototype = {
           '<div id="colorpicker-bg-overlay" style="z-index: 1002;"></div>' +
           '<div id="colorpicker-selector"><img src="' + this.options.IMAGE_BASE + 'select.gif" width="11" height="11" alt="o" /></div></div>' +
           '<div id="colorpicker-hue-container"><img src="' + this.options.IMAGE_BASE + 'hue.png" id="colorpicker-hue-bg-img"><div id="colorpicker-hue-slider"><div id="colorpicker-hue-thumb"><img src="' + this.options.IMAGE_BASE + 'hline.png"></div></div></div>' + 
-          '<div id="colorpicker-footer"><span id="colorpicker-value">#<input type="text" onclick="this.select()" id="colorpicker-value-input" name="colorpicker-value" value=""></input></span><button id="colorpicker-okbutton">OK</button></div>'
+          '<div id="colorpicker-opacity-container"><img src="' + this.options.IMAGE_BASE + 'pickerbg.png" id="colorpicker-opacity-bg-image"><div id="colorpicker-opacity-slider"><div id="colorpicker-opacity-thumb"><img src="' + this.options.IMAGE_BASE + 'hline.png"></div></div></div>' + 
+          '<div id="colorpicker-footer"><span id="colorpicker-value">#<input type="text" onclick="this.select()" id="colorpicker-value-input" name="colorpicker-value" value=""></input><input type="text" id="colorpicker-opacity-value-input" name="colorpicker-opacity-value" value=""></input></span><button id="colorpicker-okbutton">OK</button></div>'
         document.body.appendChild(control);
       }
       Control.ColorPicker.CONTROL = {
@@ -58,6 +60,7 @@ Control.ColorPicker.prototype = {
         okButton : $("colorpicker-okbutton"),
         value : $("colorpicker-value"),
         input : $("colorpicker-value-input"),
+        opacityInput : $("colorpicker-opacity-value-input"),
         picker : new Draggable($('colorpicker-selector'), {
           snap: function(x, y) {
             return [
@@ -75,6 +78,12 @@ Control.ColorPicker.prototype = {
           axis: 'vertical',
           onChange: function(v) {
             Control.ColorPicker.activeColorPicker.updateHue(v);
+          }
+        }),
+        opacitySlider: new Control.Slider('colorpicker-opacity-thumb', 'colorpicker-opacity-slider', {
+          axis: 'vertical',
+          onChange: function(v) {
+            Control.ColorPicker.activeColorPicker.updateOpacity(v);
           }
         })
       };
@@ -96,7 +105,7 @@ Control.ColorPicker.prototype = {
   },
   toggle : function(event) {
     this[(this.isOpen) ? "close" : "open"](event);
-    Event.stop(event);    
+    Event.stop(event);
   },
   open : function(event) {
     Control.colorPickers.each(function(colorPicker) {
@@ -134,6 +143,24 @@ Control.ColorPicker.prototype = {
     this.control.pickerArea.style.backgroundColor = "rgb(" + rgb[0] + ", " + rgb[1] + ", " + rgb[2] + ")";
     this.update();
   },
+  updateOpacity : function(v) {
+    var ov = v;
+    v *= 255;
+    v = Math.floor(v);
+    v = (0 - v) + 255;
+    v = v.toString(16);
+    if ( v.length == 1 ){
+        v = '0' + v;
+    }
+    ov *= 10;
+    ov = Math.floor(ov);
+    ov = (0 - ov) + 10;
+    this.control.opacityInput.value = v;
+    this.opacityField.value = v;
+    this.swatch.style.opacity = ov/10;
+    this.swatch.style.filter = 'alpha(opacity=' + ov*10 + ')';
+    this.update();
+  },
   updateFromFieldValue : function(event) {
     if (!this.isOpen) return;
     var field = (event && Event.findElement(event, "input")) || this.field;
@@ -143,6 +170,7 @@ Control.ColorPicker.prototype = {
     this.control.selector.style.left = Math.round(hsv[1] * this.control.pickerArea.offsetWidth) + "px";
     this.control.selector.style.top = Math.round((1 - hsv[2]) * this.control.pickerArea.offsetWidth) + "px";
     this.control.hueSlider.setValue((1 - hsv[0]));
+    this.control.opacitySlider.setValue((1 -(parseInt(this.opacityField.value,16)/255)));
   },
   updateSelector : function(event) {
     var xPos = Event.pointerX(event);
@@ -181,6 +209,6 @@ Control.ColorPicker.prototype = {
     this.control.input.value = this.field.value;
     this.updateSwatch();
     //if (this.options.onUpdate) this.options.onUpdate.bind(this)(this.field.value);
-    if (this.options.onUpdate) this.options.onUpdate.bind(this)( '#' + this.field.value, this.field.parentNode.id);
+    if (this.options.onUpdate) this.options.onUpdate.bind(this)( '#' + this.field.value, this.control.opacityInput.value, this.field.parentNode.id);
   }
 }

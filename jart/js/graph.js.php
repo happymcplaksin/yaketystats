@@ -22,6 +22,7 @@ include $file;
     var defaultsize        = 50;
     var tool               = 1;
     var selColor           = '#ff0000';
+    var selOpacity         = '56';
     var defaultCanvasColor = 'ffffff';
     var defaultconfirmcloseallgraphs = 1;
     var defaultconfirmdeleteplaylist = 1;
@@ -41,6 +42,7 @@ include $file;
         this.name     = '';
         this.drawtype = defaultdrawtype;
         this.display  = 1;
+        this.opacity  = 'ff';
     }
     function Graph(){
         this.avg         = 0;
@@ -111,9 +113,12 @@ include $file;
 
         var sci = $('selcolorinp');
         sci.value = selColor.replace(/^#/,'');
+        var soi = $('selopacityinp');
+        soi.value = G.selOpacity;
         var ces = $('colorexampleCANVAS-sel');
         ces.style.backgroundColor = selColor;
-        new Control.ColorPicker( sci, { 'swatch':ces, 'onUpdate':updateSelColor });
+        ces.style.opacity         = parseInt(G.selOpacity,16) /255;
+        new Control.ColorPicker( sci, { 'swatch':ces, 'onUpdate':updateSelColor, 'opacityField':soi });
 
         var ctc = $('dragtoolicon');
         var hil = $('seltoolicon');
@@ -156,8 +161,10 @@ include $file;
                 return;
         }
     }
-    function updateSelColor(color,me){
+    function updateSelColor(color,opacity,me){
         G.selColor = color;
+        G.selOpacity = opacity;
+        var opacity = parseInt(opacity,16) / 25.5;
         var l = $('colorexampleCANVAS-sel');
         l.style.backgroundColor = color;
         for (key in G.graphs){
@@ -167,6 +174,7 @@ include $file;
                     var sd;
                     if ( sd = $('seldiv-' + key) ){
                         sd.style.backgroundColor = color;
+                        setOpacity(sd,opacity);
                     }
                 }
             }
@@ -315,13 +323,14 @@ include $file;
         deIdList(myul,mygraph);
         createGraphImage(mygraph,0);
     }
-    function updateColor(color,me){
+    function updateColor(color,opacity,me){
         var mygraph = me.replace(/pathli-(\d+).*/,'$1');
         var mypath  = me.replace(/pathli-\d+_(\d+)/,'$1');
         G.graphs[mygraph].paths[mypath].color = color;
+        G.graphs[mygraph].paths[mypath].opacity = opacity;
         createGraphImage(mygraph,0);
     }
-    function updateCanvas(color,me){
+    function updateCanvas(color,opacity,me){
         var mygraph = me.replace(/linecontrolcontainerfor-(\d+)/,'$1');
         G.graphs[mygraph].canvas = color.replace(/#/,'');
         createGraphImage(mygraph,0);
@@ -1058,6 +1067,9 @@ include $file;
         }else{
             inp.value      = 'FFFFFF';
         }
+        var oinp       = document.createElement('input');
+        oinp.style.display = 'none';
+        oinp.id        = 'canvasopacityfor-' + me;
         var lab        = document.createElement('label');
         lab.className  = 'colorexample';
         lab.id         = 'colorexampleCANVAS-' + me;
@@ -1067,11 +1079,12 @@ include $file;
             G.graphs[me].canvas       = 'FFFFFF';
             lab.style.backgroundColor = '#FFFFFF';
         }
-        new Control.ColorPicker( inp, { 'swatch':lab, 'onUpdate':updateCanvas });
+        new Control.ColorPicker( inp, { 'swatch':lab, 'opacityField':oinp, 'onUpdate':updateCanvas });
         var br             = document.createElement('br');
         linecontainer.appendChild(br);
         linecontainer.appendChild(span);
         linecontainer.appendChild(inp);
+        linecontainer.appendChild(oinp);
         linecontainer.appendChild(lab);
         //BLEND
         var blend = document.createElement('img');
@@ -1211,13 +1224,24 @@ include $file;
         inp.id         = 'colorfor-' + me + '_' + i;
         inp.className  = 'colorfor';
         inp.value      = path.color.replace(/#/,'');
+        var oinp       = document.createElement('input');
+        oinp.style.display = 'none';
+        oinp.id        = 'opacityfor-' + me + '_' + i;
+        if ( path.opacity !== undefined ){
+            oinp.value     = path.opacity;
+        }else{
+            oinp.value     = 'ff';
+            path.opacity   = 'ff';
+        }
         var lab        = document.createElement('label');
         lab.className  = 'colorexample';
         lab.id         = 'colorexample' + me + i;
         lab.style.backgroundColor = path.color;
+        lab.style.opacity         = parseInt(path.opacity,16) /255;
         //Event.observe(lab,'click',colorPicker.display);
-        new Control.ColorPicker( inp, { 'swatch':lab, 'onUpdate':updateColor });
+        new Control.ColorPicker( inp, { 'swatch':lab, 'opacityField':oinp, 'onUpdate':updateColor });
         li.appendChild(inp);
+        li.appendChild(oinp);
         li.appendChild(lab);
 
         //LINE TYPE
@@ -1454,7 +1478,7 @@ include $file;
             seldiv.style.width           = '0px';
             seldiv.style.height          = G.graphs[me].ysize + 'px';
             seldiv.style.backgroundColor = G.selColor;
-            seldiv.style.opacity         = '0.5';
+            seldiv.style.opacity         = parseInt(G.selOpacity,16) /255;
             seldiv.className             = 'seldiv';
             var contain                  = $('overlaycontainerdiv-' + me);
             contain.appendChild(seldiv);
@@ -1631,16 +1655,18 @@ include $file;
         upt.value=G.tool;
 
         var upc=$('upserpcanvasinp');
+        var upoc=$('upserpcanvasopacityinp');
         upc.value=defaultCanvasColor.replace(/^#/,'');
         var upcl=$('userpcanvaslab');
         upcl.style.backgroundColor = '#' + defaultCanvasColor;
-        new Control.ColorPicker( upc, { 'swatch':upcl, });
+        new Control.ColorPicker( upc, { 'swatch':upcl, 'opacityField':upoc });
 
         var uphc=$('upserphighinp');
+        var uphoc=$('upserphighopacityinp');
         uphc.value=G.selColor.replace(/^#/,'');
         var uphcl=$('userphighlab');
         uphcl.style.backgroundColor = G.selColor;
-        new Control.ColorPicker( uphc, { 'swatch':uphcl, });
+        new Control.ColorPicker( uphc, { 'swatch':uphcl, 'opacityField':uphoc });
 
         var upccg=$('userpconfirmcloseall');
         upccg.checked = defaultconfirmcloseallgraphs;
@@ -1673,10 +1699,17 @@ include $file;
         G.defaultCanvasColor = upc;
 
         var uphc=$('upserphighinp').value;
+        var upho=$('upserphighopacityinp').value;
         out = out + "var selColor = '#" + uphc + "';\n";
+        out = out + "var selOpacity = " + upho + "';\n";
         G.selColor = "#" + uphc;
+        G.selOpacity = upho;
+        var soi = $('selopacityinp');
+        soi.value = G.selOpacity;
         $('selcolorinp').value = selColor.replace(/^#/,'');
-        $('colorexampleCANVAS-sel').style.backgroundColor = selColor;
+        var ces = $('colorexampleCANVAS-sel');
+        ces.style.backgroundColor = selColor;
+        ces.style.opacity         = parseInt(G.selOpacity,16) /255;
 
         var uca = 0;
         var upccg=$('userpconfirmcloseall').checked;
@@ -1778,6 +1811,6 @@ include $file;
                             '#F5F800', '#CDCFC4', '#BCBEB3', '#AAABA1',
                             '#8F9286', '#797C6E', '#2E3127', '#0000FF');
     return {
-        'init': init, 'drawGraph': drawGraph, 'addRrdToGraph': addRrdToGraph, 'cg': cg, 'graphs': graphs, 'selColor': selColor, 'addGraph': addGraph, 'defaultpathlimit': defaultpathlimit, 'closeAllGraphs': closeAllGraphs, 'drawAllGraphs': drawAllGraphs, 'setAllGraphTimes':setAllGraphTimes, 'autoRefreshReal':autoRefreshReal, 'createAllGraphImages':createAllGraphImages, 'createGraphImage':createGraphImage, 'autoRefreshSetup':autoRefreshSetup, setAllGraphSizes:setAllGraphSizes, 'tool':tool, resetSizeForAll:resetSizeForAll, 'defaultconfirmcloseallgraphs':defaultconfirmcloseallgraphs, 'defaultconfirmdeleteplaylist':defaultconfirmdeleteplaylist, 'defaultstarttime':defaultstarttime, 'defaultendtime':defaultendtime, 'defaultsize':defaultsize, 'defaultCanvasColor':defaultCanvasColor
+        'init': init, 'drawGraph': drawGraph, 'addRrdToGraph': addRrdToGraph, 'cg': cg, 'graphs': graphs, 'selColor': selColor, 'selOpacity': selOpacity, 'addGraph': addGraph, 'defaultpathlimit': defaultpathlimit, 'closeAllGraphs': closeAllGraphs, 'drawAllGraphs': drawAllGraphs, 'setAllGraphTimes':setAllGraphTimes, 'autoRefreshReal':autoRefreshReal, 'createAllGraphImages':createAllGraphImages, 'createGraphImage':createGraphImage, 'autoRefreshSetup':autoRefreshSetup, setAllGraphSizes:setAllGraphSizes, 'tool':tool, resetSizeForAll:resetSizeForAll, 'defaultconfirmcloseallgraphs':defaultconfirmcloseallgraphs, 'defaultconfirmdeleteplaylist':defaultconfirmdeleteplaylist, 'defaultstarttime':defaultstarttime, 'defaultendtime':defaultendtime, 'defaultsize':defaultsize, 'defaultCanvasColor':defaultCanvasColor
     }
 })();

@@ -50,6 +50,7 @@ class Graph {
         $this->number = $number;
         $this->paths = $this->json->decode($paths);
         $this->redrawoverlay = $dooverlay;
+        $this->debugLog($paths);
     }
 
     public function commentArgs(){
@@ -217,6 +218,9 @@ class Graph {
             if ( $drawt{0} == '-' ){
                 $drawt = substr($drawt, 1);
                 $negative = 1;
+            }
+            if ( isset($v->opacity) ){
+                $color .= $v->opacity;
             }
             if ( $drawt == 'STACK' ){
                 $drawt = 'AREA';
@@ -489,7 +493,6 @@ function debugLogfiles(){
         }
     }
     $out = stripslashes($json->encode($out));
-    $out = $json->encode($out);
     $out .= "\n";
     return $out;
 }
@@ -1964,7 +1967,7 @@ $version = "2.1";
                             <br>
                             <input type="radio" name="seltools" value="select" id="seltoolssel" checked><label for="seltoolssel"><img src="img/stock_draw-rounded-rectangle.png" title="Selection for Display Only"></label>
                         </form>
-                        <input id="selcolorinp" value="#000000" style="display:none"><label class="colorexample" id="colorexampleCANVAS-sel" style="background-color:#000000" title="Hightlight Color"></label><img src="img/stock_3d-color-picker-16.png" style="margin-left: 1em;" title="Highlight Color">
+                        <input id="selcolorinp" value="#000000" style="display:none"><input id="selopacityinp" value="" style="display:none"><label class="colorexample" id="colorexampleCANVAS-sel" style="background-color:#000000" title="Hightlight Color"></label><img src="img/stock_3d-color-picker-16.png" style="margin-left: 1em;" title="Highlight Color">
                         <br>
                     </div>
                 </div>
@@ -2019,10 +2022,12 @@ $version = "2.1";
 <strong>Canvas Color</strong>
 <label for="userpcanvas" class="colorexample" id="userpcanvaslab"> </label>
 <input type="text" id="upserpcanvasinp" style="display:none;"><br>
+<input type="text" id="upserpcanvasopacityinp" style="display:none;"><br>
 
 <strong>Highlight Color</strong>
 <label for="userphigh" class="colorexample" id="userphighlab"> </label>
 <input type="text" id="upserphighinp" style="display:none;"><br>
+<input type="text" id="upserphighopacityinp" style="display:none;"><br>
 
 <label for="userpconfirmcloseall">Confirm Close All Graphs</label>
 <input type="checkbox" id="userpconfirmcloseall"><br>

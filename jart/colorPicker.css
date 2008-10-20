@@ -3,7 +3,7 @@
 
 #colorpicker {
   position: absolute;
-  width: 145px;
+  width: 165px;
   height: 135px;
   overflow: hidden;
   background: #F9F9F9;
@@ -11,7 +11,7 @@
   z-index: 1000;
 }
 
-#colorpicker-hue-container {
+#colorpicker-hue-container, #colorpicker-opacity-container {
     position: absolute; 
     top: 4px;
     left: 120px; 
@@ -19,21 +19,30 @@
     height: 110px; 
 }
 
+#colorpicker-opacity-container {
+    left: 140px;
+}
+
 #colorpicker-hue-bg-img {
     width: 100%; 
     height: 100%; 
 }
 
-#colorpicker-hue-slider {
-    position: absolute; 
+#colorpicker-hue-slider, #colorpicker-opacity-slider {
+    position: absolute;
     top: 0;
     left: 0; 
     width: 100%;
     height: 100%; 
 }
 
-#colorpicker-hue-thumb { 
-    position: absolute; 
+#colorpicker-opacity-bg-image{
+    width: 18px;
+    height: 100px;
+}
+
+#colorpicker-hue-thumb, #opacity-thumb {
+    position: absolute;
     top: 0;
     left: 0;
     width: 18px; 
@@ -65,8 +74,8 @@
 }
 
 #colorpicker-bg,
-#colorpicker-bg-overlay { 
-  position: absolute; 
+#colorpicker-bg-overlay {
+  position: absolute;
   top: 0;
   left: 0;
   width: 100%;
@@ -74,12 +83,12 @@
   z-index: 1001;
   overflow: hidden;
 }
-#colorpicker-selector { 
-  position: absolute; 
+#colorpicker-selector {
+  position: absolute;
   top: 0px;
   left: 0px;
-  width: 11px; 
-  height: 11px; 
+  width: 11px;
+  height: 11px;
   z-index: 1009;
   margin-top: -6px;
   margin-left: -6px;
@@ -102,7 +111,9 @@
 }
 
 #colorpicker-value,
-#colorpicker-value-input {
+#colorpicker-value-input,
+#colorpicker-opacity-value,
+#colorpicker-opacity-value-input{
   font-size: 9px !important;
   font-family: Helvetica, Verdana, Sans-Serif;
   height: 10px;
@@ -110,6 +121,9 @@
 
 #colorpicker-value-input {
   width: 40px;
+}
+#colorpicker-opacity-value-input {
+  width: 2em;
 }
 #colorpicker-okbutton {
   float: right;
