@@ -27,7 +27,6 @@ if ( ! is_dir("graphs") || ! is_writable("graphs") ){
     print "Unable to find or write to the graphs directory. Please check permissions.\n";
     exit;
 }
-error_reporting(0);
 
 error_reporting(0);
 
