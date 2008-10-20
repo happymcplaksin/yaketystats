@@ -655,6 +655,7 @@ include $file;
             it.src         = image;
             it.height      = height;
             it.width       = width;
+            it.title       = G.graphs[graph].graphlabel;
             var gc         = $('graph-' + graph);
             var gcw        = width + 37;
             gc.style.width = gcw + "px";
