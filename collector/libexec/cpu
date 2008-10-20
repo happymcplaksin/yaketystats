@@ -116,7 +116,7 @@ sub doit {
     $u_col = 2;
     $s_col = 4;
     $io_col = 5;
-    $id_col = 6;
+    $id_col = -1;
   } else {
     # HP-UX and Solaris are the same
     if ( $g_os eq "hpux" || $g_os eq "solaris" ) {
