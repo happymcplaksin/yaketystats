@@ -270,8 +270,9 @@ include $file;
             alert('Graph is full, Move on.');
             return;
         }
+        var xrrd = rrd.replace(/^trend:/,'');
         G.graphs[mygraph].paths.each(function(path){
-            if ( path.path == rrd ){
+            if ( path.path == rrd || ( path.path == xrrd && path.isTrend == 1) ){
                 alert('You already have that path, buster!');
                 stupid = 1;
             }
@@ -1303,7 +1304,6 @@ include $file;
         setCurrentGraph(graph);
         G.graphs[graph].trending = 1;
         addRrdToGraph('trend:'+path,0);
-        //alert('graph:' + graph + ' path:' + path);
     }
     function toggleDsDisplay(e){
         var me = e.currentTarget.id.replace(/display-(\d+).*/,'$1');
