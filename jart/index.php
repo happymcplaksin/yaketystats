@@ -213,9 +213,11 @@ class Graph {
             $this->naniszero = 1;
         }
         foreach ($this->paths->paths as $v) {
+            /*
             if ( $v->display === 0 ){
                 continue;
             }
+             */
             $color = escapeshellcmd(substr(trim($v->color),1));
             $drawt = escapeshellcmd(trim($v->drawtype));
             if ( $drawt{0} == '-' ){
@@ -286,9 +288,13 @@ class Graph {
                         $rpn = "0,$rpn,-";
                         #$defs .= "CDEF:neg$defid=0,$defid,- ";
                         $this->defs[] = "CDEF:neg$defid=$rpn ";
-                        $this->lines[] = "$drawt:neg$defid#$color:'$name'$stack ";
+                        if ( $v->display != 0 ){
+                            $this->lines[] = "$drawt:neg$defid#$color:'$name'$stack ";
+                        }
                     }else{
-                        $this->lines[] = "$drawt:$defid#$color:'$name'$stack ";
+                        if ( $v->display != 0 ){
+                            $this->lines[] = "$drawt:$defid#$color:'$name'$stack ";
+                        }
                     }
                 }
                 if ( $this->paths->avg ){
@@ -304,7 +310,7 @@ class Graph {
                     $this->defs[] = "VDEF:tg$defid=$defid,MINIMUM ";
                 }
             }
-            if ( $this->paths->justtotal == 0 || $v->path == 'total' || $v->path == 'avg' ){
+            if ( ($this->paths->justtotal == 0 || $v->path == 'total' || $v->path == 'avg') && $v->display == 1 ){
                 $this->lines[] = "'COMMENT:\\n' ";
                 $this->lines[] = "VDEF:AVG$i=$defid,AVERAGE ";
                 $this->lines[] = "'GPRINT:AVG$i:\\tAv%9.2lf%s' ";

@@ -527,10 +527,18 @@ include $file;
         //first turn off the Sortable
         //Sortable.destroy(list);
         destroyDraggable(me);
+        //see if we have any trends for that line
+        var gp = G.graphs[me].paths[pathno].path;
+        var amItrend = G.graphs[me].paths[pathno].isTrend;
         //then rebuild the array
         G.graphs[me].paths.each(function(path){
             if ( i != pathno ){
-                tmp.push(path);
+                if ( path.path == gp && ! amItrend){
+                    trendele=$('pathli-' + me + '_' + i);
+                    list.removeChild(trendele);
+                }else{
+                    tmp.push(path);
+                }
             }else{
                 if ( path.path == 'total' ){
                     G.graphs[me].total = 0;
