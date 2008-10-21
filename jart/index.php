@@ -218,6 +218,9 @@ class Graph {
                 continue;
             }
              */
+            if ( ! defined($v->display) ){
+                $v->display = 1;
+            }
             $color = escapeshellcmd(substr(trim($v->color),1));
             $drawt = escapeshellcmd(trim($v->drawtype));
             if ( $drawt{0} == '-' ){
