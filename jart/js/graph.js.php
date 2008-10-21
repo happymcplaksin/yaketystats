@@ -38,6 +38,7 @@ include $file;
     function Path(){
         this.path     = '';
         this.color    = '';
+        this.isTrend  = 0;
         this.name     = '';
         this.drawtype = defaultdrawtype;
         this.display  = 1;
@@ -59,6 +60,7 @@ include $file;
         this.size        = parseInt(G.defaultsize);
         this.start       = G.defaultstarttime;
         this.total       = 0;
+        this.trending    = 0;
         this.vertlabel   = '';
         this.xsize       = 'nan';
         this.ysize       = 'nan';
@@ -278,6 +280,12 @@ include $file;
             return;
         }
         var tmp = new Path();
+        var prefix = '';
+        if ( rrd.match(/^trend:/) ){
+            prefix = "Trend:";
+            rrd = rrd.replace(/^trend:/,'');
+            tmp.isTrend = 1;
+        }
         tmp.path = rrd;
         tmp.color = getColor();
         if ( rrd != 'total' && rrd != 'avg' ){
@@ -286,6 +294,7 @@ include $file;
         }else{
             tmp.name  = rrd;
         }
+        tmp.name = prefix + tmp.name;
         G.graphs[mygraph].paths.push(tmp);
         if ( $('graph-' + mygraph) ){
             var d = $('controlsfor-' + mygraph);
@@ -1262,6 +1271,9 @@ include $file;
             select.appendChild(option);
         });
         li.appendChild(select);
+        //DISPLAY CHECKBOX
+        var txt = document.createTextNode(' | ');
+        li.appendChild(txt);
         var dcb       = document.createElement('input');
         dcb.type      = 'checkbox';
         dcb.title     = 'Display this DS';
@@ -1273,7 +1285,25 @@ include $file;
         }
         li.appendChild(dcb);
         Event.observe(dcb,'change',function(e){toggleDsDisplay(e)}.bindAsEventListener());
+        //TREND ICON
+        if ( path.isTrend === undefined || path.isTrend == 0 ){
+            var txt = document.createTextNode(' | ');
+            li.appendChild(txt);
+            var img = document.createElement('img');
+            img.src = 'img/sc27059.png';
+            img.className = 'clickable';
+            img.title     = 'Trend this line';
+            li.appendChild(img);
+            var p = path.path;
+            Event.observe(img,'click',function(){addTrendLine(p,me)}.bindAsEventListener());
+        }
         return li;
+    }
+    function addTrendLine(path,graph){
+        setCurrentGraph(graph);
+        G.graphs[graph].trending = 1;
+        addRrdToGraph('trend:'+path,0);
+        //alert('graph:' + graph + ' path:' + path);
     }
     function toggleDsDisplay(e){
         var me = e.currentTarget.id.replace(/display-(\d+).*/,'$1');

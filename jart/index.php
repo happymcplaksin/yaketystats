@@ -111,6 +111,8 @@ class Graph {
         $this->createCommandLine();
         $str = exec($this->cmd . " 2>&1",$output,$retval);
         if ( $retval != 0 ){
+            $this->debugLog($output,$out,$this->args,$this->defs);
+            $this->debugWriteLog();
             //FIX
             $out[] = 'ERROR';
             $out[] = implode(" ", $output). " $retval $args";
@@ -206,6 +208,7 @@ class Graph {
         $fakerrds  = array('total','avg');
         $i         = 0;
         $rra       = 'MAX';
+        $defables  = array();
         if ($this->paths->total == 1 || $this->paths->total == 1 ){
             $this->naniszero = 1;
         }
@@ -251,12 +254,26 @@ class Graph {
             }elseif ( $v->path == 'avg' ){
                 $defid = 'average';
                 $this->lines[] = " $drawt:$defid#$color:Average$stack ";
+            }elseif ( $v->isTrend == 1 ){
+                $this->debugLog('vname',$v->name);
+                $otherdefid = $defables[$path];
+                if (empty($otherdefid) ){
+                    continue;
+                }
+                $slide = floor(($this->paths->end - $this->paths->start)/2);
+                $name = addcslashes($v->name,':');
+                $slide_start = $this->paths->start - $slide;
+                $slide_end = $this->paths->end + $slide; 
+                $this->defs[] = "DEF:${otherdefid}slide=$path:$ds:$rra:start=${slide_start}:end=${slide_end} ";
+                $this->defs[] = "CDEF:${otherdefid}trend=${otherdefid}slide,$slide,TRENDNAN ";
+                $this->lines[] = " $drawt:${otherdefid}trend#$color:'$name'$stack ";
             }else{
                 if ( ! $this->rrdlast ){
                     $this->rrdlast = my_rrd_last($path);
                 }
                 // $i adds some uniqueness in case someone dupes a color
                 $defid  = "WUB$i";
+                $defables["$path"] = $defid;
                 if ( $this->naniszero == 1 ) {
                   # CDEF:result=value,UN,0,value,IF
                   $rpn = "${defid},UN,0,${defid},IF";
