@@ -530,6 +530,7 @@ include $file;
         //see if we have any trends for that line
         var gp = G.graphs[me].paths[pathno].path;
         var amItrend = G.graphs[me].paths[pathno].isTrend;
+        var trending = 0;
         //then rebuild the array
         G.graphs[me].paths.each(function(path){
             if ( i != pathno ){
@@ -538,6 +539,9 @@ include $file;
                     list.removeChild(trendele);
                 }else{
                     tmp.push(path);
+                    if ( path.isTrend ){
+                        trending = 1;
+                    }
                 }
             }else{
                 if ( path.path == 'total' ){
@@ -560,6 +564,7 @@ include $file;
         }
         //make the tmp array the real deal
         G.graphs[me].paths = tmp;
+        G.graphs[me].trending = trending;
         //remove the li
         list.removeChild(ele);
         var i=0;
