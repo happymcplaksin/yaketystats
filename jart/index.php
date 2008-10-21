@@ -268,7 +268,9 @@ class Graph {
                 $slide_end = $this->paths->end + $slide; 
                 $this->defs[] = "DEF:${otherdefid}slide=$path:$ds:$rra:start=${slide_start}:end=${slide_end} ";
                 $this->defs[] = "CDEF:${otherdefid}trend=${otherdefid}slide,$slide,TRENDNAN ";
-                $this->lines[] = " $drawt:${otherdefid}trend#$color:'$name'$stack ";
+                if ( $v->display != 0 ){
+                    $this->lines[] = " $drawt:${otherdefid}trend#$color:'$name'$stack ";
+                }
             }else{
                 if ( ! $this->rrdlast ){
                     $this->rrdlast = my_rrd_last($path);
