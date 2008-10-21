@@ -213,11 +213,6 @@ class Graph {
             $this->naniszero = 1;
         }
         foreach ($this->paths->paths as $v) {
-            /*
-            if ( $v->display === 0 ){
-                continue;
-            }
-             */
             if ( ! defined($v->display) ){
                 $v->display = 1;
             }
