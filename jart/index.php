@@ -213,7 +213,8 @@ class Graph {
             $this->naniszero = 1;
         }
         foreach ($this->paths->paths as $v) {
-            if ( ! defined($v->display) ){
+            if ( ! isset($v->display) ){
+                $this->debugLog($v);
                 $v->display = 1;
             }
             $color = escapeshellcmd(substr(trim($v->color),1));
