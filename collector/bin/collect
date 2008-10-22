@@ -143,7 +143,7 @@ foreach $minute (keys %config) {
       # there are no more collectors to run
     INNER: while ( keys (%pids) < $g_max_collectors &&
 		   @{ $config{$minute} } != 0 ) {
-	$stat_checker = pop (@{ $config{$minute} });
+	$stat_checker = shift (@{ $config{$minute} });
 	if ( ! defined ($stat_checker) ) {
 	  next OUTER;
 	}
@@ -232,7 +232,7 @@ sub parse_config{
   if ( ! defined ($opt_p) &&
        ! defined ($opt_o) ) {
     debug ("Adding pusherman to 5-minute list.", 50);
-  push(@{ $config{5} },'pusherman');
+    push(@{ $config{5} },'pusherman');
   }
 }
 
