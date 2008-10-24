@@ -61,6 +61,7 @@ include $file;
         this.start       = G.defaultstarttime;
         this.total       = 0;
         this.trending    = 0;
+        this.trendingTotal = 0;
         this.vertlabel   = '';
         this.xsize       = 'nan';
         this.ysize       = 'nan';
@@ -293,6 +294,9 @@ include $file;
             tmp.name  = rrd.replace(/.*\/rrd\/([^.]*)[^/]*(.*)\.rrd$/,'$1$2');
             tmp.name  = tmp.name.replace(/\//g,' ');
         }else{
+	    if ( tmp.isTrend == 1 ){
+		G.graphs[mygraph].trendingTotal = 1;
+            }
             tmp.name  = rrd;
         }
         tmp.name = prefix + tmp.name;
@@ -531,6 +535,7 @@ include $file;
         var gp = G.graphs[me].paths[pathno].path;
         var amItrend = G.graphs[me].paths[pathno].isTrend;
         var trending = 0;
+        var trendingTotal = 0;
         //then rebuild the array
         G.graphs[me].paths.each(function(path){
             if ( i != pathno ){
@@ -541,10 +546,13 @@ include $file;
                     tmp.push(path);
                     if ( path.isTrend ){
                         trending = 1;
+                        if (path.path == 'total'){
+                            trendingTotal=1;
+                        }
                     }
                 }
             }else{
-                if ( path.path == 'total' ){
+                if ( path.path == 'total' && path.isTrend == 0){
                     G.graphs[me].total = 0;
                     G.graphs[me].justtotal = 0;
                     var jtf = $('justtotalfor-' + me);
@@ -565,6 +573,7 @@ include $file;
         //make the tmp array the real deal
         G.graphs[me].paths = tmp;
         G.graphs[me].trending = trending;
+        G.graphs[me].trendingTotal = trendingTotal;
         //remove the li
         list.removeChild(ele);
         var i=0;

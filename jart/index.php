@@ -31,7 +31,7 @@ if ( ! is_dir("graphs") || ! is_writable("graphs") ){
 error_reporting(0);
 
 class Graph {
-    public $args      = array("-i -W 'YaketyStats' -E --rigid ");
+    public $args      = array("-i -P -W 'YaketyStats' -E --rigid ");
     public $comments  = array();
     public $cmd       = array();
     public $defs      = array();
@@ -43,6 +43,7 @@ class Graph {
     public $naniszero = 0;
     public $nuber     = 0;
     public $paths     = array();
+    public $slidesize = 0;
     public $targs     = array();
 
     public function __construct($number,$paths,$dooverlay){
@@ -55,6 +56,11 @@ class Graph {
 
     public function commentArgs(){
         global $dateformat;
+        if ( $this->slidesize ){
+            $this->comments[] = "'COMMENT:\\n' ";
+            $this->comments[] = "'COMMENT:Sliding window size\\: ";
+            $this->comments[] = $this->secToEng($this->slidesize) . "' ";
+        }
         $this->comments[] = "'COMMENT:\\n' ";
         $this->comments[] = "'COMMENT:Times displayed\\: ";
         $this->comments[] = $this->dateEscape($dateformat, $this->paths->start);
@@ -84,7 +90,7 @@ class Graph {
         $out  = "$rrdtool graphv ". $this->nameGraph();
         $out .= " ". $this->minusb . $tmpa;
         $this->cmd = $out;
-        $this->debugLog($out);
+        $this->debugLog('command:',$out,"\n\n");
     }
 
     public function dateEscape($f,$t){
@@ -209,12 +215,19 @@ class Graph {
         $i         = 0;
         $rra       = 'MAX';
         $defables  = array();
+        $trendtotaldefs  = array();
         if ($this->paths->total == 1 || $this->paths->total == 1 ){
             $this->naniszero = 1;
         }
+        if ( $this->paths->trending == 1 ){
+            $slide = floor(($this->paths->end - $this->paths->start)/2);
+            $this->slidesize = $slide;
+            $slideStart = $this->paths->start - $slide;
+            $slideEnd = $this->paths->end + $slide; 
+        }
         foreach ($this->paths->paths as $v) {
             if ( ! isset($v->display) ){
-                $this->debugLog($v);
+                $this->debugLog('display was not set for ',$v);
                 $v->display = 1;
             }
             $color = escapeshellcmd(substr(trim($v->color),1));
@@ -249,26 +262,38 @@ class Graph {
             }
             $name = escapeshellcmd($v->name);
             $name = preg_replace('/[:]/','\\:',$name);
-            if ( $v->path == 'total' ){
-                $defid = 'total';
-                $this->lines[] = " $drawt:$defid#$color:Total$stack ";
-            }elseif ( $v->path == 'avg' ){
-                $defid = 'average';
-                $this->lines[] = " $drawt:$defid#$color:Average$stack ";
-            }elseif ( $v->isTrend == 1 ){
+            if ( $v->isTrend == 1 ){
                 $this->debugLog('vname',$v->name);
                 $otherdefid = $defables[$path];
                 if (empty($otherdefid) ){
                     continue;
                 }
-                $slide = floor(($this->paths->end - $this->paths->start)/2);
                 $name = addcslashes($v->name,':');
-                $slide_start = $this->paths->start - $slide;
-                $slide_end = $this->paths->end + $slide; 
-                $this->defs[] = "DEF:${otherdefid}slide=$path:$ds:$rra:start=${slide_start}:end=${slide_end} ";
-                $this->defs[] = "CDEF:${otherdefid}trend=${otherdefid}slide,$slide,TRENDNAN ";
+                $name = '<i>' . $name . '</i>';
+                $dashes = '';
+                if ( $drawt != 'AREA' ){
+                    $dashes = ':dashes';
+                }
+                if ( $otherdefid != 'total'){
+                    $this->defs[] = "DEF:${otherdefid}slide=$path:$ds:$rra:start=${slideStart}:end=${slideEnd} ";
+                    $this->defs[] = "CDEF:${otherdefid}trend=${otherdefid}slide,$slide,TRENDNAN ";
+                }else{
+                    $d2 = "CDEF:${otherdefid}trend=${otherdefid}slide,$slide,TRENDNAN ";
+                    $totalt = $d2;
+                }
                 if ( $v->display != 0 ){
-                    $this->lines[] = " $drawt:${otherdefid}trend#$color:'$name'$stack ";
+                    $this->lines[] = " $drawt:${otherdefid}trend#$color:'$name'$stack$dashes ";
+                }
+            }elseif ( $v->path == 'total' ){
+                $defid = 'total';
+                if ( $v->display != 0 ){
+                    $this->lines[] = " $drawt:$defid#$color:Total$stack ";
+                }
+                $defables["$path"] = $defid;
+            }elseif ( $v->path == 'avg' ){
+                $defid = 'average';
+                if ( $v->display != 0 ){
+                    $this->lines[] = " $drawt:$defid#$color:Average$stack ";
                 }
             }else{
                 if ( ! $this->rrdlast ){
@@ -276,6 +301,9 @@ class Graph {
                 }
                 // $i adds some uniqueness in case someone dupes a color
                 $defid  = "WUB$i";
+                if ( $this->paths->trendingTotal == 1 ){
+                    $trendtotaldefs[] = "DEF:TWUB$i=$path:$ds:$rra:start=${slideStart}:end=${slideEnd} ";
+                }
                 $defables["$path"] = $defid;
                 if ( $this->naniszero == 1 ) {
                   # CDEF:result=value,UN,0,value,IF
@@ -330,6 +358,32 @@ class Graph {
         if ( $this->paths->avg ){
             $this->defs[] = 'CDEF:average='.$avgargs.$a.',AVG ';
         }
+        if ( isset($totalt) ){
+            $this->defs[] = join('',$trendtotaldefs);
+            $muppy = preg_replace('/WUB([^,]*),UN,0,WUB[^,]*,IF/','TWUB$1',$totalargs);
+            $this->defs[] = "CDEF:totalslide=${muppy}${plusses} ";
+            $this->defs[] = $totalt;
+        }
+    }
+
+    public function secToEng($d_sec){
+        $d['weeks'] = floor($d_sec/604800);
+        $d_sec     -= $d['weeks'] * 604800;
+        $d['days']  = floor($d_sec/86400);
+        $d_sec     -= $d['days'] * 86400;
+        $d['hours'] = floor($d_sec/3600);
+        $d_sec     -= $d['hours'] * 3600;
+        $d['mins']  = floor($d_sec/60);
+        $d_sec     -= $d['mins'] * 60;
+        $d['secs']  = $d_sec;
+
+        $str = '';
+        foreach( $d as $key => $value ){
+            if ( $value  != '0' ){
+                $str .= "$value $key ";
+            }
+        }
+        return $str;
     }
 
     public function sizeArgs(){
