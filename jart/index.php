@@ -216,6 +216,7 @@ class Graph {
         $rra       = 'MAX';
         $defables  = array();
         $trendtotaldefs  = array();
+        $trenddefs = array();
         if ($this->paths->total == 1 || $this->paths->total == 1 ){
             $this->naniszero = 1;
         }
@@ -274,13 +275,19 @@ class Graph {
                 if ( $drawt != 'AREA' ){
                     $dashes = ':dashes';
                 }
-                if ( $otherdefid != 'total'){
-                    $this->defs[] = "DEF:${otherdefid}slide=$path:$ds:$rra:start=${slideStart}:end=${slideEnd} ";
-                    $this->defs[] = "CDEF:${otherdefid}trend=${otherdefid}slide,$slide,TRENDNAN ";
+                //if ( $otherdefid != 'total'){
+                    //$this->defs[] = "DEF:${otherdefid}slide=$path:$ds:$rra:start=${slideStart}:end=${slideEnd} ";
+                    //$this->defs[] = "CDEF:${otherdefid}trend=${otherdefid}slide,$slide,TRENDNAN ";
+                    $trenddefs[] = "VDEF:${otherdefid}slope=${otherdefid},LSLSLOPE ";
+                    $trenddefs[] = "VDEF:${otherdefid}int=${otherdefid},LSLINT ";
+                    $trenddefs[] = "VDEF:${otherdefid}corr=${otherdefid},LSLCORREL ";
+                    $trenddefs[] = "CDEF:${otherdefid}trend=${otherdefid},POP,${otherdefid}slope,COUNT,*,${otherdefid}int,+ ";
+                    /*
                 }else{
                     $d2 = "CDEF:${otherdefid}trend=${otherdefid}slide,$slide,TRENDNAN ";
                     $totalt = $d2;
                 }
+                     */
                 if ( $v->display != 0 ){
                     $this->lines[] = " $drawt:${otherdefid}trend#$color:'$name'$stack$dashes ";
                 }
@@ -302,10 +309,10 @@ class Graph {
                 // $i adds some uniqueness in case someone dupes a color
                 $defid  = "WUB$i";
                 if ( $this->paths->trendingTotal == 1 ){
-                    $trendtotaldefs[] = "DEF:TWUB$i=$path:$ds:$rra:start=${slideStart}:end=${slideEnd} ";
+                    //$trendtotaldefs[] = "DEF:TWUB$i=$path:$ds:$rra:start=${slideStart}:end=${slideEnd} ";
                 }
                 $defables["$path"] = $defid;
-                if ( $this->naniszero == 1 ) {
+                if ( $this->naniszero == 1 && $this->paths->trendingTotal == 0) {
                   # CDEF:result=value,UN,0,value,IF
                   $rpn = "${defid},UN,0,${defid},IF";
                 } else {
@@ -334,7 +341,7 @@ class Graph {
                     $totalargs .= "$rpn,";
                     $plusses   .= '+,';
                 }
-                if ( $justgraph != 1 ){
+                if ( $v->display == 1 ){
                     $this->defs[] = "VDEF:jg$defid=$defid,MAXIMUM ";
                     $this->defs[] = "VDEF:tg$defid=$defid,MINIMUM ";
                 }
@@ -363,6 +370,9 @@ class Graph {
             $muppy = preg_replace('/WUB([^,]*),UN,0,WUB[^,]*,IF/','TWUB$1',$totalargs);
             $this->defs[] = "CDEF:totalslide=${muppy}${plusses} ";
             $this->defs[] = $totalt;
+        }
+        foreach ($trenddefs as $t){
+            $this->defs[] = $t;
         }
     }
 
