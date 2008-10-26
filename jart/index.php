@@ -115,14 +115,14 @@ class Graph {
 
     public function draw(){
         $this->createCommandLine();
-        $str = exec($this->cmd . " 2>&1",$output,$retval);
+        $str = exec( $this->cmd . " 2>&1",$output,$retval);
         if ( $retval != 0 ){
             $this->debugLog($output,$out,$this->args,$this->defs);
             $this->debugWriteLog();
             //FIX
             $out[] = 'ERROR';
-            $out[] = implode(" ", $output). " $retval $args";
-            return $out;
+            $out[] = implode(" ", $output). " $retval ".$this->cmd;
+            return $this->json->encode($out);
         }else{
             $out[] = 'image';
             $out[] = $this->number;
