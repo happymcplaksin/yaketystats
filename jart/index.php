@@ -299,7 +299,7 @@ class Graph {
                     $totalt = $d2;
                 }
                      */
-                if ( $v->display != 0 ){
+                if ( $v->display != 0 && $this->iAmOverlay == 0 ){
                     $this->lines[] = " $drawt:${otherdefid}trend#$color:'$name'$stack$dashes ";
                 }
             }elseif ( $v->path == 'total' ){
@@ -382,8 +382,10 @@ class Graph {
             $this->defs[] = "CDEF:totalslide=${muppy}${plusses} ";
             $this->defs[] = $totalt;
         }
-        foreach ($trenddefs as $t){
-            $this->defs[] = $t;
+        if ( $this->iAmOverlay == 0 ){
+            foreach ($trenddefs as $t){
+                $this->defs[] = $t;
+            }
         }
     }
 
@@ -443,6 +445,7 @@ class Graph {
 
 class Overlay extends Graph {
 
+    public $iAmOverlay = 1;
     public function __construct($number,$paths){
         parent::__construct($number,$paths);
     }
