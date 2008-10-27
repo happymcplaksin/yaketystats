@@ -4,6 +4,7 @@
 #
 # This file is part of YaketyStats (see http://yaketystats.org/).
 # YaketyStats is free software: you can redistribute it and/or modify
+# vim: set sw=4 sts=4 et tw=0 :
 
 require("Sajax.php");
 require("JSON.php");
@@ -126,16 +127,13 @@ class Graph {
             $out[] = implode(" ", $output). " $retval ".$this->cmd;
             $out[] = $this->number;
         }else{
-            if ( $this->redrawoverlay ){
-                $ol = createGraphDragOverlay($this->number,$this->opaths,1);
-            }
-            $out[] = 'image';
-            $out[] = $this->number;
+            $out[] = 'image'; // [0]
+            $out[] = $this->number; // [1]
 
             $h = $this->grep('/^image_height =\s+/',$output);
             $w = $this->grep('/^image_width =\s+/',$output);
 
-            $out[] = $this->nameGraph() . "?" . mktime();
+            $out[] = $this->nameGraph() . "?" . mktime(); // [2]
 
             if ( empty($h) ){
                 $h = $this->paths->ysize;
@@ -144,24 +142,28 @@ class Graph {
                 $w = $this->paths->xsize;
             }
 
-            $out[] = $h;
-            $out[] = $w;
+            $out[] = $h; // [3]
+            $out[] = $w; // [4]
             $min    = $this->grep('/^value_min =\s+/',$output);
             $max    = $this->grep('/^value_max =\s+/',$output);
-            $out[]  = $min;
-            $out[]  = $max;
+            $out[]  = $min; // [5]
+            $out[]  = $max; // [6]
 
             $xoff   = $this->grep('/^graph_left =\s+/',$output);
             $yoff   = $this->grep('/^graph_top =\s+/',$output);
             $xsize  = $this->grep('/^graph_width =\s+/',$output);
             $ysize  = $this->grep('/^graph_height =\s+/',$output);
-            $out[]  = $xoff;
-            $out[]  = $yoff;
-            $out[]  = $xsize;
-            $out[]  = $ysize;
+            $out[]  = $xoff; // [7]
+            $out[]  = $yoff; // [8]
+            $out[]  = $xsize; // [9]
+            $out[]  = $ysize; // [10]
             //$out[]  = $this->redrawoverlay;
-            if ( isset($ol) ){
-                $out[]  = $ol;
+            if ( $this->redrawoverlay ){
+                $np = preg_replace('/"min":"[^"]*"/','"min":"'.$min.'"',$this->opaths);
+                $np = preg_replace('/"max":"[^"]*"/','"max":"'.$max.'"',$np);
+                $this->debugLog($min,$max,$this->opaths,$np);
+                $ol = createGraphDragOverlay($this->number,$np,1);
+                $out[]  = $ol; // [11]
             }
         }
         $this->debugLog($output,$out,$this->args,$this->defs);
