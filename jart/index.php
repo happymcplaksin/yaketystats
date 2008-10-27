@@ -264,7 +264,7 @@ class Graph {
                 $path  = escapeshellcmd($v->path);
             }
             if ( ! file_exists($v->path) && ! in_array($v->path,$fakerrds) ){
-                // there should probably be a log message here
+                $this->debugLog("BAD PATH:",$v->path);
                 continue;
             }
             if ( empty($this->minusb) ){
@@ -333,7 +333,7 @@ class Graph {
                 if ( $this->paths->justtotal == 0 ){
                     if ( $negative ){
                         $rpn = "0,$rpn,-";
-                        #$defs .= "CDEF:neg$defid=0,$defid,- ";
+                        //$defs .= "CDEF:neg$defid=0,$defid,- ";
                         $this->defs[] = "CDEF:neg$defid=$rpn ";
                         if ( $v->display != 0 ){
                             $this->lines[] = "$drawt:neg$defid#$color:'$name'$stack ";
