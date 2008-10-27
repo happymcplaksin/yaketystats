@@ -26,7 +26,7 @@ if ( file_exists($file) && is_readable($file) ){
 include $file;
 }
 ?>
-    // 0 == drag&CtC
+    // 0 == drag / CtC
     // 1 == highlight
     var slider;
     var gsliders           = new Array();
@@ -294,8 +294,8 @@ include $file;
             tmp.name  = rrd.replace(/.*\/rrd\/([^.]*)[^/]*(.*)\.rrd$/,'$1$2');
             tmp.name  = tmp.name.replace(/\//g,' ');
         }else{
-	    if ( tmp.isTrend == 1 ){
-		G.graphs[mygraph].trendingTotal = 1;
+            if ( tmp.isTrend == 1 ){
+                G.graphs[mygraph].trendingTotal = 1;
             }
             tmp.name  = rrd;
         }
@@ -675,7 +675,7 @@ include $file;
         if ( ! spin ){ return; }
         Element.show(spin);
         var paths = G.graphs[me].toJSONString();
-        x_createGraphImage(me,paths,dooverlay,debuglog,createGraphImageCB);
+        x_createGraphImage(me,paths,dooverlay,createGraphImageCB);
     }
     function createGraphImageCB(s){
         //console.log(s);
@@ -684,6 +684,7 @@ include $file;
         if ( result[0] == 'ERROR' ){
             //console.log(result[1]);
             dsPicker.handleError(result[1]);
+            Element.hide('spinnerfor-' + result[2]);
             return;
         }
         if ( result[0] == 'image' ){
@@ -720,10 +721,6 @@ include $file;
             ol.style.height = result[10] + 'px';
             Element.hide('spinnerfor-' + graph);
 
-            //create an overlay
-            if ( result[11] == 1 ){
-                createGraphDragOverlay(graph);
-            }
             var ole = $('seldiv-' + graph);
             if ( ole ){
                 if ( ole.style.left == 0 || ole.style.height === undefined ){
@@ -756,6 +753,10 @@ include $file;
                 var newoff = Math.floor(neww * perc);
                 ole.style.width = newsw + 'px';
                 ole.style.left = newoff + 'px';
+            }
+            // Use the overlay if there is one
+            if ( result[11] ){
+                createGraphDragOverlayCB(result[11]);
             }
         }
     }
@@ -1499,7 +1500,7 @@ include $file;
 
             Event.observe(pme,'mouseup',function(e){clickToCenterGraph(me,e)}.bindAsEventListener());
         }
-        mydrag = new Draggable('overlaydragdiv-' + me,{constraint:'horizontal',revert:false,ghosting:false,onEnd:function(el,e){graphDragHandler(el,e)}});
+        mydrag = new Draggable('overlaydragdiv-' + me,{constraint:'horizontal',revert:false,ghosting:false,onEnd:function(el,e){graphDragHandler(el,e)},starteffect:function(){return;}});
 
     }
     function createGraphOverlayDiv(me){
@@ -1538,7 +1539,7 @@ include $file;
         }
         overlayoffset[me] = Position.cumulativeOffset(pme);
         Event.observe(pme,'mousedown',selDragStart.bindAsEventListener());
-        mydrag = new Draggable(pme,{constraint:'horizontal',revert:true,ghosting:false,snap:[10,10],onEnd:function(el,e,me){selEnd(el,e,me)},change:function(e){selUpdate(mydrag.currentDelta(),overlayoffset[me],e,me)}});
+        mydrag = new Draggable(pme,{constraint:'horizontal',revert:false,reverteffect:function(){return;},ghosting:false,snap:[10,10],onEnd:function(el,e,me){selEnd(el,e,me)},change:function(e){selUpdate(mydrag.currentDelta(),overlayoffset[me],e,me)}});
     }
     function selDragStart(e){
         var el            = Event.element(e);
@@ -1600,12 +1601,16 @@ include $file;
         //console.log('NOT using cached image');
         var paths = G.graphs[graph].toJSONString();
         //console.log(paths);
-        x_createGraphDragOverlay(graph,paths,debuglog,createGraphDragImagesCB);
+        x_createGraphDragOverlay(graph,paths,createGraphDragOverlayCB);
     }
-    function createGraphDragImagesCB(s){
+    function createGraphDragOverlayCB(s){
         //console.log(s);
         //return;
-        var result = s.parseJSON();
+        if ( typeof(s) == 'string' ){
+            var result = s.parseJSON();
+        }else{
+            var result = s;
+        }
         //console.log(result);
         if ( result[0] == 'ERROR' ){
             //console.log(result[1]);
@@ -1616,23 +1621,18 @@ include $file;
             var graph     = result[1];
             var me        = $('overlaydragdiv-' + graph);
             var it        = $('odim-' + graph);
-            me.style.left = '-' + G.graphs[graph].xsize + 'px';
             Element.hide('spinnerfor-' + graph);
             var image  = result[2];
             var height = result[3];
             var width  = result[4];
-            //console.log(it);
-            //console.log(it.src);
-            if ( G.graphs[graph].mo == 1 ){
-                it.src     = image;
-                //console.log(it.src);
-                it.height  = height;
-                it.width   = width;
-            }
+            it.src     = image;
+            // not perfect, but as close as I can come knowing less than nothing
+            it.onload = function(){ me.style.left = '-' + G.graphs[graph].xsize + 'px'};
+            it.height  = height;
+            it.width   = width;
             var lastdrawn = image.replace(/.*\?(\d+)/,'$1');
-            //console.log('ol last drawn ',lastdrawn);
-            G.graphs[graph].ollastdrawn = lastdrawn;
-            G.graphs[graph].overlayimage     = image;
+            G.graphs[graph].ollastdrawn  = lastdrawn;
+            G.graphs[graph].overlayimage = image;
             return;
         }
         dsPicker.handleError(s);

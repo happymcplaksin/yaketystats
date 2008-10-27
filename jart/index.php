@@ -41,7 +41,8 @@ class Graph {
     public $lines     = array();
     public $minusb    = '';
     public $naniszero = 0;
-    public $nuber     = 0;
+    public $number    = 0;
+    public $opaths    = array();
     public $paths     = array();
     public $slidesize = 0;
     public $targs     = array();
@@ -49,6 +50,7 @@ class Graph {
     public function __construct($number,$paths,$dooverlay){
         $this->json  = new Services_JSON();
         $this->number = $number;
+        $this->opaths = $paths;
         $this->paths = $this->json->decode($paths);
         $this->redrawoverlay = $dooverlay;
         $this->debugLog($paths);
@@ -56,11 +58,13 @@ class Graph {
 
     public function commentArgs(){
         global $dateformat;
+        /*
         if ( $this->slidesize ){
             $this->comments[] = "'COMMENT:\\n' ";
             $this->comments[] = "'COMMENT:Sliding window size\\: ";
             $this->comments[] = $this->secToEng($this->slidesize) . "' ";
         }
+         */
         $this->comments[] = "'COMMENT:\\n' ";
         $this->comments[] = "'COMMENT:Times displayed\\: ";
         $this->comments[] = $this->dateEscape($dateformat, $this->paths->start);
@@ -117,13 +121,14 @@ class Graph {
         $this->createCommandLine();
         $str = exec( $this->cmd . " 2>&1",$output,$retval);
         if ( $retval != 0 ){
-            $this->debugLog($output,$out,$this->args,$this->defs);
-            $this->debugWriteLog();
             //FIX
             $out[] = 'ERROR';
             $out[] = implode(" ", $output). " $retval ".$this->cmd;
-            return $this->json->encode($out);
+            $out[] = $this->number;
         }else{
+            if ( $this->redrawoverlay ){
+                $ol = createGraphDragOverlay($this->number,$this->opaths,1);
+            }
             $out[] = 'image';
             $out[] = $this->number;
 
@@ -154,11 +159,15 @@ class Graph {
             $out[]  = $yoff;
             $out[]  = $xsize;
             $out[]  = $ysize;
-            $out[]  = $this->redrawoverlay;
+            //$out[]  = $this->redrawoverlay;
+            if ( isset($ol) ){
+                $out[]  = $ol;
+            }
         }
         $this->debugLog($output,$out,$this->args,$this->defs);
         $this->debugWriteLog();
-        return $this->json->encode($out);
+        //return $this->json->encode($out);
+        return $out;
     }
 
     public function error($msg){
@@ -461,8 +470,6 @@ class Overlay extends Graph {
 
 }
 
-class GraphException extends Exception {}
-
 function cleanempty($a){
     if ( ! is_array($a) ){
         return FALSE;
@@ -538,16 +545,23 @@ function convertTime($id,$str){
     return $out;
 }
 
-function createGraphDragOverlay($graphnumber,$paths,$debuglog){
+function createGraphDragOverlay($graphnumber,$paths,$fromphp=0){
     $o = new Overlay($graphnumber,$paths,0);
     $ov = $o->draw();
-    return $ov;
+    if ( $fromphp ){
+        return $ov;
+    }else{
+        $json  = new Services_JSON();
+        return $json->encode($ov);
+    }
 }
 
-function createGraphImage($graphnumber,$paths,$dooverlay,$debuglog,$overlay=0){
+function createGraphImage($graphnumber,$paths,$dooverlay){
     $g = new Graph($graphnumber,$paths,$dooverlay);
     $graph = $g->draw();
-    return $graph;
+    $json  = new Services_JSON();
+    return $json->encode($graph);
+    //return $graph;
 }
 
 function debugLoadLog($file,$n){
