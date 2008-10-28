@@ -226,12 +226,12 @@ class Graph {
         $i         = 0;
         $rra       = 'MAX';
         $defables  = array();
-        $trendtotaldefs  = array();
-        $trenddefs = array();
+        //$trendtotaldefs  = array();
+        $predctdefs = array();
         if ($this->paths->total == 1 || $this->paths->total == 1 ){
             $this->naniszero = 1;
         }
-        if ( $this->paths->trending == 1 ){
+        if ( $this->paths->predicting == 1 ){
             $slide = floor(($this->paths->end - $this->paths->start)/2);
             $this->slidesize = $slide;
             $slideStart = $this->paths->start - $slide;
@@ -274,7 +274,7 @@ class Graph {
             }
             $name = escapeshellcmd($v->name);
             $name = preg_replace('/[:]/','\\:',$name);
-            if ( $v->isTrend == 1 ){
+            if ( $v->isPredict == 1 ){
                 $this->debugLog('vname',$v->name);
                 $otherdefid = $defables[$path];
                 if (empty($otherdefid) ){
@@ -289,10 +289,10 @@ class Graph {
                 //if ( $otherdefid != 'total'){
                     //$this->defs[] = "DEF:${otherdefid}slide=$path:$ds:$rra:start=${slideStart}:end=${slideEnd} ";
                     //$this->defs[] = "CDEF:${otherdefid}trend=${otherdefid}slide,$slide,TRENDNAN ";
-                    $trenddefs[] = "VDEF:${otherdefid}slope=${otherdefid},LSLSLOPE ";
-                    $trenddefs[] = "VDEF:${otherdefid}int=${otherdefid},LSLINT ";
-                    $trenddefs[] = "VDEF:${otherdefid}corr=${otherdefid},LSLCORREL ";
-                    $trenddefs[] = "CDEF:${otherdefid}trend=${otherdefid},POP,${otherdefid}slope,COUNT,*,${otherdefid}int,+ ";
+                    $predictdefs[] = "VDEF:${otherdefid}slope=${otherdefid},LSLSLOPE ";
+                    $predictdefs[] = "VDEF:${otherdefid}int=${otherdefid},LSLINT ";
+                    $predictdefs[] = "VDEF:${otherdefid}corr=${otherdefid},LSLCORREL ";
+                    $predictdefs[] = "CDEF:${otherdefid}predict=${otherdefid},POP,${otherdefid}slope,COUNT,*,${otherdefid}int,+ ";
                     /*
                 }else{
                     $d2 = "CDEF:${otherdefid}trend=${otherdefid}slide,$slide,TRENDNAN ";
@@ -300,7 +300,7 @@ class Graph {
                 }
                      */
                 if ( $v->display != 0 && $this->iAmOverlay == 0 ){
-                    $this->lines[] = " $drawt:${otherdefid}trend#$color:'$name'$stack$dashes ";
+                    $this->lines[] = " $drawt:${otherdefid}predict#$color:'$name'$stack$dashes ";
                 }
             }elseif ( $v->path == 'total' ){
                 $defid = 'total';
@@ -319,11 +319,11 @@ class Graph {
                 }
                 // $i adds some uniqueness in case someone dupes a color
                 $defid  = "WUB$i";
-                if ( $this->paths->trendingTotal == 1 ){
+                if ( $this->paths->predictTotal == 1 ){
                     //$trendtotaldefs[] = "DEF:TWUB$i=$path:$ds:$rra:start=${slideStart}:end=${slideEnd} ";
                 }
                 $defables["$path"] = $defid;
-                if ( $this->naniszero == 1 && $this->paths->trendingTotal == 0) {
+                if ( $this->naniszero == 1 && $this->paths->predictTotal == 0) {
                   # CDEF:result=value,UN,0,value,IF
                   $rpn = "${defid},UN,0,${defid},IF";
                 } else {
@@ -383,7 +383,7 @@ class Graph {
             $this->defs[] = $totalt;
         }
         if ( $this->iAmOverlay == 0 ){
-            foreach ($trenddefs as $t){
+            foreach ($predictdefs as $t){
                 $this->defs[] = $t;
             }
         }
@@ -1618,42 +1618,11 @@ $version = "2.1";
                 return;
             }
             var pltimes = $F('playlisttimes');
-            //console.log(pltimes);
             if ( pltimes == 'on' ){
                 convertAllTimes();
             }else{
                 realSavePlaylist();
             }
-        }
-        function realSavePlaylist(){
-            var plname = $F('playlistname');
-            var pldir  = $F('playlistsubs') + '/';
-            //console.log(pldir+plname);
-            var playlist = G.graphs.toJSONString();
-            x_savePlaylist(plname,pldir,playlist,savePlaylistCB);
-        }
-        function toggleRegexTotals(){
-            var ts = $('regextotal');
-            var jt = $('regexjusttotal');
-            if ( jt.checked ){
-                ts.checked = true;
-            }
-        }
-        function regexDraw(){
-            showPicker(1);
-            var avg = $('regexavg');
-            if ( avg.checked ){
-                regexAddAvg();
-            }
-            var ts = $('regextotal');
-            if ( ts.checked ){
-                regexAddTotal();
-            }
-            var jt = $('regexjusttotal');
-            if ( jt.checked ){
-                regexJustTotal();
-            }
-            G.drawAllGraphs();
         }
         function regexSavePlaylist(){
             var plname = $F('regexsavename');
@@ -1684,6 +1653,36 @@ $version = "2.1";
             }
             var playlist = G.graphs.toJSONString();
             x_savePlaylist(plname,pldir,playlist,savePlaylistCB);
+        }
+        function realSavePlaylist(){
+            var plname = $F('playlistname');
+            var pldir  = $F('playlistsubs') + '/';
+            //console.log(pldir+plname);
+            var playlist = G.graphs.toJSONString();
+            x_savePlaylist(plname,pldir,playlist,savePlaylistCB);
+        }
+        function toggleRegexTotals(){
+            var ts = $('regextotal');
+            var jt = $('regexjusttotal');
+            if ( jt.checked ){
+                ts.checked = true;
+            }
+        }
+        function regexDraw(){
+            showPicker(1);
+            var avg = $('regexavg');
+            if ( avg.checked ){
+                regexAddAvg();
+            }
+            var ts = $('regextotal');
+            if ( ts.checked ){
+                regexAddTotal();
+            }
+            var jt = $('regexjusttotal');
+            if ( jt.checked ){
+                regexJustTotal();
+            }
+            G.drawAllGraphs();
         }
         function savePlaylistCB(s){
             //console.log(s);

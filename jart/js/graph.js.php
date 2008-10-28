@@ -36,13 +36,13 @@ include $file;
     var mydrag;
 
     function Path(){
-        this.path     = '';
-        this.color    = '';
-        this.isTrend  = 0;
-        this.name     = '';
-        this.drawtype = defaultdrawtype;
-        this.display  = 1;
-        this.opacity  = 'ff';
+        this.path      = '';
+        this.color     = '';
+        this.isPredict = 0;
+        this.name      = '';
+        this.drawtype  = defaultdrawtype;
+        this.display   = 1;
+        this.opacity   = 'ff';
     }
     function Graph(){
         this.avg         = 0;
@@ -60,8 +60,8 @@ include $file;
         this.size        = parseInt(G.defaultsize);
         this.start       = G.defaultstarttime;
         this.total       = 0;
-        this.trending    = 0;
-        this.trendingTotal = 0;
+        this.predicting  = 0;
+        this.predictTotal = 0;
         this.vertlabel   = '';
         this.xsize       = 'nan';
         this.ysize       = 'nan';
@@ -271,9 +271,9 @@ include $file;
             alert('Graph is full, Move on.');
             return;
         }
-        var xrrd = rrd.replace(/^trend:/,'');
+        var xrrd = rrd.replace(/^predict:/,'');
         G.graphs[mygraph].paths.each(function(path){
-            if ( path.path == rrd || ( path.path == xrrd && path.isTrend == 1) ){
+            if ( path.path == rrd || ( path.path == xrrd && path.isPredict == 1) ){
                 alert('You already have that path, buster!');
                 stupid = 1;
             }
@@ -283,10 +283,10 @@ include $file;
         }
         var tmp = new Path();
         var prefix = '';
-        if ( rrd.match(/^trend:/) ){
-            prefix = "Trend:";
-            rrd = rrd.replace(/^trend:/,'');
-            tmp.isTrend = 1;
+        if ( rrd.match(/^predict:/) ){
+            prefix = "Predict:";
+            rrd = rrd.replace(/^predict:/,'');
+            tmp.isPredict = 1;
         }
         tmp.path = rrd;
         tmp.color = getColor();
@@ -294,8 +294,8 @@ include $file;
             tmp.name  = rrd.replace(/.*\/rrd\/([^.]*)[^/]*(.*)\.rrd$/,'$1$2');
             tmp.name  = tmp.name.replace(/\//g,' ');
         }else{
-            if ( tmp.isTrend == 1 ){
-                G.graphs[mygraph].trendingTotal = 1;
+            if ( tmp.isPredict == 1 ){
+                G.graphs[mygraph].predictTotal = 1;
             }
             tmp.name  = rrd;
         }
@@ -531,28 +531,28 @@ include $file;
         //first turn off the Sortable
         //Sortable.destroy(list);
         destroyDraggable(me);
-        //see if we have any trends for that line
+        //see if we have any predictions for that line
         var gp = G.graphs[me].paths[pathno].path;
-        var amItrend = G.graphs[me].paths[pathno].isTrend;
-        var trending = 0;
-        var trendingTotal = 0;
+        var amIpredict = G.graphs[me].paths[pathno].isPredict;
+        var predicting = 0;
+        var predictTotal = 0;
         //then rebuild the array
         G.graphs[me].paths.each(function(path){
             if ( i != pathno ){
-                if ( path.path == gp && ! amItrend){
-                    trendele=$('pathli-' + me + '_' + i);
-                    list.removeChild(trendele);
+                if ( path.path == gp && ! amIpredict){
+                    predictele=$('pathli-' + me + '_' + i);
+                    list.removeChild(predictele);
                 }else{
                     tmp.push(path);
-                    if ( path.isTrend ){
-                        trending = 1;
+                    if ( path.isPredict ){
+                        predicting = 1;
                         if (path.path == 'total'){
-                            trendingTotal=1;
+                            predictTotal=1;
                         }
                     }
                 }
             }else{
-                if ( path.path == 'total' && path.isTrend == 0){
+                if ( path.path == 'total' && path.isPredict == 0){
                     G.graphs[me].total = 0;
                     G.graphs[me].justtotal = 0;
                     var jtf = $('justtotalfor-' + me);
@@ -572,8 +572,8 @@ include $file;
         }
         //make the tmp array the real deal
         G.graphs[me].paths = tmp;
-        G.graphs[me].trending = trending;
-        G.graphs[me].trendingTotal = trendingTotal;
+        G.graphs[me].predicting = predicting;
+        G.graphs[me].predictTotal = predictTotal;
         //remove the li
         list.removeChild(ele);
         var i=0;
@@ -1309,24 +1309,24 @@ include $file;
         }
         li.appendChild(dcb);
         Event.observe(dcb,'change',function(e){toggleDsDisplay(e)}.bindAsEventListener());
-        //TREND ICON
-        if ( path.isTrend === undefined || path.isTrend == 0 ){
+        //PREDICT ICON
+        if ( path.isPredict === undefined || path.isPredict == 0 ){
             var txt = document.createTextNode(' | ');
             li.appendChild(txt);
             var img = document.createElement('img');
             img.src = 'img/sc27059.png';
             img.className = 'clickable';
-            img.title     = 'Trend this line';
+            img.title     = 'Predict this line';
             li.appendChild(img);
             var p = path.path;
-            Event.observe(img,'click',function(){addTrendLine(p,me)}.bindAsEventListener());
+            Event.observe(img,'click',function(){addPredictLine(p,me)}.bindAsEventListener());
         }
         return li;
     }
-    function addTrendLine(path,graph){
+    function addPredictLine(path,graph){
         setCurrentGraph(graph);
-        G.graphs[graph].trending = 1;
-        addRrdToGraph('trend:'+path,0);
+        G.graphs[graph].predicting = 1;
+        addRrdToGraph('predict:'+path,0);
     }
     function toggleDsDisplay(e){
         var me = e.currentTarget.id.replace(/display-(\d+).*/,'$1');
