@@ -82,10 +82,10 @@ sub doit {
   foreach $host (keys (%econfig)) {
     foreach $oid (keys (%{ $econfig{$host} })) {
       $path = $econfig{$host}{$oid}{path};
-      if ( defined ($stupid{$path}) ) {
+      if ( defined ($stupid{"${host}.${path}"}) ) {
 	fileit ("Hey!  You already collected $path!  I refuse to do it again.");
       } else {
-	$stupid{$path} = 1;
+	$stupid{"${host}.${path}"} = 1;
 	$cmd = get_path ("snmpget");
 	$cmd = "$cmd -v1 -c '$snmp_community' $host $oid";
 	($status, @data) = run_prg ($cmd, $g_default_timeout);
