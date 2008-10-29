@@ -21,6 +21,15 @@ dir="`grep '^rolled_dir' /usr/local/yaketystats/etc/server.conf | awk '{print \$
 # Delete old logs
 /usr/bin/find $dir -type f ! -mtime -14 -exec /bin/rm -f {} \;
 
-# Compress those we keep
-/usr/bin/find $dir -type f | grep -v 'gz$' | xargs -i gzip {}
+# Tar & compress those we keep
+for hostdir in `ls -d $dir/*`
+do
+  cd $hostdir
+  if [ $? = 0 ]
+  then
+    file="`date +%m-%d-%y`.tar"
+    tar cf $file `ls | grep -v 'z$'`
+    gzip $file
+  fi
+done
 
