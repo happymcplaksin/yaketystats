@@ -861,7 +861,8 @@ include $file;
 
         //GRAPH
         var img            = document.createElement('img');
-        img.src            = 'img/scanner-transparent-back.gif';
+        //img.src            = 'img/scanner-transparent-back.gif';
+        img.src            = 'img/14-1.gif';
         //img.src            = 'fortune.php';
         img.border         = '0';
         //img.height         = 223;
