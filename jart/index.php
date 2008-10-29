@@ -898,8 +898,10 @@ function ls_dir($dir){
     }
 }
 
-function massAdd($path,$limit){
-    $out  = recurseForMassAdd($path,$limit,null);
+function massAdd($path,$limit,$target){
+    $out  = array($target);
+    $nout = recurseForMassAdd($path,$limit,null);
+    $out  = array_merge($out , $nout);
     $json = new Services_JSON();
     $out  = $json->encode($out);
     $out  = stripslashes($out);
@@ -1186,6 +1188,7 @@ $version = "2.1";
 ?>
     var debuglog = 0;
     var saveplct = 0;
+    var alls     = 0;
 
     function debugLogTog(){
         if ( $F('debuglog') == 'on' ){
@@ -1219,25 +1222,35 @@ $version = "2.1";
             }
         }
 
-        function massAdd(path){
-            //alert('mass adding ' + path);
-            x_massAdd(path,G.defaultpathlimit,massAddCB);
+        function massAdd(e,path){
+            if ( e.target.id ){
+                e.target.innerHTML = '<img src="img/scanner-transparent-back.gif" class="allthrobber">';
+            }
+            x_massAdd(path,G.defaultpathlimit,e.target.id,massAddCB);
         }
 
         function massAddCB(s){
             var mypaths = s.parseJSON();
+            var target  = '';
             //console.log(mypaths);
+            var i=0;
             mypaths.each(function(paths){
-                G.addGraph();
-                var label = paths[0].replace(/.*\/([^/]+\/[^/]+)\/[^/]+.rrd/,'$1');
-                G.graphs[G.cg].graphlabel = label;
-                paths.each(function(path){
-                    if ( path != '' ){
-                        G.addRrdToGraph(path,0);
-                    }
-                })
+                if ( i == 0 ){
+                    target  = paths;
+                    i++;
+                }else{
+                    G.addGraph();
+                    var label = paths[0].replace(/.*\/([^/]+\/[^/]+)\/[^/]+.rrd/,'$1');
+                    G.graphs[G.cg].graphlabel = label;
+                    paths.each(function(path){
+                        if ( path != '' ){
+                            G.addRrdToGraph(path,0);
+                        }
+                    })
+                }
             })
             G.drawAllGraphs();
+            $(target).innerHTML = '[All]';
         }
 
         function showTreeChild(e,p){
@@ -1277,10 +1290,12 @@ $version = "2.1";
                     if ( ! path.match(/.*\/playlists\/.*/) ){
                         var span = document.createElement('span');
                         span.className = 'clickable smalltxt';
+                        span.id = 'alls-' + alls;
+                        alls++;
                         var txt  = document.createTextNode( ' [All]' );
                         span.appendChild(txt);
                         //attach the event listener
-                        Event.observe(span,'click',function(){ massAdd( path) }.bindAsEventListener());
+                        Event.observe(span,'click',function(e){ massAdd(e,path) }.bindAsEventListener());
                         pdiv.appendChild(span);
                     }
                     hider.appendChild(pdiv);
@@ -1585,10 +1600,12 @@ $version = "2.1";
                 hostDiv.appendChild(span);
                 var span = document.createElement('span');
                 span.className = 'clickable smalltxt';
+                span.id        = 'alls-' + alls;
+                alls++;
                 var txt  = document.createTextNode( ' [All]' );
                 span.appendChild(txt);
                 //attach the event listener
-                Event.observe(span,'click',function(){ massAdd(path) }.bindAsEventListener());
+                Event.observe(span,'click',function(e){ massAdd(e,path) }.bindAsEventListener());
                 hostDiv.appendChild(span);
                 navDiv.appendChild(hostDiv);
             })
