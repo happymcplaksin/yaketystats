@@ -1140,7 +1140,7 @@ function unTmpPlaylist($file){
     $newf = preg_replace('/.tmp$/','',$file);
     $outy = preg_replace('/.pspl$/','',$newf);
     $r = rename("$dir/$user/$file","$dir/$user/$newf");
-    return $json->encode(array('SUCCESS',"Yea, $user maybe I saved your playlist. Who knows really? Not me. The URL for this playlist is ",$_SERVER['PHP_SELF'].'?pl='.$user.$outy));
+    return $json->encode(array('SUCCESS',"Yea, $user maybe I saved your playlist. Who knows really? Not me. The URL for this playlist is ",$_SERVER['PHP_SELF'].'?pl='.$user.$outy,$dir.$user.$outy));
 }
 
 function zoomTimes($start,$end,$action,$graph){
