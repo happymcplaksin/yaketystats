@@ -9,22 +9,41 @@ var G = (function() {
     var cg           = 0;
     var defaultdrawtype    = 'LINE1';
     var defaultpathlimit   = 15;
-    var defaultstarttime   = '4 days ago';
-    var defaultendtime     = 'now';
-    var defaultsize        = 50;
-    var tool               = 1;
-    var selColor           = '#ff0000';
-    var selOpacity         = '56';
-    var defaultCanvasColor = 'ffffff';
-    var defaultconfirmcloseallgraphs = 1;
-    var defaultconfirmdeleteplaylist = 1;
+
 <?php
-include("../conf.php");
+require("../conf.php");
+require("../JSON.php");
 $user  = $_SERVER['PHP_AUTH_USER'];
+$json = new Services_JSON();
 $file = "$webdir/playlists/$user/.prefs";
+$out  = '';
+$defaults = array(
+                    'confirmcloseallgraphs'    => 1,
+                    'confirmdeleteplaylist'    => 1,
+                    'confirmoverwriteplaylist' => 1,
+                    'defaultCanvasColor'       => "ffffff",
+                    'defaultstarttime' => "4 days ago",
+                    'defaultendtime'   => "now",
+                    'defaultsize'      => 50,
+                    'selColor'         => "#ff0000",
+                    'selOpacity'       => 56,
+                    'tool'             => 1
+                );
+$arr = array();
 if ( file_exists($file) && is_readable($file) ){
-include $file;
+    $arr  = $json->decode( file_get_contents($file) );
 }
+foreach( $defaults as $key => $value ){
+    $q = '';
+    if ( isset($arr->$key) ){
+        $defaults[$key] = $arr->$key;
+    }
+    if ( ! is_numeric($defaults[$key]) || preg_match('/olor/',$key) ){
+        $q = "'";
+    }
+    $out .= "    var $key = $q".$defaults[$key] . "$q;\n";
+}
+print $out;
 ?>
     // 0 == drag / CtC
     // 1 == highlight
@@ -184,7 +203,11 @@ include $file;
     }
 
     function setTool(e){
-        var c = e.target.id;
+        if ( e.target !== undefined ){
+            var c = e.target.id;
+        }else{
+            var c = e
+        }
         ['dragtoolicon','seltoolicon'].each(function(tool,key){
             var me = $(tool);
             if ( me.id == c ){
@@ -861,7 +884,8 @@ include $file;
 
         //GRAPH
         var img            = document.createElement('img');
-        img.src            = 'img/scanner-transparent-back.gif';
+        //img.src            = 'img/scanner-transparent-back.gif';
+        img.src            = 'img/14-1.gif';
         //img.src            = 'fortune.php';
         img.border         = '0';
         //img.height         = 223;
@@ -1529,7 +1553,7 @@ include $file;
             seldiv.style.top             = '0px';
             seldiv.style.width           = '0px';
             seldiv.style.height          = G.graphs[me].ysize + 'px';
-            seldiv.style.backgroundColor = G.selColor;
+            seldiv.style.backgroundColor = '#' + G.selColor;
             seldiv.style.opacity         = parseInt(G.selOpacity,16) /255;
             seldiv.className             = 'seldiv';
             var contain                  = $('overlaycontainerdiv-' + me);
@@ -1723,9 +1747,11 @@ include $file;
         new Control.ColorPicker( uphc, { 'swatch':uphcl, 'opacityField':uphoc });
 
         var upccg=$('userpconfirmcloseall');
-        upccg.checked = defaultconfirmcloseallgraphs;
+        upccg.checked = confirmcloseallgraphs;
         var upcdp=$('userpconfirmdeletepl');
-        upcdp.checked = defaultconfirmdeleteplaylist;
+        upcdp.checked = confirmdeleteplaylist;
+        var upcop=$('userpconfirmoverwritepl');
+        upcop.checked = confirmoverwriteplaylist;
         $('userpsave').onclick = function(){saveUserPrefs()};
         $('userpcancel').onclick = function(){Element.hide('userprefsdiv')};
         $('userprefsbutton').onclick = function(){Element.toggle('userprefsdiv')};
@@ -1733,29 +1759,33 @@ include $file;
     function saveUserPrefs(){
         Element.hide('userprefsdiv');
         var ups=$('userpstart').value;
-        var out="var defaultstarttime = '" + ups + "';\n";
+        //I'll no doubt regret this.
+        var hash = new Hash();
         G.defaultstarttime = ups;
+        hash.set('defaultstarttime',ups);
 
         var upe=$('userpend').value;
-        out = out + "var defaultendtime = '" + upe + "';\n";
         G.defaultendtime = upe;
+        hash.set('defaultendtime',upe);
 
         var upsize=$('userpsize').value;
-        out = out + "var defaultsize = " + upsize + ";\n";
         G.defaultsize = upsize;
+        hash.set('defaultsize',upsize);
 
         var upt=$('userptool').value;
-        out = out + "var tool = " + upt + ";\n";
         G.tool = upt;
+        tools = ['dragtoolicon','seltoolicon'];
+        setTool(tools[upt]);
+        hash.set('tool',upt);
 
         var upc=$('upserpcanvasinp').value;
-        out = out + "var defaultCanvasColor = '" + upc + "';\n";
         G.defaultCanvasColor = upc;
+        hash.set('defaultCanvasColor',upc);
 
         var uphc=$('upserphighinp').value;
         var upho=$('upserphighopacityinp').value;
-        out = out + "var selColor = '#" + uphc + "';\n";
-        out = out + "var selOpacity = '" + upho + "';\n";
+        hash.set('selColor',uphc);
+        hash.set('selOpacity',upho);
         G.selColor = "#" + uphc;
         G.selOpacity = upho;
         var soi = $('selopacityinp');
@@ -1771,21 +1801,28 @@ include $file;
         if ( upccg ){
             uca = 1;
         }
-        out = out + "var defaultconfirmcloseallgraphs = " + uca + ";\n";
-        G.defaultconfirmcloseallgraphs = uca;
+        hash.set('confirmcloseallgraphs',uca);
+        G.confirmcloseallgraphs = uca;
 
         var ucd = 0;
         var upcdp=$('userpconfirmdeletepl').checked;
         if ( upcdp ){
             ucd = 1;
         }
-        out = out + "var defaultconfirmdeleteplaylist = " + ucd + ";\n";
-        G.defaultconfirmdeleteplaylist = ucd;
+        hash.set('confirmdeleteplaylist',ucd);
+        G.confirmdeleteplaylist = ucd;
         if ( G.graphs[0].paths[0] === undefined ){
             closeAllGraphs(0);
         }
+        var uco = 0;
+        var upcop=$('userpconfirmoverwritepl').checked;
+        if ( upcop ){
+            uco = 1;
+        }
+        hash.set('confirmoverwriteplaylist',uco);
+        G.confirmoverwriteplaylist = uco;
 
-        x_saveUserPrefs(out,saveUserPrefsCB);
+        x_saveUserPrefs(hash.toJSON(),saveUserPrefsCB);
     }
     function saveUserPrefsCB(s){
         dsPicker.handleError('Preferences:' + s + ', bro!');
@@ -1866,6 +1903,6 @@ include $file;
                             '#F5F800', '#CDCFC4', '#BCBEB3', '#AAABA1',
                             '#8F9286', '#797C6E', '#2E3127', '#0000FF');
     return {
-        'init': init, 'drawGraph': drawGraph, 'addRrdToGraph': addRrdToGraph, 'cg': cg, 'graphs': graphs, 'selColor': selColor, 'selOpacity': selOpacity, 'addGraph': addGraph, 'defaultpathlimit': defaultpathlimit, 'closeAllGraphs': closeAllGraphs, 'drawAllGraphs': drawAllGraphs, 'setAllGraphTimes':setAllGraphTimes, 'autoRefreshReal':autoRefreshReal, 'createAllGraphImages':createAllGraphImages, 'createGraphImage':createGraphImage, 'autoRefreshSetup':autoRefreshSetup, setAllGraphSizes:setAllGraphSizes, 'tool':tool, resetSizeForAll:resetSizeForAll, 'defaultconfirmcloseallgraphs':defaultconfirmcloseallgraphs, 'defaultconfirmdeleteplaylist':defaultconfirmdeleteplaylist, 'defaultstarttime':defaultstarttime, 'defaultendtime':defaultendtime, 'defaultsize':defaultsize, 'defaultCanvasColor':defaultCanvasColor
+        'init': init, 'drawGraph': drawGraph, 'addRrdToGraph': addRrdToGraph, 'cg': cg, 'graphs': graphs, 'selColor': selColor, 'selOpacity': selOpacity, 'addGraph': addGraph, 'defaultpathlimit': defaultpathlimit, 'closeAllGraphs': closeAllGraphs, 'drawAllGraphs': drawAllGraphs, 'setAllGraphTimes':setAllGraphTimes, 'autoRefreshReal':autoRefreshReal, 'createAllGraphImages':createAllGraphImages, 'createGraphImage':createGraphImage, 'autoRefreshSetup':autoRefreshSetup, setAllGraphSizes:setAllGraphSizes, 'tool':tool, resetSizeForAll:resetSizeForAll, 'confirmcloseallgraphs':confirmcloseallgraphs, 'confirmdeleteplaylist':confirmdeleteplaylist, 'defaultstarttime':defaultstarttime, 'defaultendtime':defaultendtime, 'defaultsize':defaultsize, 'defaultCanvasColor':defaultCanvasColor, 'confirmoverwriteplaylist':confirmoverwriteplaylist
     }
 })();

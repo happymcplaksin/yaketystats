@@ -898,8 +898,10 @@ function ls_dir($dir){
     }
 }
 
-function massAdd($path,$limit){
-    $out  = recurseForMassAdd($path,$limit,null);
+function massAdd($path,$limit,$target){
+    $out  = array($target);
+    $nout = recurseForMassAdd($path,$limit,null);
+    $out  = array_merge($out , $nout);
     $json = new Services_JSON();
     $out  = $json->encode($out);
     $out  = stripslashes($out);
@@ -1023,7 +1025,7 @@ function saveUserPrefs($str){
     return "saved";
 }
 
-function savePlaylist($name,$pldir,$str){
+function savePlaylist($name,$pldir,$verify,$str){
     global $webdir;
     $name = preg_replace('`\W`','',$name);
     $name = trim($name);
@@ -1061,15 +1063,39 @@ function savePlaylist($name,$pldir,$str){
     if ( empty($str) ){
         return $json->encode(array('ERROR','Empty playlist!'));
     }
+    $tmped = 0;
+    if ( file_exists($file) && $verify == 1 ){
+        $file .= ".tmp";
+        $tmped = 1;
+    }
     $fp   = @fopen($file,'w');
     if ($fp==0){
         return $json->encode(array('ERROR',"Unable to write to file [$file]. Check permissions."));
     }
     $blah = fwrite($fp,"$str");
     fclose($fp);
+    if ( $tmped == 1 ){
+        return $json->encode(array('VERIFY',$pldir.$name.'.pspl.tmp'));
+    }
     $tname = $pldir.$name;
     $out  = $json->encode(array('SUCCESS',"Yea, $pldir maybe I saved your playlist. Who knows really? Not me. The URL for this playlist is ",$_SERVER['PHP_SELF'].'?pl='.$user.$tname,$dir.$tname));
     return $out;
+}
+
+function rmTmpPlaylist($file){
+    global $webdir;
+    $json = new Services_JSON();
+    if ( preg_match('`\.\.`', $file) ){
+        return $json->encode(array('ERROR',"Uh, No."));
+    }
+    $dir  = $webdir.'/playlists/';
+    $user = $_SERVER['PHP_AUTH_USER'];
+    $r = unlink("$dir/$user/$file");
+    if ( $r ){
+        return $json->encode(array('SUCCESS',"Ok then."));
+    }else{
+        return $json->encode(array('ERROR',"Some problem unlinking the tempfile for this playlist. See your admin, perhaps yourself. Yea see yourself as soon as possible."));
+    }
 }
 
 function selTime($graph,$s1,$s2p,$e1,$e2p){
@@ -1101,6 +1127,20 @@ function showTreeChild($id,$path){
     $nodes = stripslashes($nodes);
 
     return $nodes;
+}
+
+function unTmpPlaylist($file){
+    global $webdir;
+    $json = new Services_JSON();
+    if ( preg_match('`\.\.`', $file) ){
+        return $json->encode(array('ERROR',"Uh, No."));
+    }
+    $dir  = $webdir.'/playlists/';
+    $user = $_SERVER['PHP_AUTH_USER'];
+    $newf = preg_replace('/.tmp$/','',$file);
+    $outy = preg_replace('/.pspl$/','',$newf);
+    $r = rename("$dir/$user/$file","$dir/$user/$newf");
+    return $json->encode(array('SUCCESS',"Yea, $user maybe I saved your playlist. Who knows really? Not me. The URL for this playlist is ",$_SERVER['PHP_SELF'].'?pl='.$user.$outy,$dir.$user.$outy));
 }
 
 function zoomTimes($start,$end,$action,$graph){
@@ -1148,7 +1188,7 @@ function zoomTimes($start,$end,$action,$graph){
 
 sajax_init();
 //$sajax_debug_mode = 1;
-$exports = array('clickToCenterTime','convertAllTimes','convertTime','createGraphDragOverlay','createGraphImage','deletePlaylist','dragTime','findMatches','loadPlaylist','massAdd','newPlSub','savePlaylist','saveUserPrefs','selTime','showTreeChild','zoomTimes');
+$exports = array('clickToCenterTime','convertAllTimes','convertTime','createGraphDragOverlay','createGraphImage','deletePlaylist','dragTime','findMatches','loadPlaylist','massAdd','newPlSub','rmTmpPlaylist','savePlaylist','saveUserPrefs','selTime','showTreeChild','unTmpPlaylist','zoomTimes');
 if ( in_array($_SERVER['PHP_AUTH_USER'],$admins) ){
     array_push($exports,'debugLogfiles','debugLoadLog','debugZeroFile');
 }
@@ -1186,6 +1226,7 @@ $version = "2.1";
 ?>
     var debuglog = 0;
     var saveplct = 0;
+    var alls     = 0;
 
     function debugLogTog(){
         if ( $F('debuglog') == 'on' ){
@@ -1219,25 +1260,35 @@ $version = "2.1";
             }
         }
 
-        function massAdd(path){
-            //alert('mass adding ' + path);
-            x_massAdd(path,G.defaultpathlimit,massAddCB);
+        function massAdd(e,path){
+            if ( e.target.id ){
+                e.target.innerHTML = '<img src="img/scanner-transparent-back.gif" class="allthrobber">';
+            }
+            x_massAdd(path,G.defaultpathlimit,e.target.id,massAddCB);
         }
 
         function massAddCB(s){
             var mypaths = s.parseJSON();
+            var target  = '';
             //console.log(mypaths);
+            var i=0;
             mypaths.each(function(paths){
-                G.addGraph();
-                var label = paths[0].replace(/.*\/([^/]+\/[^/]+)\/[^/]+.rrd/,'$1');
-                G.graphs[G.cg].graphlabel = label;
-                paths.each(function(path){
-                    if ( path != '' ){
-                        G.addRrdToGraph(path,0);
-                    }
-                })
+                if ( i == 0 ){
+                    target  = paths;
+                    i++;
+                }else{
+                    G.addGraph();
+                    var label = paths[0].replace(/.*\/([^/]+\/[^/]+)\/[^/]+.rrd/,'$1');
+                    G.graphs[G.cg].graphlabel = label;
+                    paths.each(function(path){
+                        if ( path != '' ){
+                            G.addRrdToGraph(path,0);
+                        }
+                    })
+                }
             })
             G.drawAllGraphs();
+            $(target).innerHTML = '[All]';
         }
 
         function showTreeChild(e,p){
@@ -1277,10 +1328,12 @@ $version = "2.1";
                     if ( ! path.match(/.*\/playlists\/.*/) ){
                         var span = document.createElement('span');
                         span.className = 'clickable smalltxt';
+                        span.id = 'alls-' + alls;
+                        alls++;
                         var txt  = document.createTextNode( ' [All]' );
                         span.appendChild(txt);
                         //attach the event listener
-                        Event.observe(span,'click',function(){ massAdd( path) }.bindAsEventListener());
+                        Event.observe(span,'click',function(e){ massAdd(e,path) }.bindAsEventListener());
                         pdiv.appendChild(span);
                     }
                     hider.appendChild(pdiv);
@@ -1585,10 +1638,12 @@ $version = "2.1";
                 hostDiv.appendChild(span);
                 var span = document.createElement('span');
                 span.className = 'clickable smalltxt';
+                span.id        = 'alls-' + alls;
+                alls++;
                 var txt  = document.createTextNode( ' [All]' );
                 span.appendChild(txt);
                 //attach the event listener
-                Event.observe(span,'click',function(){ massAdd(path) }.bindAsEventListener());
+                Event.observe(span,'click',function(e){ massAdd(e,path) }.bindAsEventListener());
                 hostDiv.appendChild(span);
                 navDiv.appendChild(hostDiv);
             })
@@ -1652,14 +1707,14 @@ $version = "2.1";
                 regexJustTotal();
             }
             var playlist = G.graphs.toJSONString();
-            x_savePlaylist(plname,pldir,playlist,savePlaylistCB);
+            x_savePlaylist(plname,pldir,G.confirmoverwriteplaylist,playlist,savePlaylistCB);
         }
         function realSavePlaylist(){
             var plname = $F('playlistname');
             var pldir  = $F('playlistsubs') + '/';
             //console.log(pldir+plname);
             var playlist = G.graphs.toJSONString();
-            x_savePlaylist(plname,pldir,playlist,savePlaylistCB);
+            x_savePlaylist(plname,pldir,G.confirmoverwriteplaylist,playlist,savePlaylistCB);
         }
         function toggleRegexTotals(){
             var ts = $('regextotal');
@@ -1684,11 +1739,37 @@ $version = "2.1";
             }
             G.drawAllGraphs();
         }
+        function verifyPlaylistOverwrite(s){
+                var pl = s.parseJSON();
+                pl = pl[1];
+                var yn = confirm('File ' + pl.replace(/.tmp/,'') + ' exists. Overwite?');
+                if ( yn ){
+                    x_unTmpPlaylist(pl,savePlaylistCB);
+                }else{
+                    x_rmTmpPlaylist(pl,rmTmpPlaylistCB);
+                }
+        }
+        function rmTmpPlaylistCB(s){
+            var msg = s.parseJSON();
+            if ( msg[0] == 'ERROR' ){
+                handleError(msg[1]);
+            }else{
+                removeErrors();
+                var out = document.createTextNode(msg[1]);
+                $('errorspace').appendChild(out);
+                rmErrorButton();
+                $('playlistname').value = '';
+                $('playlistsubs').value = '/';
+            }
+        }
         function savePlaylistCB(s){
             //console.log(s);
             if ( s.match(/\[\"ERROR\",/) ){
                 var error = s.parseJSON();
                 handleError(error[1]);
+            }else if ( s.match(/\[\"VERIFY\",/) ){
+                verifyPlaylistOverwrite(s);
+                return;
             }else{
                 removeErrors();
                 var msg = s.parseJSON();
@@ -1825,14 +1906,14 @@ $version = "2.1";
         function verify(s,arg){
             switch ( s ){
                 case "closeallgraphs":
-                    if ( G.defaultconfirmcloseallgraphs ){
+                    if ( G.confirmcloseallgraphs ){
                         return confirm('You sure?');
                     }else{
                         return true;
                     }
                     break;
                 case "deleteplaylist":
-                    if ( G.defaultconfirmdeleteplaylist ){
+                    if ( G.confirmdeleteplaylist ){
                         return confirm('You sure?');
                     }else{
                         return true;
@@ -2140,6 +2221,9 @@ $version = "2.1";
 
 <label for="userpconfirmdeletepl">Confirm Delete Playlist</label>
 <input type="checkbox" id="userpconfirmdeletepl"><br>
+
+<label for="userpconfirmdeletepl">Confirm Overwrite Playlist</label>
+<input type="checkbox" id="userpconfirmoverwritepl"><br>
 
 <input type="button" value="Save" id="userpsave">
 <input type="button" value="Cancel" id="userpcancel">

@@ -215,7 +215,7 @@ function buildPKG(){
     #copyright
     cp ${me}/../COPYING ${dir}/copyright
     #pkginfo
-    sed -e "s/SORC/${1}/" -e "s/=VERSION/=${version}/" pkginfo.in > ${dir}/pkginfo
+    sed -e "s/SORC/${1}/" -e "s/=VERSION/=${version}/" -e "s/RELEASE/${release}/" pkginfo.in > ${dir}/pkginfo
     # prototype
     cp prototype.in ${dir}/prototype
     if [[ ${1} == "server" ]]
@@ -250,7 +250,7 @@ function buildPKG(){
     pkgmk -o -d ../ -a all >> ${me}/pkgbuild.log 2>&1
     # pkgtrans -s 
     cd ..
-    pkgtrans -s . yaketystats-${1}-${version}-SunOS`uname -r`-all.pkg yaketystats-${1} >> ${me}/pkgbuild.log 2>&1
+    pkgtrans -s . yaketystats-${1}-${version}-${release}-SunOS`uname -r`-all.pkg yaketystats-${1} >> ${me}/pkgbuild.log 2>&1
     cd $me
     find solaris/ -name yaketystats-${1}\*
 }
@@ -283,7 +283,7 @@ function buildDEPOT(){
       ../psf.in > yaketystats.psf
 
     # sample: swpackage -s yaketystats.psf -d /tmp/blah -x run_as_superuser=false 
-    swpackage -s yaketystats.psf -x media_type=tape -d ${me}/hp-ux/YaketyStats.depot -x run_as_superuser=false >> ${me}/depotbuild.log 2>&1
+    swpackage -s yaketystats.psf -x media_type=tape -d ${me}/hp-ux/YaketyStats-${version}-${release}.depot -x run_as_superuser=false >> ${me}/depotbuild.log 2>&1
     swpackage -s yaketystats.psf -d ${me}/hp-ux/YaketyStats -x run_as_superuser=false >> ${me}/depotbuild.log 2>&1
     ls -d ${me}/hp-ux/YaketyStats*
 }
@@ -347,11 +347,8 @@ else
         fi
     fi
     ask "What version number do you want this/these package(s) to have?" version
-    if [[ "${myOS}" = 'Linux' ]]
-    then
-        release=${release:-"1"}
-        ask "What version of the RPM?" release
-    fi
+    release=${release:-"1"}
+    ask "What version of the Package?" release
     ask "What do you want the stats user's UID to be?" statsuid
     statsgid=${statsgid:-"${statsuid}"}
     ask "What do you want the stats user's GID to be?" statsgid
