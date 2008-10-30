@@ -1025,7 +1025,7 @@ function saveUserPrefs($str){
     return "saved";
 }
 
-function savePlaylist($name,$pldir,$str){
+function savePlaylist($name,$pldir,$verify,$str){
     global $webdir;
     $name = preg_replace('`\W`','',$name);
     $name = trim($name);
@@ -1063,15 +1063,39 @@ function savePlaylist($name,$pldir,$str){
     if ( empty($str) ){
         return $json->encode(array('ERROR','Empty playlist!'));
     }
+    $tmped = 0;
+    if ( file_exists($file) && $verify == 1 ){
+        $file .= ".tmp";
+        $tmped = 1;
+    }
     $fp   = @fopen($file,'w');
     if ($fp==0){
         return $json->encode(array('ERROR',"Unable to write to file [$file]. Check permissions."));
     }
     $blah = fwrite($fp,"$str");
     fclose($fp);
+    if ( $tmped == 1 ){
+        return $json->encode(array('VERIFY',$pldir.$name.'.pspl.tmp'));
+    }
     $tname = $pldir.$name;
     $out  = $json->encode(array('SUCCESS',"Yea, $pldir maybe I saved your playlist. Who knows really? Not me. The URL for this playlist is ",$_SERVER['PHP_SELF'].'?pl='.$user.$tname,$dir.$tname));
     return $out;
+}
+
+function rmTmpPlaylist($file){
+    global $webdir;
+    $json = new Services_JSON();
+    if ( preg_match('`\.\.`', $file) ){
+        return $json->encode(array('ERROR',"Uh, No."));
+    }
+    $dir  = $webdir.'/playlists/';
+    $user = $_SERVER['PHP_AUTH_USER'];
+    $r = unlink("$dir/$user/$file");
+    if ( $r ){
+        return $json->encode(array('SUCCESS',"Ok then."));
+    }else{
+        return $json->encode(array('ERROR',"Some problem unlinking the tempfile for this playlist. See your admin, perhaps yourself. Yea see yourself as soon as possible."));
+    }
 }
 
 function selTime($graph,$s1,$s2p,$e1,$e2p){
@@ -1103,6 +1127,20 @@ function showTreeChild($id,$path){
     $nodes = stripslashes($nodes);
 
     return $nodes;
+}
+
+function unTmpPlaylist($file){
+    global $webdir;
+    $json = new Services_JSON();
+    if ( preg_match('`\.\.`', $file) ){
+        return $json->encode(array('ERROR',"Uh, No."));
+    }
+    $dir  = $webdir.'/playlists/';
+    $user = $_SERVER['PHP_AUTH_USER'];
+    $newf = preg_replace('/.tmp$/','',$file);
+    $outy = preg_replace('/.pspl$/','',$newf);
+    $r = rename("$dir/$user/$file","$dir/$user/$newf");
+    return $json->encode(array('SUCCESS',"Yea, $user maybe I saved your playlist. Who knows really? Not me. The URL for this playlist is ",$_SERVER['PHP_SELF'].'?pl='.$user.$outy));
 }
 
 function zoomTimes($start,$end,$action,$graph){
@@ -1150,7 +1188,7 @@ function zoomTimes($start,$end,$action,$graph){
 
 sajax_init();
 //$sajax_debug_mode = 1;
-$exports = array('clickToCenterTime','convertAllTimes','convertTime','createGraphDragOverlay','createGraphImage','deletePlaylist','dragTime','findMatches','loadPlaylist','massAdd','newPlSub','savePlaylist','saveUserPrefs','selTime','showTreeChild','zoomTimes');
+$exports = array('clickToCenterTime','convertAllTimes','convertTime','createGraphDragOverlay','createGraphImage','deletePlaylist','dragTime','findMatches','loadPlaylist','massAdd','newPlSub','rmTmpPlaylist','savePlaylist','saveUserPrefs','selTime','showTreeChild','unTmpPlaylist','zoomTimes');
 if ( in_array($_SERVER['PHP_AUTH_USER'],$admins) ){
     array_push($exports,'debugLogfiles','debugLoadLog','debugZeroFile');
 }
@@ -1669,14 +1707,16 @@ $version = "2.1";
                 regexJustTotal();
             }
             var playlist = G.graphs.toJSONString();
-            x_savePlaylist(plname,pldir,playlist,savePlaylistCB);
+verify = 1;
+            x_savePlaylist(plname,pldir,verify,playlist,savePlaylistCB);
         }
         function realSavePlaylist(){
             var plname = $F('playlistname');
             var pldir  = $F('playlistsubs') + '/';
             //console.log(pldir+plname);
             var playlist = G.graphs.toJSONString();
-            x_savePlaylist(plname,pldir,playlist,savePlaylistCB);
+verify = 1;
+            x_savePlaylist(plname,pldir,verify,playlist,savePlaylistCB);
         }
         function toggleRegexTotals(){
             var ts = $('regextotal');
@@ -1701,11 +1741,37 @@ $version = "2.1";
             }
             G.drawAllGraphs();
         }
+        function verifyPlaylistOverwrite(s){
+                var pl = s.parseJSON();
+                pl = pl[1];
+                var yn = confirm('File ' + pl.replace(/.tmp/,'') + ' exists. Overwite?');
+                if ( yn ){
+                    x_unTmpPlaylist(pl,savePlaylistCB);
+                }else{
+                    x_rmTmpPlaylist(pl,rmTmpPlaylistCB);
+                }
+        }
+        function rmTmpPlaylistCB(s){
+            var msg = s.parseJSON();
+            if ( msg[0] == 'ERROR' ){
+                handleError(msg[1]);
+            }else{
+                removeErrors();
+                var out = document.createTextNode(msg[1]);
+                $('errorspace').appendChild(out);
+                rmErrorButton();
+                $('playlistname').value = '';
+                $('playlistsubs').value = '/';
+            }
+        }
         function savePlaylistCB(s){
             //console.log(s);
             if ( s.match(/\[\"ERROR\",/) ){
                 var error = s.parseJSON();
                 handleError(error[1]);
+            }else if ( s.match(/\[\"VERIFY\",/) ){
+                verifyPlaylistOverwrite(s);
+                return;
             }else{
                 removeErrors();
                 var msg = s.parseJSON();
