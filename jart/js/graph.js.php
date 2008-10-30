@@ -203,7 +203,11 @@ print $out;
     }
 
     function setTool(e){
-        var c = e.target.id;
+        if ( e.target !== undefined ){
+            var c = e.target.id;
+        }else{
+            var c = e
+        }
         ['dragtoolicon','seltoolicon'].each(function(tool,key){
             var me = $(tool);
             if ( me.id == c ){
@@ -1770,6 +1774,8 @@ print $out;
 
         var upt=$('userptool').value;
         G.tool = upt;
+        tools = ['dragtoolicon','seltoolicon'];
+        setTool(tools[upt]);
         hash.set('tool',upt);
 
         var upc=$('upserpcanvasinp').value;
