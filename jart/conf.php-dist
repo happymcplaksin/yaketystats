@@ -4,10 +4,7 @@
 $admins = array();
 
 $dateformat = 'r';
-# Debian:
 $font  = 'Mono';
-# Red Hat:
-# $font  = '/usr/share/fonts/bitstream-vera/Vera.ttf';
 
 $graphpath = './graphs';
 $graphlinelimit = 16;
