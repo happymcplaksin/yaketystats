@@ -1707,16 +1707,14 @@ $version = "2.1";
                 regexJustTotal();
             }
             var playlist = G.graphs.toJSONString();
-verify = 1;
-            x_savePlaylist(plname,pldir,verify,playlist,savePlaylistCB);
+            x_savePlaylist(plname,pldir,G.confirmoverwriteplaylist,playlist,savePlaylistCB);
         }
         function realSavePlaylist(){
             var plname = $F('playlistname');
             var pldir  = $F('playlistsubs') + '/';
             //console.log(pldir+plname);
             var playlist = G.graphs.toJSONString();
-verify = 1;
-            x_savePlaylist(plname,pldir,verify,playlist,savePlaylistCB);
+            x_savePlaylist(plname,pldir,G.confirmoverwriteplaylist,playlist,savePlaylistCB);
         }
         function toggleRegexTotals(){
             var ts = $('regextotal');
@@ -1908,14 +1906,14 @@ verify = 1;
         function verify(s,arg){
             switch ( s ){
                 case "closeallgraphs":
-                    if ( G.defaultconfirmcloseallgraphs ){
+                    if ( G.confirmcloseallgraphs ){
                         return confirm('You sure?');
                     }else{
                         return true;
                     }
                     break;
                 case "deleteplaylist":
-                    if ( G.defaultconfirmdeleteplaylist ){
+                    if ( G.confirmdeleteplaylist ){
                         return confirm('You sure?');
                     }else{
                         return true;
@@ -2223,6 +2221,9 @@ verify = 1;
 
 <label for="userpconfirmdeletepl">Confirm Delete Playlist</label>
 <input type="checkbox" id="userpconfirmdeletepl"><br>
+
+<label for="userpconfirmdeletepl">Confirm Overwrite Playlist</label>
+<input type="checkbox" id="userpconfirmoverwritepl"><br>
 
 <input type="button" value="Save" id="userpsave">
 <input type="button" value="Cancel" id="userpcancel">
