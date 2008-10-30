@@ -93,12 +93,11 @@ sub doit {
 sub memory_linux {
   my ($time) = @_;
 
-  my ($cmd, $status, @data, $line, @loads, @return, $total, $used, $free, $buffers,
+  my ($status, @data, $line, @loads, @return, $total, $used, $free, $buffers,
       $cached);
 
-  $cmd = get_path ('free');
   ($total, $used, $free, $buffers, $cached) =
-    parse_cmd ("$cmd -b", $g_default_timeout, 1, undef, '\s+',
+    parse_cmd ('free -b', $g_default_timeout, 1, undef, '\s+',
                'Unknown HZ value', 0, (1, 2, 3, 5, 6));
   check_vars ($g_exit, $total, "total", $used, "used", $buffers, "buffers",
               $cached, "$cached");
@@ -135,9 +134,7 @@ sub memory_solaris {
 
   # - 'prtconf | grep "^Memory size:" to get physical RAM
   #   Output: "Memory size: 2048 Megabytes"
-  $cmd = get_path ('prtconf');
-
-  ($total_ram) = parse_cmd ($cmd, $g_default_timeout, "^Memory size:", undef,
+  ($total_ram) = parse_cmd ('prtconf', $g_default_timeout, "^Memory size:", undef,
                             '\s+', undef, 0, (2));
   check_vars ($g_exit, $total_ram, "total_ram");
   # Convert from megabytes to bytes
@@ -150,15 +147,14 @@ sub memory_solaris {
   #     r b w   swap  free  re  mf pi po fr de sr m0 m1 m1 m1   in   sy   cs us sy id
   #     0 0 0 4944208 1137200 730 468 5159 19 18 0 0 66 1 0 0 1663 4787  424  7  5 88
   #     0 0 0 4389104 622000 51 185 0  3  3  0  0  1  0  0  0  712 1816  296  1  0 99
-  $cmd = get_path ('vmstat');
-  ($free_list) = parse_cmd ("$cmd 3 2", $g_default_timeout, -1, undef, '\s+',
+  ($free_list) = parse_cmd ('vmstat 3 2', $g_default_timeout, -1, undef, '\s+',
                            undef, 0, (5));
   check_vars ($g_exit, $free_list, "free_list");
   # Convert from k to bytes
   $free_list *= 1024;
 
   # - Use 'swap -l' to find swap space slices and files
-  $cmd = get_path ('swap');
+  $cmd = 'swap';
   (@swap_spaces) = parse_cmd ("$cmd -l", $g_default_timeout, '.', undef, '\s+',
 			      "^swapfile", 0, (3));
   foreach $i (@swap_spaces) {
@@ -185,9 +181,8 @@ sub memory_solaris {
   #
   #   12:42:28 swpin/s bswin/s swpot/s bswot/s pswch/s
   #   12:42:30    0.00     0.0    0.00     0.0     306
-  $cmd = get_path ('sar');
   ($swap_bytes_in, $swap_bytes_out) =
-    parse_cmd ("$cmd -w 2", $g_default_timeout, 4, undef, '\s+', undef, 0, (2, 4));
+    parse_cmd ('sar -w 2', $g_default_timeout, 4, undef, '\s+', undef, 0, (2, 4));
   check_vars ($g_exit, $swap_bytes_in, "swap_bytes_in",
               $swap_bytes_out, "swap_bytes_out");
 
@@ -211,13 +206,12 @@ sub memory_solaris {
 sub memory_hpux {
   my ($time) = @_;
 
-  my ($cmd, $status, @data, $line, @return, $total_ram, $total_swap, $used_swap,
+  my ($status, @data, $line, @return, $total_ram, $total_swap, $used_swap,
       $free_ram, $swap_bytes_in, $swap_bytes_out);
 
   # Michael's RAMsize gives this output:
   # Physical RAM: 2147483648 bytes = 2097152 Kbytes = 2048 Mbytes
-  $cmd = get_path ('RAMsize');
-  ($total_ram) = parse_cmd ($cmd, $g_default_timeout, 0, undef, '\s+', undef,
+  ($total_ram) = parse_cmd ('RAMsize', $g_default_timeout, 0, undef, '\s+', undef,
                             1, (2));
   check_vars ($g_exit, $total_ram, "total_ram");
 
@@ -228,8 +222,7 @@ sub memory_hpux {
   #       r     b     w      avm    free   re   at    pi   po    fr   de    sr     in     sy    cs  us sy id
   #       0     1     0     2230  350953    7    6     0    0     9    0     0    427    238    36   0  0 100
   #       0     1     0     1760  350898    3    3     0    0     2    0     0    414    166    32   0  0 100
-  $cmd = get_path ('vmstat');
-  ($free_ram) = parse_cmd ("$cmd 3 2", $g_default_timeout, 3, undef, '\s+', undef, 0, (5));
+  ($free_ram) = parse_cmd ('vmstat 3 2', $g_default_timeout, 3, undef, '\s+', undef, 0, (5));
   check_vars ($g_exit, $free_ram, "free_ram");
   # *4k to get bytes
   $free_ram *= 4*1024;
@@ -242,9 +235,8 @@ sub memory_hpux {
   #   
   #   15:46:01 swpin/s bswin/s swpot/s bswot/s pswch/s
   #   15:46:03    0.00     0.0    0.00     0.0      43
-  $cmd = get_path ('sar');
   ($swap_bytes_in, $swap_bytes_out) =
-    parse_cmd ("$cmd -w 2", $g_default_timeout, 4, undef, '\s+', undef, 0, (2, 4));
+    parse_cmd ('sar -w 2', $g_default_timeout, 4, undef, '\s+', undef, 0, (2, 4));
   check_vars ($g_exit, $swap_bytes_in, "swap_bytes_in",
               $swap_bytes_out, "swap_bytes_out");
 

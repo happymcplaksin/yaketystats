@@ -23,7 +23,7 @@ $Data::Dumper::Purity = 1;
 $Data::Dumper::Deepcopy = 1;
 
 #require "$ENV{'HOME'}/lib/include";
-our (%g_paths, $g_hostname_file, $g_get_fqdn, $g_debug, $g_debug_level, $g_exit, $g_os);
+our ($g_hostname_file, $g_get_fqdn, $g_debug, $g_debug_level, $g_exit, $g_os);
 # TODO:  This is from sloppy obmon code.  Clean!
 our ($cmd_debug, $spec, $tape, $protection, @tape_list, $free_now, $label, $full,
      $os, $cmd, $path, @labels, $location, $g_user_agent);
@@ -143,13 +143,7 @@ sub my_lock {
 
 sub run_prg {
   my ($cmdline, $timeout, $ignore_stderr) = @_;
-  my ($command, $status, @data, $redirect);
-
-  $command = (split (/ /, $cmdline))[0];
-
-  if ( ! -e $command ) {
-    return (-1, ("$command does not exist\n"));
-  }
+  my ($status, @data, $redirect);
 
   # Wrap the program run in alarm in case it never exits
   eval {
@@ -181,33 +175,6 @@ sub run_prg {
       return (-1, @data);
   }
   return ($status, @data);
-}
-
-our $g_configfile;
-sub configure {
-  my ($line);
-  local *F;
-
-  open (F, $g_configfile) || die "can't open $g_configfile: $!";
-  while ( <F> ) {
-    #print "line = $_.\n";
-    $line = $_;
-    # If it's not a comment or a blank line
-    if ( $line !~ /^\#/ && $line !~ /^$/  ) {
-      chomp ($line);
-      if ( $line =~ /\s*path:/ ) {
-        ($os, $cmd, $path) = (split (/\s*:\s*/, $line))[1, 2, 3];
-        if ( !defined ($os) || !defined ($cmd) || !defined ($path) ) {
-          fileit ("Skipping bad config line:\n$line\n");
-        } else {
-          $g_paths{$os}{$cmd} = $path;
-        }
-      } else {
-        fileit ("Unknown config file line:\n$line\n");
-      }
-    }
-  }
-  close (F);
 }
 
 # Get FQDN and cache it in a file.  If the cache file already exists, just read it
@@ -376,8 +343,7 @@ sub my_syslog {
 
   # Only keep good chars
   $message =~ s/[^-0-9a-z<>:_\/.= ]//ig;
-  $cmd = get_path ("logger");
-  $cmd .= " -p $facility.$priority -t $g_syslog_tag '$message'";
+  $cmd = "logger -p $facility.$priority -t $g_syslog_tag '$message'";
   ($status, @data) = run_prg ($cmd, $g_default_timeout);
   if ( $status !=0 ) {
     if ( $nofileit == 1 ) {
@@ -465,18 +431,6 @@ sub parse_cmd {
     }
   }
   return (@return);
-}
-
-sub get_path {
-  my ($cmd) = @_;
-  my ($path);
-
-  $path = $g_paths{$g_os}{$cmd};
-  if ( !defined ($path) ) {
-    fileit ("I don't know the path to $cmd for $g_os.  So sorry!\n");
-    exit (18);
-  }
-  return ($path);
 }
 
 sub write2file {

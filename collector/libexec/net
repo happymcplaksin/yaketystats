@@ -95,11 +95,9 @@ sub net_linux {
   my ($cmd, $status, @data, $line, @ifaces, $iface, @return, $rxb, $rxe,
       $txb, $txe);
 
-  $cmd = get_path ('netstat');
-
   # Match letters followed by 0 or more numbers at the beginning of the line,
   # and no colons allowed because those are IP aliases.
-  @ifaces  = parse_cmd ("$cmd -in", $g_default_timeout, '^[a-z]+[0-9]+[.]*[0-9]*\s',
+  @ifaces  = parse_cmd ("netstat -in", $g_default_timeout, '^[a-z]+[0-9]+[.]*[0-9]*\s',
                         undef, '\s+', undef, 0, (0));#'
   LOOP: foreach $iface (@ifaces) {
       if ( ignoreit ('net', $iface) ) {
@@ -116,8 +114,7 @@ sub net_linux {
     #           Interrupt:9 Base address:0xf400 
     #
     # TODO:  It would be cool to use parse_cmd for this too
-    $cmd = get_path ('ifconfig');
-    $cmd = "$cmd $iface";
+    $cmd = "ifconfig $iface";
     ($status, @data) = run_prg ($cmd, $g_default_timeout);
     if ( $status != 0 ) {
       fileit ("Bad status for $cmd:  $status.  Output was:  @data\n");
@@ -173,7 +170,7 @@ sub net_hpux {
   # Path     Address        In# State NamePPA        ID  Type      Support Mjr#
   # 0/0/0/0  0x00306E0C2B68 0   UP    lan0 snap0     1   ETHER     Yes     119
   # 0/6/2/0  0x001083F67FE8 1   UP    lan1 snap1     2   ETHER     Yes     119
-  $cmd = get_path ('lanscan');
+  $cmd = 'lanscan';
   ($status, @data) = run_prg ($cmd, $g_default_timeout);
   if ( $status != 0 ) {
     fileit ("Bad status for $cmd:  $status.  Output was:  @data\n");
@@ -246,8 +243,7 @@ sub net_hpux {
     }
 
     # TODO:  It would be cool to use parse_cmd for this too
-    $cmd = get_path ('lanadmin');
-    $cmd = "$cmd -g mibstats $ifaces{$iface}{ppa}";
+    $cmd = "lanadmin -g mibstats $ifaces{$iface}{ppa}";
     ($status, @data) = run_prg ($cmd, $g_default_timeout);
     if ( $status != 0 ) {
       fileit ("Bad status for $cmd:  $status.  Output was:  @data\n");
@@ -307,10 +303,9 @@ sub net_solaris {
       $speed);
 
   # Get list of interfaces via netstat -i
-  $cmd = get_path ('netstat');
   # Match letters followed by 0 or more numbers at the beginning of the line,
   # and no colons allowed because those are IP aliases.
-  @ifaces  = parse_cmd ("$cmd -in", $g_default_timeout, '^[a-z]+[0-9]*\s', undef,
+  @ifaces  = parse_cmd ("netstat -in", $g_default_timeout, '^[a-z]+[0-9]*\s', undef,
                         '\s+', undef, 0, (0));#'
 
  LOOP: foreach $iface (@ifaces) {
@@ -335,9 +330,7 @@ sub net_solaris {
     $instance = $iface;
     $instance =~ s/$class//;
 
-    $cmd = get_path ('kstat');
-    $cmd = "$cmd -p $class:$instance:$iface";
-
+    $cmd = "kstat -p $class:$instance:$iface";
     ($status, @data) = run_prg ($cmd, $g_default_timeout);
     if ( $status != 0 ) {
       fileit ("Bad status for $cmd:  $status.  Output was:  @data\n");

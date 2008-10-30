@@ -102,8 +102,7 @@ sub doit {
 
   $ignore_ret = 0;
   $count = 2;
-  $cmd = get_path ('sar');
-  $cmd = "$cmd 3 $count";
+  $cmd = "sar 3 $count";
   $time = time ();
 
   # For Linux,
