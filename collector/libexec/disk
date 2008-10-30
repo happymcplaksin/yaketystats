@@ -83,10 +83,10 @@ if (! defined (@ARGV) || (! defined ($ARGV[1]) && $ARGV[1] eq "calledfromcollect
 ## list=`eval $GETFSES | sort`
 sub doit {
   my ($cmd, $status, @data, $line, @return, $time, $dev_col, $fs_col, %fses,
-      $dev, $fs, $size, $used, $avail, $pct, $i_col, $i_used, $prg);
+      $dev, $fs, $size, $used, $avail, $pct, $i_col, $i_used);
 
-  $cmd = get_path('mount');
   $time = time ();
+  $cmd = 'mount';
   ($status, @data) = run_prg ($cmd, $g_default_timeout);
   if ( $status != 0 ) {
     fileit ("Bad status for $cmd:  $status.  Output was:  @data\n");
@@ -115,11 +115,10 @@ sub doit {
     }
   }
 
-  $prg = 'df';
+  $cmd = 'df';
   if ( $g_os eq "hpux" ) {
-    $prg = "b$prg";
+    $cmd = "b${cmd}";
   }
-  $cmd = get_path($prg);
   if ( $g_os eq "solaris" ) {
     $cmd = "$cmd -k -F ufs";
   } else {

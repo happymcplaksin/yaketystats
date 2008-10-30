@@ -75,10 +75,10 @@ if (! defined (@ARGV) || (! defined ($ARGV[1]) && $ARGV[1] eq "calledfromcollect
 sub doit {
   my ($cmd, $status, @data, $line, $rss, $vsz, @return, $time);
 
-  $cmd = get_path ('ps');
+  $cmd = 'ps -e -o pid,rss,vsz,args';
   $time = time ();
 
-  ($status, @data) = run_prg ("$cmd -e -o pid,rss,vsz,args", $g_default_timeout);
+  ($status, @data) = run_prg ($cmd, $g_default_timeout);
   if ( $status != 0 ) {
     fileit ("Bad status for $cmd:  $status.  Output was:  @data\n");
     return (undef);

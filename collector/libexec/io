@@ -229,8 +229,8 @@ sub hpux {
   $time = time ();
 
   # First, get all PVs
-  $cmd = get_path ('vgdisplay');
-  ($status, @data) = run_prg ("$cmd -v", $g_default_timeout);
+  $cmd = 'vgdisplay -v';
+  ($status, @data) = run_prg ($cmd, $g_default_timeout);
   if ( $status != 0 ) {
     fileit ("Bad status for $cmd:  $status.  Output was:  @data\n");
     return (undef);
@@ -246,8 +246,8 @@ sub hpux {
   }
 
   # The get data from sar
-  $cmd = get_path ('sar');
-  ($status, @data) = run_prg ("$cmd -d 5", $g_default_timeout);
+  $cmd = 'sar -d 5';
+  ($status, @data) = run_prg ($cmd, $g_default_timeout);
   if ( $status != 0 ) {
     fileit ("Bad status for $cmd:  $status.  Output was:  @data\n");
     return (undef);
@@ -351,8 +351,8 @@ sub solaris {
   }
   close (F);
 
-  $cmd = get_path ('ls');
-  ($status, @data) = run_prg ("$cmd -l /dev/dsk", $g_default_timeout);
+  $cmd = 'ls -l /dev/dsk';
+  ($status, @data) = run_prg ($cmd, $g_default_timeout);
   if ( $status != 0 ) {
     fileit ("Bad status for $cmd:  $status.  Output was:  @data\n");
     return (undef);
@@ -377,8 +377,8 @@ sub solaris {
   }
 
   # Then get data from sar
-  $cmd = get_path ('sar');
-  ($status, @data) = run_prg ("$cmd -d 5", $g_default_timeout);
+  $cmd = 'sar -d 5';
+  ($status, @data) = run_prg ($cmd, $g_default_timeout);
   if ( $status != 0 ) {
     fileit ("Bad status for $cmd:  $status.  Output was:  @data\n");
     return (undef);
@@ -503,11 +503,11 @@ sub linux {
 
   # Map from major, minor to device name
   # Skip /dev/fd* and /dev/.*
-  $cmd = get_path ('find');
+  $cmd = 'find';
   ($status, @data) = run_prg ("$cmd /dev -xdev -follow -type b",
 			      $g_default_timeout, 1);
 
-  $cmd = get_path ('ls');
+  $cmd = 'ls';
   $files = join (' ', @data);
 
   $files =~ s/\n//g;
@@ -532,8 +532,8 @@ sub linux {
   }
 
   # The get data from sar
-  $cmd = get_path ('sar');
-  ($status, @data) = run_prg ("$cmd -d 5", $g_default_timeout);
+  $cmd = 'sar -d 5';
+  ($status, @data) = run_prg ($cmd, $g_default_timeout);
   # TODO: hack to work around Linux stupidity.
   if ( $status != 0 && $status != 1 ) {
     fileit ("Bad status for $cmd:  $status.  Output was:  @data\n");

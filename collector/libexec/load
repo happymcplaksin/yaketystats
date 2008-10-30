@@ -80,13 +80,12 @@ if (! defined (@ARGV) || (! defined ($ARGV[1]) && $ARGV[1] eq "calledfromcollect
 # These are all basically the same so use this logic:
 # Remove everything through "average:\s*", then split on ",\s*"
 sub doit {
-  my ($cmd, $status, @data, $line, $load1, $load5, $load15, @return, $time);
+  my ($status, @data, $line, $load1, $load5, $load15, @return, $time);
 
-  $cmd = get_path ('uptime');
   $time = time ();
 
   ($load1, $load5, $load15) =
-    parse_cmd ($cmd, $g_default_timeout, 0, '.*average:\s*', ',\s*',
+    parse_cmd ('uptime', $g_default_timeout, 0, '.*average:\s*', ',\s*',
                'Unknown HZ value', 0, (0, 1, 2));
   check_vars ($g_exit, $load1, "load1", $load5, "load5", $load15, "load15");
   if ( ! ignoreit ('load', '1-minute') ) {

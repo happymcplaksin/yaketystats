@@ -86,8 +86,7 @@ sub doit {
 	fileit ("Hey!  You already collected $path!  I refuse to do it again.");
       } else {
 	$stupid{"${host}.${path}"} = 1;
-	$cmd = get_path ("snmpget");
-	$cmd = "$cmd -v1 -c '$snmp_community' $host $oid";
+	$cmd = "snmpget -v1 -c '$snmp_community' $host $oid";
 	($status, @data) = run_prg ($cmd, $g_default_timeout);
 	if ( $status != 0 ) {
 	  fileit ("problem with $cmd.  Output was:  @data");

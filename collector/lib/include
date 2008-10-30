@@ -20,6 +20,7 @@ $|=1;
 
 $ENV{'LANG'} = '';
 $ENV{'LC_ALL'} = '';
+$ENV{'PATH'} = "$ENV{'PATH'}:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:/usr/local/yaketystats/bin";
 
 # TODO:  Perhaps all of these should come from a config file!
 
@@ -61,7 +62,6 @@ our $g_secs_per_10years = 60 * 60 * 24 * 365 * 10;
 our $g_default_timeout = 20;
 our $g_noexit = 0;
 our $g_exit = 1;
-our $g_configfile = "$g_etc/config";
 our $g_ignore_file = "$g_etc/ignores";
 our $g_lock_dir = "$g_var/locks";
 our $g_incoming = "$g_var/incoming";
@@ -72,9 +72,6 @@ our $g_sep = '';
 # Set by collectors, used by bivalve
 our $g_collector;
 
-our %g_paths;
-# Fill %g_paths
-configure ();
 if ( $ARGV[0] eq "-d" ) {
   $g_debug = 1;
 }
