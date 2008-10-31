@@ -90,7 +90,6 @@ our $g_deadlog_dir = "/www/logs/rolledstats";
 our $g_max_collectors = 10;
 
 our $g_syslog_facility = "local5";
-our $g_syslog_priority = "info";
 our $g_syslog_tag = $g_user_agent;
 $g_syslog_tag =~ s/ .*//;
 our $g_syslog = 1;

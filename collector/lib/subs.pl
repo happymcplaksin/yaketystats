@@ -194,11 +194,11 @@ sub get_hostname {
       if ( $data[0] ne '' ) {
 	return ($data[0]);
       } else {
-	fileit ("No FQDN found.  I give up.");
+	fileit ("No FQDN found.  I give up.", "err");
 	exit (1);
       }
     } else {
-      fileit ("No FQDN found.  I give up.");
+      fileit ("No FQDN found.  I give up.", "err");
       exit (1);
     }
   }
@@ -208,7 +208,7 @@ sub get_hostname {
   ($status, @data) = run_prg ($g_get_fqdn, 10);
   if ( $status != 0 ) {
     fileit ("Bad status for $cmd: $status.  The output was:  @data\n");
-    fileit ("No FQDN found.  I give up.");
+    fileit ("No FQDN found.  I give up.", "err");
     exit (3);
   }
 
@@ -224,7 +224,7 @@ sub debug {
 
   if ( $g_debug &&
        (! defined ($level) || $level <= $g_debug_level) ) {
-    fileit ("$message");
+    fileit ("$message", "debug");
   }
 }
 
@@ -287,7 +287,7 @@ sub check_vars {
     my (undef, undef, $sub) = (caller (1))[1,2,3];
     fileit ("Undefined variables from $sub:  @bad");
     if ( $exit ) {
-      fileit ("Exiting.");
+      fileit ("exiting because of badness in check_vars.", "err");
       exit (22);
     }
     return (1);
@@ -297,13 +297,27 @@ sub check_vars {
 
 # syslog summaries and log details to /var/.../messages.  cron job rolls
 # messages file once a day
+# Optional second arg is syslog priority (debug, info, etc)
+#
+# alert
+# crit
+# debug
+# emerg
+# err
+# info
+# notice
+# warning
 our ($g_message_file, $g_summary_file, $g_fileit_mode, $g_syslog_facility,
-     $g_syslog_priority, $g_syslog);
+     $g_syslog);
 sub fileit {
-  my ($text) = @_;
+  my ($text, $priority) = @_;
   my ($summary, $stack);
   my $date = localtime ();
   $date =~ s/\s+/|/g;
+
+  if ( ! defined ($priority) ) {
+    $priority = "info";
+  }
 
   local *F;
   # Generate a summary based on $where and the first line of $text
@@ -323,7 +337,7 @@ sub fileit {
   #
   # Print the summary to the summary file.
   if ( $g_syslog == 1 ) {
-    my_syslog($g_syslog_facility, $g_syslog_priority, "$stack: $summary", 1);
+    my_syslog($g_syslog_facility, $priority, "$stack: $summary", 1);
   } else {
     open (F, ">>$g_summary_file") || die "Help!  Can't open $g_summary_file: $!";
     print F "$date: $summary\n";
@@ -406,7 +420,7 @@ sub parse_cmd {
       }
     }
     if ( ! $found ) {
-      fileit ("No match for $match from $cmd.  Exiting\n");
+      fileit ("No match for $match from $cmd.  Exiting\n", "err");
       exit (13);
     }
   }
@@ -592,13 +606,13 @@ sub get_eval_config {
   local *F;
 
   if ( ! open (F, $file) ) {
-    fileit ("Can't open $file: $!\n");
+    fileit ("Can't open $file: $!\n", "err");
     exit (33);
   }
   @config = <F>;
   eval "@config";
   if ( $@ ) {
-    print "Eval error:  $@\n";
+    fileit ("Eval error:  $@\n", "err");
     exit 3;
   }
   if ( $g_debug ) {
@@ -646,7 +660,7 @@ sub get_config {
     close (F);
   }
   if ( $role eq "client" && !defined ($g_server_fqdn) ) {
-    fileit ("store_url is undefined.  Death!");
+    fileit ("store_url is undefined.  Death!", "err");
     exit (38);
   }
   if ( $role eq "server" &&
@@ -654,7 +668,7 @@ sub get_config {
 	 (!defined ($g_deadlog_dir) || "$g_deadlog_dir" eq "") ||
 	 (!defined ($g_rrddir) || "$g_rrddir" eq "" ))
        ) {
-    fileit ("inbound_dir and/or rolled_dir and/or rrddir is/are undefined.  Death!");
+    fileit ("inbound_dir and/or rolled_dir and/or rrddir is/are undefined.  Death!", "err");
     exit (39);
   }
 }
@@ -700,7 +714,7 @@ sub bivalve {
 	}
 	close (F);
       } else {
-	fileit ("Failed to open $outfile: $!  Holy crap!");
+	fileit ("Failed to open $outfile: $!  Holy crap!", "err");
 	exit (908);
       }
     } else {
@@ -763,7 +777,7 @@ sub get_ignores {
   my ($line, $collector, $item);
 
   if ( ! open (F, $g_ignore_file) ) {
-    fileit ("Can't open $g_ignore_file: $!");
+    fileit ("Can't open $g_ignore_file: $!", "err");
     return (());
   }
   while ( <F> ) {

@@ -56,7 +56,7 @@ $main::g_host = get_hostname ();
 ## }
 $main::g_collector = $ARGV[2];
 if ( ! defined ($ARGV[3]) ) {
-  fileit ("No cluster defined.  Wilt.");
+  fileit ("No cluster defined.  Wilt.", "err");
   exit (23);
 }
 $cluster = $ARGV[3];
@@ -81,7 +81,7 @@ if (! defined (@ARGV) || (! defined ($ARGV[1]) && $ARGV[1] eq "calledfromcollect
   if ( defined ($ARGV[0]) && $ARGV[0] =~ /^\d+$/ ) {
     $rrd_interval = $ARGV[0];
   } else {
-    fileit ("Ack!  No interval for $g_collector.  Bailing.");
+    fileit ("Ack!  No interval for $g_collector.  Bailing.", "err");
     exit ();
   }
   get_ignores ();
@@ -102,7 +102,7 @@ sub doit {
 
   get_eval_config ("$ENV{HOME}/etc/vista.config");
   if ( ! %econfig ) {
-    fileit ("No cluster hash.  You probably don't have a config file.  Death.");
+    fileit ("No cluster hash.  You probably don't have a config file.  Death.", "err");
     exit (24);
   }
   $user = $econfig{$cluster}{'username'};
@@ -133,7 +133,7 @@ sub doit {
       ($status, @data) = run_prg ("/usr/bin/dig +short -t a $reporthost", 10);
       if ( ! @data ) {
 	# If both lookups fail, something is wrong
-	fileit ("Bad status for dig: $status.  Output was:  @data\n");
+	fileit ("Bad status for dig: $status.  Output was:  @data\n", "err");
 	exit (49);
       }
     } else {

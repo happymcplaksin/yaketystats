@@ -59,7 +59,7 @@ $stuffer_lock = "$g_lock_dir/stuffer";
 $stuffer_lock_fh = return_fh ();
 open ($stuffer_lock_fh, ">$stuffer_lock") || die "Can't open $stuffer_lock: $!";
 if ( lock_fh ($stuffer_lock_fh) != 1 ) {
-  fileit ("Can't get lock ($stuffer_lock).  Bailing.");
+  fileit ("Can't get lock ($stuffer_lock).  Bailing.", "err");
   exit (34);
 }
 
@@ -189,7 +189,7 @@ sub readlog {
   my $new = "$basename.$now";
   debug ("Renaming $file to $dir/$new");
   if ( ! rename ($file, "$dir/$new") ) {
-    fileit ("rename($file, $dir/$new) failed.  Ack!");
+    fileit ("rename($file, $dir/$new) failed.  Ack!", "err");
   }
 }
 
@@ -258,26 +258,26 @@ sub check_values {
     return (1);
   }
   if ( $path !~ /^[[:ascii:]]+$/ ) {
-    fileit ("Path contains non-ASCII characters: $path.");
+    fileit ("Path contains non-ASCII characters: $path.", "err");
     $return++;
   }
   if ( $type ne "GAUGE" &&
        $type ne "COUNTER" &&
        $type ne "DERIVE" &&
        $type ne "ABSOLUTE" ) {
-    fileit ("Type is not one of GAUGE, COUNTER, DERIVE, and ABSOLUTE: $type.");
+    fileit ("Type is not one of GAUGE, COUNTER, DERIVE, and ABSOLUTE: $type.", "err");
     $return++;
   }
   if ( $interval !~ /^\d+$/ ) {
-    fileit ("Interval is not a number: $interval.");
+    fileit ("Interval is not a number: $interval.", "err");
     $return++;
   }
   if ( $timestamp !~ /^[\d-]+$/ ) {
-    fileit ("Timestamp is not an integer or a range: $timestamp.");
+    fileit ("Timestamp is not an integer or a range: $timestamp.", "err");
     $return++;
   }
   if ( $value !~ /^[\d.]+$/ ) {
-    fileit ("Value is not an integer or float: $value.");
+    fileit ("Value is not an integer or float: $value.", "err");
     $return++;
   }
   return ($return);
@@ -398,7 +398,7 @@ sub rrdit {
   $ERR = RRDs::error;
   if ( $ERR ) {
     debug ("Update failure: $ERR", 100);
-    fileit ("ERROR while updating $rrdfile: $ERR\n");
+    fileit ("ERROR while updating $rrdfile: $ERR\n", "err");
     return (1);
   }
   debug ("Updating successful", 100);
@@ -422,7 +422,7 @@ sub maybe_create_rrdfile {
 
   # Sanity check
   if ( $secs_per_step > $g_secs_per_10years ) {
-    fileit ("Good grief!  You don't sample enough.  I'm outta here!\n");
+    fileit ("Good grief!  You don't sample enough.  I'm outta here!\n", "err");
     return (1);
   }
 
@@ -470,7 +470,7 @@ sub maybe_create_rrdfile {
   eval $command;
   $rrderr = RRDs::error ();
   if ( $rrderr ) {
-    fileit ("ERROR while creating $rrdfile: $rrderr\n");
+    fileit ("ERROR while creating $rrdfile: $rrderr\n", "err");
     return (1);
    }
   return (0);
@@ -500,7 +500,7 @@ sub mkdirp {
     $cmd = "/bin/mkdir -p $dir";
     ($status, @data) = run_prg ($cmd, 10);
     if ( $status != 0 ) {
-      fileit ("Bad status for $cmd: $status.  Output was:  @data\n");
+      fileit ("Bad status for $cmd: $status.  Output was:  @data\n", "err");
       return (1);
     }
   }
