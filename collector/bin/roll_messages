@@ -5,7 +5,7 @@
 messages=/var/yaketystats/messages
 
 if [ -f $messages ]
+then
   cp $messages $messages.`date +%d`
 fi
 > $messages
-
