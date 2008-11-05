@@ -49,7 +49,6 @@ use Fcntl ':flock'; # get LOCK_*
 use Data::Dumper;
 $Data::Dumper::Purity = 1;
 $Data::Dumper::Deepcopy = 1;
-use Getopt::Std;
 
 # TODO:  What the heck is this comment about?!?
 # Make LANG be empty so we don't get hosed.

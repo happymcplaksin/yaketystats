@@ -18,6 +18,8 @@
 
 $|=1;
 
+use Getopt::Std;
+
 $ENV{'LANG'} = '';
 $ENV{'LC_ALL'} = '';
 $ENV{'PATH'} = "$ENV{'PATH'}:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:/usr/local/yaketystats/bin";

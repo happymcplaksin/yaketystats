@@ -37,10 +37,11 @@ my $rrd_interval;
 our ($g_exit, $g_os, $g_default_timeout, $g_host, $g_sep, $g_collector);
 $main::g_host = get_hostname ();
 $main::g_collector = 'cpu';
+default_plugin_opts ();
 
 # If we haven't loaded subs.pl, then we've been run from the command-line.  That
 # means we're in test mode.  So load include, define $g_host, and print results.
-if (! defined (@ARGV) || (! defined ($ARGV[1]) && $ARGV[1] eq "calledfromcollect") ) {
+if ( !@ARGV || (! defined ($ARGV[1]) && $ARGV[1] eq "calledfromcollect") ) {
   # TODO: There must be a better way to get this path!  I think the better
   # way is called "perl module" :)
   local $main::g_fileit_mode = "test";

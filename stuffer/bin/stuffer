@@ -28,7 +28,6 @@ use Fcntl ':mode';
 use Data::Dumper;
 $Data::Dumper::Purity = 1;
 $Data::Dumper::Deepcopy = 1;
-use Getopt::Std;
 
 our $g_dir = __FILE__;
 $g_dir =~ s/\/[^\/]+$//;

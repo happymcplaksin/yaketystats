@@ -818,4 +818,19 @@ sub dumphash {
   print Data::Dumper->Dump ( [\%hash], ['*hash'] );
 }
 
+our ($opt_l, $opt_d);
+sub default_plugin_opts {
+  getopts('dl:');
+  # Sets $opt_* as a side effect.
+
+  if ( defined ($opt_d) ) {
+    $g_debug = 1;
+    debug ("Debug is ON!");
+  }
+  if ( defined ($opt_l) && $opt_l =~ /^\d+$/ ) {
+    $g_debug_level = $opt_l;
+    debug ("Debug level set to $g_debug_level");
+  }
+}
+
 1;
