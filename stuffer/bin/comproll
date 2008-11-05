@@ -28,8 +28,11 @@ do
   if [ $? = 0 ]
   then
     file="`date +%m-%d-%y,%H.%M.%S`.tar"
-    tar cf $file `ls | egrep -v 'z$|tar$'`
-    gzip $file
+    files="`ls | egrep -v 'z$|tar$'`"
+    if [ "$files" != "" ]
+    then
+      tar cf $file $files && gzip $file
+    fi
   fi
 done
 
