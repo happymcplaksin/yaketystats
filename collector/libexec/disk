@@ -153,7 +153,9 @@ sub doit {
     ($dev, $size, $used, $avail, $pct, $fs) = split (/\s+/, $line);
 
     if ( $dev =~ /\/dev/ &&
-	 defined ($fses{$fs}) ) {
+	 defined ($fses{$fs}) &&
+	 !ignoreit ('disk', $fs)
+       ) {
       debug ("fs = $fs");
       $fs = renamefs ($fs);
       $pct =~ s/%//;
@@ -214,7 +216,10 @@ sub doit {
       $i_used =~ s/%//;
       # Linux returns - for %iuse for reiserfs filesystems (which can't run out
       # of inodes
-      if ( defined ($fses{$fs}) && $i_used ne "-") {
+      if ( defined ($fses{$fs}) &&
+	   $i_used ne "-" &&
+	   !ignoreit ('disk', $fs)
+	 ) {
 	$fs = renamefs ($fs);
 	push (@return,
 	      "p=/$main::g_host/disk/inodes/$fs${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$i_used\n");
