@@ -25,3 +25,6 @@ disk: /us$
 
 # Ignore multiple filesystems:
 disk: /scratch|^/scritch
+
+# Ignore a type of TCP socket:
+net_sockets: ESTABLISHED
