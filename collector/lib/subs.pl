@@ -315,10 +315,6 @@ sub fileit {
   my $date = localtime ();
   $date =~ s/\s+/|/g;
 
-  if ( ! defined ($priority) ) {
-    $priority = "info";
-  }
-
   local *F;
   # Generate a summary based on $where and the first line of $text
   $summary = $text;
@@ -354,6 +350,10 @@ our $g_syslog_tag;
 sub my_syslog {
   my ($facility, $priority, $message, $nofileit) = @_;
   my ($cmd, $status, @data);
+
+  if ( ! defined ($priority) ) {
+    $priority = "info";
+  }
 
   # Only keep good chars
   $message =~ s/[^-0-9a-z<>:_\/.= ]//ig;
