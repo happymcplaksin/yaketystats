@@ -22,3 +22,6 @@ disk: /BCV
 
 # Ignore a filesystem with a short name that might match a longer filesystem
 disk: /us$
+
+# Ignore multiple filesystems:
+disk: /scratch|^/scritch
