@@ -82,22 +82,25 @@ sub doit {
   $time = time ();
   foreach $host (keys (%econfig)) {
     foreach $oid (keys (%{ $econfig{$host} })) {
-      $path = $econfig{$host}{$oid}{path};
-      if ( defined ($stupid{"${host}.${path}"}) ) {
-	fileit ("Hey!  You already collected $path!  I refuse to do it again.");
-      } else {
-	$stupid{"${host}.${path}"} = 1;
-	$cmd = "snmpget -v1 -c '$snmp_community' $host $oid";
-	($status, @data) = run_prg ($cmd, $g_default_timeout);
-	if ( $status != 0 ) {
-	  fileit ("problem with $cmd.  Output was:  @data");
+      # Sort of a hack but it keeps %econfig from getting complicated
+      if ( $oid ne 'community' ) {
+	$path = $econfig{$host}{$oid}{path};
+	if ( defined ($stupid{"${host}.${path}"}) ) {
+	  fileit ("Hey!  You already collected $path!  I refuse to do it again.");
 	} else {
-	  # Sample output
-	  #SNMPv2-SMI::enterprises.476.1.1.1.1.2.6.0 = INTEGER: 100
-	  chomp ($data[0]);
-	  $data[0] =~ s/.*=.*: *//;
-	  push (@return,
-		"p=/$host/snmp/$path${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$data[0]\n");
+	  $stupid{"${host}.${path}"} = 1;
+	  $cmd = "snmpget -v1 -c '$econfig{$host}{'community'}' $host $oid";
+	  ($status, @data) = run_prg ($cmd, $g_default_timeout);
+	  if ( $status != 0 ) {
+	    fileit ("problem with $cmd.  Output was:  @data");
+	  } else {
+	    # Sample output
+	    #SNMPv2-SMI::enterprises.476.1.1.1.1.2.6.0 = INTEGER: 100
+	    chomp ($data[0]);
+	    $data[0] =~ s/.*=.*: *//;
+	    push (@return,
+		  "p=/$host/snmp/$path${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$data[0]\n");
+	  }
 	}
       }
     }
