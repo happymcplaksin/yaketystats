@@ -40,11 +40,13 @@ our ($g_statfile, $g_server_lock, $g_server_uri, $g_rrddir, $g_exit,
      $g_lock_dir, $g_host, $g_collector);
 our ($g_secs_per_hour, $g_secs_per_month, $g_secs_per_10years);
 our ($g_server_logdir, @g_known_versions, $opt_d, $opt_l);
-our ($g_debug, $g_debug_level, $g_deadlog_dir);
+our ($g_debug, $g_debug_level, $g_deadlog_dir, $g_host4host_file,
+     %host4host);
 
 # Dump to RRD files after collecting this many timestamp/value pairs
 
 my (%stats, $num_entries, $stuffer_lock, $stuffer_lock_fh, $stuffies);
+
 # How many datapoints have we stuffed?
 $stuffies = 0;
 # End globals.
@@ -66,6 +68,7 @@ my $show_times = 1;
 my $start = time ();
 
 # Main
+read_host4host ();
 $show_times && fileit ("Starting at " . localtime ($start));
 not_v1 ();
 
@@ -84,6 +87,7 @@ $main::g_host = get_hostname ();
 #bivalve (("p=/$main::g_host/stuffer/stuffspersec${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$stuffs_per_sec\n",
 #	  "p=/$main::g_host/stuffer/numstuffs${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$stuffies\n"
 #	 ));
+save_host4host ();
 # End main
 
 close ($stuffer_lock_fh);
@@ -171,7 +175,7 @@ sub readlog {
     for (;$start <= $end; $start += $interval) {
       debug ("add_and_maybe_dump ($value, $start, $stat, $path, $type, $interval)", 100);
       if ( add_and_maybe_dump ($value, $start, $stat, $path, $type,
-			       $interval) != 0 ) {
+			       $interval, $host) != 0 ) {
 	fileit ("FAILURE: add_and_maybe_dump ($value, $timestamp, $stat, $path, $type, $interval) but pressing on.\n");
       }
     }
@@ -293,10 +297,13 @@ sub check_values {
 # 5/3/6: Sam and Happy decided we shouldn't touch this.  If we read this
 # TODO again and still agree, delete it!
 sub add_and_maybe_dump {
-  my ($value, $timestamp, $stat, $path, $type, $interval) = @_;
+  my ($value, $timestamp, $stat, $path, $type, $interval, $host) = @_;
 
   push ( @{ $stats{"${g_rrddir}/${path}/$stat.rrd"}{$type}{$interval} },
          "$timestamp:$value");
+  if ( ${path} =~ /^${host}\// ) {
+    $host4host{$host} = $start;
+  }
 
   $num_entries++;
   debug ("$num_entries (max = $g_max_log_entries) stats so far.\n", 100);

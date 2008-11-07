@@ -88,7 +88,7 @@ our $g_server_fqdn;
 our $g_server_protocol;
 our $g_server_uri;
 our $g_deadlog_dir = "/www/logs/rolledstats";
-
+our $g_host4host_file;
 our $g_max_collectors = 10;
 
 our $g_syslog_facility = "local5";

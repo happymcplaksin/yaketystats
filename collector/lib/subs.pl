@@ -655,6 +655,9 @@ sub get_config {
 	if ( $line =~ /^\s*rolled_dir /) {
 	  $g_deadlog_dir = config_value($line);
 	}
+	if ( $line =~ /^\s*stuffer_track /) {
+	  $g_host4host_file = config_value($line);
+	}
       }
     }
     close (F);
@@ -727,9 +730,11 @@ sub bivalve {
   }
 }
 
-# List directory entries.  Sort oldest to newest if $sort == 1.
+# List directory entries of $type (dir|file)
+# Sort oldest to newest if $sort == 1.
+# Recurse if $recuse == 1
 sub list_dir_entries {
-  my ($dir, $type, $sort) = @_;
+  my ($dir, $type, $sort, $recurse) = @_;
   local *F;
   my ($entry, $entry_type, @return);
 
@@ -737,11 +742,17 @@ sub list_dir_entries {
     fileit ("Can't open $dir: $!");
     return (());
   } else {
-    while ( ($entry = readdir (F)) ) {
-      if ( $entry !~ /^[.]/ ) {
+    WHILE: while ( ($entry = readdir (F)) ) {
+      if ( $entry !~ /^[.]/ && $entry !~ /^lost[+]found$/ ) {
+	($entry_type) = (stat ("$dir/$entry"))[2];
+	if ( defined ($recurse) && $recurse == 1 && $entry ne "lost+found") {
+	  if ( S_ISDIR($entry_type) ) {
+	    push (@return, list_dir_entries ("$dir/$entry", $type, $sort, $recurse));
+	    next WHILE;
+	  }
+	}
 	if ( defined ($type) ) {
-	  ($entry_type) = (stat ("$dir/$entry"))[2];
-	  if ( ($type eq "file" && S_ISREG($entry_type)) ||
+	  if ( ($type eq "file" && S_ISREG($entry_type) && !S_ISLNK($entry_type)) ||
 	       ($type eq "dir" && S_ISDIR($entry_type)) ) {
 	    push (@return, "$dir/$entry");
 	  }
@@ -830,6 +841,25 @@ sub default_plugin_opts {
   if ( defined ($opt_l) && $opt_l =~ /^\d+$/ ) {
     $g_debug_level = $opt_l;
     debug ("Debug level set to $g_debug_level");
+  }
+}
+
+our (%host4host);
+sub read_host4host {
+  if ( ! open (F, $g_host4host_file) ) {
+    fileit ("Can't open $g_host4host_file: $!");
+  } else {
+    eval <F>;
+    close (F);
+  }
+}
+
+sub save_host4host {
+  if ( ! open (F, ">${g_host4host_file}") ) {
+    fileit ("Can't open $g_host4host_file: $!");
+  } else {
+    print F Data::Dumper->Dump ( [\%host4host], ['*host4host'] );
+    close (F);
   }
 }
 
