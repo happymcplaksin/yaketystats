@@ -844,6 +844,7 @@ sub default_plugin_opts {
   }
 }
 
+our (%host4host);
 sub read_host4host {
   if ( ! open (F, $g_host4host_file) ) {
     fileit ("Can't open $g_host4host_file: $!");
