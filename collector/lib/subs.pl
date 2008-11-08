@@ -596,7 +596,7 @@ sub parse_server_url {
 
 our ($g_server_fqdn, $g_server_protocol, $g_server_uri, $g_max_log_entries,
      $g_max_rrd_entries, $g_server_logdir, $g_deadlog_dir,
-     $g_client_config, $g_server_config, $g_rrddir);
+     $g_client_config, $g_server_config, $g_rrddir, $g_host4host_file);
 
 # econfig = eval_config
 our (%econfig);
