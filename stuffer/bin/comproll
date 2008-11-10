@@ -31,7 +31,7 @@ do
     files="`ls | egrep -v 'z$|tar$'`"
     if [ "$files" != "" ]
     then
-      tar cf $file $files && gzip $file
+      tar cf $file $files && gzip $file && rm -f $files
     fi
   fi
 done
