@@ -1563,7 +1563,7 @@ print $out;
         }
         overlayoffset[me] = Position.cumulativeOffset(pme);
         Event.observe(pme,'mousedown',selDragStart.bindAsEventListener());
-        mydrag = new Draggable(pme,{constraint:'horizontal',revert:false,reverteffect:function(){return;},ghosting:false,snap:[10,10],onEnd:function(el,e,me){selEnd(el,e,me)},change:function(e){selUpdate(mydrag.currentDelta(),overlayoffset[me],e,me)}});
+        mydrag = new Draggable(pme,{constraint:'horizontal',revert:true,reverteffect:function(){pme.style.left=0;},ghosting:false,snap:[10,10],onEnd:function(el,e,me){selEnd(el,e,me)},change:function(e){selUpdate(mydrag.currentDelta(),overlayoffset[me],e,me)}});
     }
     function selDragStart(e){
         var el            = Event.element(e);
