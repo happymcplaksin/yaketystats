@@ -33,12 +33,19 @@ else
   fqdn="`nslookup \"\$hostname\" | egrep '^Name:|name =' | awk '{print \$NF}' | sed 's/[.]$//' | tr '[A-Z]' '[a-z]'`"
 fi
 
-# If there's no dot in the result, report badness on stderr
-echo "$fqdn" | grep '[.]' > /dev/null
+# If there's no dot in the result, try hostname -f
+echo "$fqdn" | grep '[.]' > /dev/null 2>&1
 if [ $? != 0 ]
 then
-  echo "Did not get a useful FQDN:  $fqdn" 1>&2
-  exit 1
-else
-  echo "$fqdn"
+  echo hostname -f
+  fqdn="`hostname -f 2> /dev/null`"
 fi
+
+# If there's there's still no dot in the result, settle for hostname
+echo "$fqdn" | grep '[.]' > /dev/null 2>&1
+if [ $? != 0 ]
+then
+  fqdn="${hostname}"
+fi
+
+echo "${fqdn}"

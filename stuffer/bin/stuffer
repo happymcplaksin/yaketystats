@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 # Copyright (C) 2008 Board of Regents of the University System of Georgia
 
@@ -28,7 +28,6 @@ use Fcntl ':mode';
 use Data::Dumper;
 $Data::Dumper::Purity = 1;
 $Data::Dumper::Deepcopy = 1;
-use Getopt::Std;
 
 our $g_dir = __FILE__;
 $g_dir =~ s/\/[^\/]+$//;
@@ -41,11 +40,13 @@ our ($g_statfile, $g_server_lock, $g_server_uri, $g_rrddir, $g_exit,
      $g_lock_dir, $g_host, $g_collector);
 our ($g_secs_per_hour, $g_secs_per_month, $g_secs_per_10years);
 our ($g_server_logdir, @g_known_versions, $opt_d, $opt_l);
-our ($g_debug, $g_debug_level, $g_deadlog_dir);
+our ($g_debug, $g_debug_level, $g_deadlog_dir, $g_host4host_file,
+     %host4host);
 
 # Dump to RRD files after collecting this many timestamp/value pairs
 
 my (%stats, $num_entries, $stuffer_lock, $stuffer_lock_fh, $stuffies);
+
 # How many datapoints have we stuffed?
 $stuffies = 0;
 # End globals.
@@ -59,7 +60,7 @@ $stuffer_lock = "$g_lock_dir/stuffer";
 $stuffer_lock_fh = return_fh ();
 open ($stuffer_lock_fh, ">$stuffer_lock") || die "Can't open $stuffer_lock: $!";
 if ( lock_fh ($stuffer_lock_fh) != 1 ) {
-  fileit ("Can't get lock ($stuffer_lock).  Bailing.");
+  fileit ("Can't get lock ($stuffer_lock).  Bailing.", "err");
   exit (34);
 }
 
@@ -67,6 +68,7 @@ my $show_times = 1;
 my $start = time ();
 
 # Main
+read_host4host ();
 $show_times && fileit ("Starting at " . localtime ($start));
 not_v1 ();
 
@@ -76,15 +78,22 @@ $show_times && fileit ("Took " . ($time - $start) . " seconds to stuff $stuffies
 
 $g_collector = "stuffer";
 # +.0001 = Cheating when it only takes no time at all
-my $stuffs_per_sec = ($stuffies / (($time+.0001) - $start));
-$show_times && fileit ("That's " . sprintf ("%.2f", $stuffs_per_sec) . " stuffs per second.");
 my $rrd_type = 'GAUGE';
 my $rrd_interval = 300;
 $main::g_host = get_hostname ();
-# TODO: Come up with a way to get useful stuffer stats
-#bivalve (("p=/$main::g_host/stuffer/stuffspersec${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$stuffs_per_sec\n",
-#	  "p=/$main::g_host/stuffer/numstuffs${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$stuffies\n"
-#	 ));
+my $diff = $time - $start;
+my @stats;
+push (@stats,
+      "p=/$main::g_host/stuffer/numstuffs${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$stuffies\n");
+if ( $diff != 0 ) {
+  my $stuffs_per_sec = $stuffies / $diff;
+  push (@stats, "p=/$main::g_host/stuffer/stuffspersec${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$stuffs_per_sec\n");
+  $show_times && fileit ("That's " . sprintf ("%.2f", $stuffs_per_sec) . " stuffs per second.");
+} else {
+  $show_times && fileit ("That's INFINITY stuffs per second!!  (It took 0 time)");
+}
+bivalve (@stats);
+save_host4host ();
 # End main
 
 close ($stuffer_lock_fh);
@@ -172,7 +181,7 @@ sub readlog {
     for (;$start <= $end; $start += $interval) {
       debug ("add_and_maybe_dump ($value, $start, $stat, $path, $type, $interval)", 100);
       if ( add_and_maybe_dump ($value, $start, $stat, $path, $type,
-			       $interval) != 0 ) {
+			       $interval, $host) != 0 ) {
 	fileit ("FAILURE: add_and_maybe_dump ($value, $timestamp, $stat, $path, $type, $interval) but pressing on.\n");
       }
     }
@@ -189,7 +198,7 @@ sub readlog {
   my $new = "$basename.$now";
   debug ("Renaming $file to $dir/$new");
   if ( ! rename ($file, "$dir/$new") ) {
-    fileit ("rename($file, $dir/$new) failed.  Ack!");
+    fileit ("rename($file, $dir/$new) failed.  Ack!", "err");
   }
 }
 
@@ -245,39 +254,52 @@ sub parse_logline {
   return ($path, $type, $interval, $timestamp, $value)
 }
 
+sub check_value {
+  my ($var, $name) = @_;
+
+  if ( !defined ($var) ) {
+    fileit ("$name is undefined");
+    return (1);
+  }
+  return (0);
+}
+
 sub check_values {
   my ($path, $type, $interval, $timestamp, $value) = @_;
   my $return = 0;
+  my $bail = 0;
 
-  if ( ! defined ($path) ||
-       ! defined ($type) ||
-       ! defined ($interval) ||
-       ! defined ($timestamp) ||
-       ! defined ($value) ) {
-    fileit ("Some values are undefined.");
+  $bail += check_value ($path, 'path');
+  $bail += check_value ($path, 'type');
+  $bail += check_value ($path, 'interval');
+  $bail += check_value ($path, 'timestamp');
+  $bail += check_value ($path, 'value');
+  $bail += check_value ($path, 'path');
+  if ( $bail ) {
+    fileit ("Bailing because of undefined values.");
     return (1);
   }
   if ( $path !~ /^[[:ascii:]]+$/ ) {
-    fileit ("Path contains non-ASCII characters: $path.");
+    fileit ("Path contains non-ASCII characters: $path.", "err");
     $return++;
   }
   if ( $type ne "GAUGE" &&
        $type ne "COUNTER" &&
        $type ne "DERIVE" &&
        $type ne "ABSOLUTE" ) {
-    fileit ("Type is not one of GAUGE, COUNTER, DERIVE, and ABSOLUTE: $type.");
+    fileit ("Type is not one of GAUGE, COUNTER, DERIVE, and ABSOLUTE: $type.", "err");
     $return++;
   }
   if ( $interval !~ /^\d+$/ ) {
-    fileit ("Interval is not a number: $interval.");
+    fileit ("Interval is not a number: $interval.", "err");
     $return++;
   }
   if ( $timestamp !~ /^[\d-]+$/ ) {
-    fileit ("Timestamp is not an integer or a range: $timestamp.");
+    fileit ("Timestamp is not an integer or a range: $timestamp.", "err");
     $return++;
   }
   if ( $value !~ /^[\d.]+$/ ) {
-    fileit ("Value is not an integer or float: $value.");
+    fileit ("Value is not an integer or float: $value.", "err");
     $return++;
   }
   return ($return);
@@ -294,10 +316,13 @@ sub check_values {
 # 5/3/6: Sam and Happy decided we shouldn't touch this.  If we read this
 # TODO again and still agree, delete it!
 sub add_and_maybe_dump {
-  my ($value, $timestamp, $stat, $path, $type, $interval) = @_;
+  my ($value, $timestamp, $stat, $path, $type, $interval, $host) = @_;
 
   push ( @{ $stats{"${g_rrddir}/${path}/$stat.rrd"}{$type}{$interval} },
          "$timestamp:$value");
+  if ( ${path} =~ /^${host}\// ) {
+    $host4host{$host} = $start;
+  }
 
   $num_entries++;
   debug ("$num_entries (max = $g_max_log_entries) stats so far.\n", 100);
@@ -398,7 +423,7 @@ sub rrdit {
   $ERR = RRDs::error;
   if ( $ERR ) {
     debug ("Update failure: $ERR", 100);
-    fileit ("ERROR while updating $rrdfile: $ERR\n");
+    fileit ("ERROR while updating $rrdfile: $ERR\n", "err");
     return (1);
   }
   debug ("Updating successful", 100);
@@ -422,7 +447,7 @@ sub maybe_create_rrdfile {
 
   # Sanity check
   if ( $secs_per_step > $g_secs_per_10years ) {
-    fileit ("Good grief!  You don't sample enough.  I'm outta here!\n");
+    fileit ("Good grief!  You don't sample enough.  I'm outta here!\n", "err");
     return (1);
   }
 
@@ -470,7 +495,7 @@ sub maybe_create_rrdfile {
   eval $command;
   $rrderr = RRDs::error ();
   if ( $rrderr ) {
-    fileit ("ERROR while creating $rrdfile: $rrderr\n");
+    fileit ("ERROR while creating $rrdfile: $rrderr\n", "err");
     return (1);
    }
   return (0);
@@ -500,7 +525,7 @@ sub mkdirp {
     $cmd = "/bin/mkdir -p $dir";
     ($status, @data) = run_prg ($cmd, 10);
     if ( $status != 0 ) {
-      fileit ("Bad status for $cmd: $status.  Output was:  @data\n");
+      fileit ("Bad status for $cmd: $status.  Output was:  @data\n", "err");
       return (1);
     }
   }

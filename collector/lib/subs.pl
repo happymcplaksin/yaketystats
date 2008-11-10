@@ -194,11 +194,11 @@ sub get_hostname {
       if ( $data[0] ne '' ) {
 	return ($data[0]);
       } else {
-	fileit ("No FQDN found.  I give up.");
+	fileit ("No FQDN found.  I give up.", "err");
 	exit (1);
       }
     } else {
-      fileit ("No FQDN found.  I give up.");
+      fileit ("No FQDN found.  I give up.", "err");
       exit (1);
     }
   }
@@ -208,7 +208,7 @@ sub get_hostname {
   ($status, @data) = run_prg ($g_get_fqdn, 10);
   if ( $status != 0 ) {
     fileit ("Bad status for $cmd: $status.  The output was:  @data\n");
-    fileit ("No FQDN found.  I give up.");
+    fileit ("No FQDN found.  I give up.", "err");
     exit (3);
   }
 
@@ -224,7 +224,7 @@ sub debug {
 
   if ( $g_debug &&
        (! defined ($level) || $level <= $g_debug_level) ) {
-    fileit ("$message");
+    fileit ("$message", "debug");
   }
 }
 
@@ -287,7 +287,7 @@ sub check_vars {
     my (undef, undef, $sub) = (caller (1))[1,2,3];
     fileit ("Undefined variables from $sub:  @bad");
     if ( $exit ) {
-      fileit ("Exiting.");
+      fileit ("exiting because of badness in check_vars.", "err");
       exit (22);
     }
     return (1);
@@ -297,10 +297,20 @@ sub check_vars {
 
 # syslog summaries and log details to /var/.../messages.  cron job rolls
 # messages file once a day
+# Optional second arg is syslog priority (debug, info, etc)
+#
+# alert
+# crit
+# debug
+# emerg
+# err
+# info
+# notice
+# warning
 our ($g_message_file, $g_summary_file, $g_fileit_mode, $g_syslog_facility,
-     $g_syslog_priority, $g_syslog);
+     $g_syslog);
 sub fileit {
-  my ($text) = @_;
+  my ($text, $priority) = @_;
   my ($summary, $stack);
   my $date = localtime ();
   $date =~ s/\s+/|/g;
@@ -323,7 +333,7 @@ sub fileit {
   #
   # Print the summary to the summary file.
   if ( $g_syslog == 1 ) {
-    my_syslog($g_syslog_facility, $g_syslog_priority, "$stack: $summary", 1);
+    my_syslog($g_syslog_facility, $priority, "$stack: $summary", 1);
   } else {
     open (F, ">>$g_summary_file") || die "Help!  Can't open $g_summary_file: $!";
     print F "$date: $summary\n";
@@ -340,6 +350,10 @@ our $g_syslog_tag;
 sub my_syslog {
   my ($facility, $priority, $message, $nofileit) = @_;
   my ($cmd, $status, @data);
+
+  if ( ! defined ($priority) ) {
+    $priority = "info";
+  }
 
   # Only keep good chars
   $message =~ s/[^-0-9a-z<>:_\/.= ]//ig;
@@ -406,7 +420,7 @@ sub parse_cmd {
       }
     }
     if ( ! $found ) {
-      fileit ("No match for $match from $cmd.  Exiting\n");
+      fileit ("No match for $match from $cmd.  Exiting\n", "err");
       exit (13);
     }
   }
@@ -582,7 +596,7 @@ sub parse_server_url {
 
 our ($g_server_fqdn, $g_server_protocol, $g_server_uri, $g_max_log_entries,
      $g_max_rrd_entries, $g_server_logdir, $g_deadlog_dir,
-     $g_client_config, $g_server_config, $g_rrddir);
+     $g_client_config, $g_server_config, $g_rrddir, $g_host4host_file);
 
 # econfig = eval_config
 our (%econfig);
@@ -592,13 +606,13 @@ sub get_eval_config {
   local *F;
 
   if ( ! open (F, $file) ) {
-    fileit ("Can't open $file: $!\n");
+    fileit ("Can't open $file: $!\n", "err");
     exit (33);
   }
   @config = <F>;
   eval "@config";
   if ( $@ ) {
-    print "Eval error:  $@\n";
+    fileit ("Eval error:  $@\n", "err");
     exit 3;
   }
   if ( $g_debug ) {
@@ -641,12 +655,15 @@ sub get_config {
 	if ( $line =~ /^\s*rolled_dir /) {
 	  $g_deadlog_dir = config_value($line);
 	}
+	if ( $line =~ /^\s*stuffer_track /) {
+	  $g_host4host_file = config_value($line);
+	}
       }
     }
     close (F);
   }
   if ( $role eq "client" && !defined ($g_server_fqdn) ) {
-    fileit ("store_url is undefined.  Death!");
+    fileit ("store_url is undefined.  Death!", "err");
     exit (38);
   }
   if ( $role eq "server" &&
@@ -654,7 +671,7 @@ sub get_config {
 	 (!defined ($g_deadlog_dir) || "$g_deadlog_dir" eq "") ||
 	 (!defined ($g_rrddir) || "$g_rrddir" eq "" ))
        ) {
-    fileit ("inbound_dir and/or rolled_dir and/or rrddir is/are undefined.  Death!");
+    fileit ("inbound_dir and/or rolled_dir and/or rrddir is/are undefined.  Death!", "err");
     exit (39);
   }
 }
@@ -700,7 +717,7 @@ sub bivalve {
 	}
 	close (F);
       } else {
-	fileit ("Failed to open $outfile: $!  Holy crap!");
+	fileit ("Failed to open $outfile: $!  Holy crap!", "err");
 	exit (908);
       }
     } else {
@@ -713,9 +730,11 @@ sub bivalve {
   }
 }
 
-# List directory entries.  Sort oldest to newest if $sort == 1.
+# List directory entries of $type (dir|file)
+# Sort oldest to newest if $sort == 1.
+# Recurse if $recuse == 1
 sub list_dir_entries {
-  my ($dir, $type, $sort) = @_;
+  my ($dir, $type, $sort, $recurse) = @_;
   local *F;
   my ($entry, $entry_type, @return);
 
@@ -723,11 +742,17 @@ sub list_dir_entries {
     fileit ("Can't open $dir: $!");
     return (());
   } else {
-    while ( ($entry = readdir (F)) ) {
-      if ( $entry !~ /^[.]/ ) {
+    WHILE: while ( ($entry = readdir (F)) ) {
+      if ( $entry !~ /^[.]/ && $entry !~ /^lost[+]found$/ ) {
+	($entry_type) = (stat ("$dir/$entry"))[2];
+	if ( defined ($recurse) && $recurse == 1 && $entry ne "lost+found") {
+	  if ( S_ISDIR($entry_type) ) {
+	    push (@return, list_dir_entries ("$dir/$entry", $type, $sort, $recurse));
+	    next WHILE;
+	  }
+	}
 	if ( defined ($type) ) {
-	  ($entry_type) = (stat ("$dir/$entry"))[2];
-	  if ( ($type eq "file" && S_ISREG($entry_type)) ||
+	  if ( ($type eq "file" && S_ISREG($entry_type) && !S_ISLNK($entry_type)) ||
 	       ($type eq "dir" && S_ISDIR($entry_type)) ) {
 	    push (@return, "$dir/$entry");
 	  }
@@ -763,7 +788,7 @@ sub get_ignores {
   my ($line, $collector, $item);
 
   if ( ! open (F, $g_ignore_file) ) {
-    fileit ("Can't open $g_ignore_file: $!");
+    fileit ("Can't open $g_ignore_file: $!", "err");
     return (());
   }
   while ( <F> ) {
@@ -802,6 +827,40 @@ sub tell_nagios {
 sub dumphash {
   my (%hash) = @_;
   print Data::Dumper->Dump ( [\%hash], ['*hash'] );
+}
+
+our ($opt_l, $opt_d);
+sub default_plugin_opts {
+  getopts('dl:');
+  # Sets $opt_* as a side effect.
+
+  if ( defined ($opt_d) ) {
+    $g_debug = 1;
+    debug ("Debug is ON!");
+  }
+  if ( defined ($opt_l) && $opt_l =~ /^\d+$/ ) {
+    $g_debug_level = $opt_l;
+    debug ("Debug level set to $g_debug_level");
+  }
+}
+
+our (%host4host);
+sub read_host4host {
+  if ( ! open (F, $g_host4host_file) ) {
+    fileit ("Can't open $g_host4host_file: $!");
+  } else {
+    eval <F>;
+    close (F);
+  }
+}
+
+sub save_host4host {
+  if ( ! open (F, ">${g_host4host_file}") ) {
+    fileit ("Can't open $g_host4host_file: $!");
+  } else {
+    print F Data::Dumper->Dump ( [\%host4host], ['*host4host'] );
+    close (F);
+  }
 }
 
 1;

@@ -1,0 +1,231 @@
+#!/usr/bin/env perl
+
+# TODO: Remove hacks which made testing easier:
+#       - put list_dir_entries back in subs.pl
+#       - re-include require
+#       - delete fileit
+#
+#       Why doesn't list_dir_entries skip symlinks?
+
+$|=1;
+use warnings;
+use strict;
+use RRDs;
+use Cwd 'realpath';
+use Getopt::Long qw(:config bundling);
+our $g_dir = __FILE__;
+$g_dir =~ s/\/[^\/]+$//;
+$g_dir = realpath("$g_dir/..");
+#require "$g_dir/lib/include";
+use Fcntl qw (:flock :mode); # get LOCK_* and S_IF*
+
+my ($host_only, $rrd_only, $all, $delete, $yes, $seconds,
+    $date_format, $help, $oldest, $host4host, %hosts, %files);
+our ($g_rrddir, %host4host);
+my ($dir, $host, $rrd, $last, $now);
+$now = time ();
+
+config ();
+if ( $host4host ) {
+  display_host4host ();
+} else {
+  gather ();
+  display ();
+}
+
+sub usage {
+  print "$0: Display update times for hosts and RRD files.\n";
+  print "\n";
+  print "    By default shows the time of the least- and most-recent update time for RRDs\n";
+  print "    associated with each host (i.e., top-level directories in $g_rrddir), sorted\n";
+  print "    by most-recent update.\n";
+  print "\n";
+  print "    Shows the last update time of each RRD file when given the --rrd-only option.\n";
+  print "\n";
+  print "    Shows the last time a stuffer saw a host reported data for *itself* when given the\n";
+  print "    --host4host option\n";
+  print "\n";
+  print "List of arguments:\n";
+  print "--host4host                    Shows the last time a stuffer saw a host reported\n";
+  print "                               data for *itself*.\n";
+  print "--host-only                    Only report on hosts (i.e., top-level dirs in $g_rrddir).\n";
+  print "                               This is the default behavior\n";
+  print "--rrd-only                     Only report on RRD files\n";
+  print "--all                          Report on both hosts and RRD files\n";
+  print "--delete                       Delete RRD files older than SECONDS\n";
+  print "--yes                          Don't prompt when deleting old RRD files\n";
+  print "--seconds=SECONDS              How old is old?\n";
+  print "--dateformat=seconds|pretty    Print seconds since epoch or human-readable date\n";
+  print "                               Defaults to pretty\n";
+  print "--oldest                       Sort hosts by least-recent update instead of most-recent\n";
+  exit (0);
+}
+
+sub fileit {
+  my ($x) = @_;
+  print "$x\n";
+}
+
+sub list_dir_entries {
+  my ($dir, $type, $sort, $recurse) = @_;
+  local *F;
+  my ($entry, $entry_type, @return);
+
+  if ( !opendir (F, $dir) ) {
+    fileit ("Can't open $dir: $!");
+    return (());
+  } else {
+    WHILE: while ( ($entry = readdir (F)) ) {
+      if ( $entry !~ /^[.]/ && $entry !~ /^lost[+]found$/ ) {
+	($entry_type) = (stat ("$dir/$entry"))[2];
+	if ( defined ($recurse) && $recurse == 1 && $entry ne "lost+found") {
+	  if ( S_ISDIR($entry_type) ) {
+	    push (@return, list_dir_entries ("$dir/$entry", $type, $sort, $recurse));
+	    next WHILE;
+	  }
+	}
+	if ( defined ($type) ) {
+	  if ( ($type eq "file" && S_ISREG($entry_type) && !S_ISLNK($entry_type)) ||
+	       ($type eq "dir" && S_ISDIR($entry_type)) ) {
+	    push (@return, "$dir/$entry");
+	  }
+	} else {
+	  push (@return, "$dir/$entry");
+	}
+      }
+    }
+    closedir (F);
+    if ( defined ($sort) && $sort == 1 ) {
+      @return = sort (@return);
+    }
+    return (@return);
+  }
+}
+
+
+sub config {
+  # defaults
+  $host_only = 1;
+  $seconds = 86400 * 30;
+  $date_format = 'pretty';
+  # For $g_rrddir
+  #get_config("server");
+  $g_rrddir = "/rrd";
+  if ( !GetOptions (
+		    "all" => \$all,
+		    "dateformat=s" => \$date_format,
+		    "delete" => \$delete,
+		    "host-only" => \$host_only,
+		    "host4host" => \$host4host,
+		    "oldest" => \$oldest,
+		    "rrd-only" => \$rrd_only,
+		    "seconds=i" => \$seconds,
+		    "yes" => \$yes,
+		    "help" => \$help
+		   ) ) {
+    print "Trouble w/ options.  Feed me, Seymour\n";
+    exit (1);
+  }
+  if ( defined($date_format) &&
+       $date_format ne 'seconds' &&
+       $date_format ne 'pretty' ) {
+    print "dateformat must be 'seconds' or 'pretty'.  Assuming you meant 'seconds'.\n";
+    $date_format = 'seconds';
+  }
+  if ( $help ) {
+    usage ();
+  }
+}
+
+sub keeper {
+  my ($a, $b, $which) = @_;
+
+  if ( !defined ($a) ) {
+    return ($b);
+  }
+  if ( $which eq 'oldest' ) {
+    return ($a > $b);
+  } else {
+    return ($a < $b);
+  }
+}
+
+sub gather {
+  LOOP: foreach $dir (list_dir_entries ($g_rrddir, "dir")) {
+    if ( $dir eq 'lost+found' ) {
+      next LOOP;
+    }
+    #print "dir = $dir";
+    $host = $dir;
+    $host =~ s/^$g_rrddir.//g;
+    LOOP2: foreach $rrd (list_dir_entries ($dir, "file", 1, 1)) {
+      if ( $rrd !~ /[.]rrd$/ ) {
+	next LOOP2;
+      }
+      #print "rrd = $rrd\n";
+      $last = RRDs::last ($rrd);
+      my $ERR=RRDs::error;
+      #print "last = " . showtime($last) . ", rrd = $rrd.\n";
+      if ( $ERR ) {
+	print "Warning: Trouble w/ rrdlast for $rrd: $ERR\n";
+      } else {
+	if ( keeper($hosts{$host}{'oldest'}, $last, 'oldest') ) {
+	  $hosts{$host}{'oldest'} = $last;
+	}
+	if ( keeper($hosts{$host}{'newest'}, $last, 'newest') ) {
+	  $hosts{$host}{'newest'} = $last;
+	}
+	if ( $now - $last > $seconds ) {
+	  $files{$rrd} = $last;
+	}
+      }
+    }
+  }
+}
+
+sub showtime {
+  my ($time) = @_;
+  if ( $date_format eq 'pretty' ) {
+    return (scalar localtime($time));
+  } else {
+    return ($time);
+  }
+}
+
+# if -h or -a, show all hosts times
+# if -r or -a, show all crusty rrd files
+# if -d, ASK and if YES delete crusty rrd files
+sub display {
+  my ($time, $one, $two);
+
+  if ( !$rrd_only && ($all || $host_only) ) {
+    foreach $host (sort mysort keys (%hosts)) {
+      printf ("%-30s %s,    %s\n", "${host},", showtime ($hosts{$host}{'oldest'}), showtime ($hosts{$host}{'newest'}));
+    }
+  }
+  if ( $all || $rrd_only ) {
+    foreach $rrd (sort {$files{$a} cmp $files{$b}} keys (%files)) {
+      printf ("%-50s: %s\n", $rrd, showtime ($files{$rrd}));
+      if ( $delete ) {
+	print "implement delete.\n";
+      }
+    }
+  }
+}
+
+sub mysort {
+  if ( $oldest ) {
+    return ($hosts{$a}{'oldest'} cmp $hosts{$b}{'oldest'});
+  } else {
+    return ($hosts{$a}{'newest'} cmp $hosts{$b}{'newest'});
+  }
+}
+
+sub display_host4host {
+  my ($host);
+
+  read_host4host ();
+  foreach $host (sort (keys (%host4host))) {
+    print "$host, " . showtime ($host4host) . "\n";
+  }
+}

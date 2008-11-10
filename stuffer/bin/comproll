@@ -27,9 +27,12 @@ do
   cd $hostdir
   if [ $? = 0 ]
   then
-    file="`date +%m-%d-%y,%H:%M:%S`.tar"
-    tar cf $file `ls | grep -v 'z$'`
-    gzip $file
+    file="`date +%m-%d-%y,%H.%M.%S`.tar"
+    files="`ls | egrep -v 'z$|tar$'`"
+    if [ "$files" != "" ]
+    then
+      tar cf $file $files && gzip $file
+    fi
   fi
 done
 

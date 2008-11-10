@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 # Copyright (C) 2008 Board of Regents of the University System of Georgia
 
@@ -25,7 +25,6 @@ use Data::Dumper;
 $Data::Dumper::Purity = 1;
 $Data::Dumper::Deepcopy = 1;
 #print Data::Dumper->Dump ( [\%config], ['*config'] );
-use Getopt::Std;
 
 # Make LANG be empty so we don't get hosed.
 $ENV{'LANG'} = '';
@@ -91,7 +90,7 @@ if ( defined ($packet_file) ) {
     $new_file = $packet_file;
     $new_file =~ s/[-]${biggest_ts}[.]/-${smallest_ts}./;
     if ( ! rename ($packet_file, $new_file) ) {
-      fileit ("Could not rename $packet_file to $new_file.  I'm helpless!");
+      fileit ("Could not rename $packet_file to $new_file.  I'm helpless!", "err");
       return ();
     }
     $packet_file = $new_file;
@@ -152,7 +151,7 @@ sub conglomerate {
 	$new_file = $packet_file;
 	$new_file =~ s/[-]($biggest_ts)[.]/-${smallest_ts}./;
 	if ( ! rename ($packet_file, $new_file) ) {
-	  fileit ("Could not rename $packet_file to $new_file.  I'm helpless!");
+	  fileit ("Could not rename $packet_file to $new_file.  I'm helpless!", "err");
 	  return ();
 	}
 	$packet_file = $new_file;
@@ -197,7 +196,7 @@ sub post_file {
   my ($protocol, $fqdn, $port, $uri, $pair_href, @packets) = @_;
 
   if ($protocol ne "http") {
-    fileit ("$protocol is an unsupported protocol");
+    fileit ("$protocol is an unsupported protocol", "err");
     return (33);
   }
   http_post_file ($fqdn, 80, $uri, $pair_href, @packets);

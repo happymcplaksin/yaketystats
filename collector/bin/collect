@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 # Copyright (C) 2008 Board of Regents of the University System of Georgia
 
@@ -49,7 +49,6 @@ use Fcntl ':flock'; # get LOCK_*
 use Data::Dumper;
 $Data::Dumper::Purity = 1;
 $Data::Dumper::Deepcopy = 1;
-use Getopt::Std;
 
 # TODO:  What the heck is this comment about?!?
 # Make LANG be empty so we don't get hosed.
@@ -85,7 +84,7 @@ $collect_lock = "$g_lock_dir/collect";
 $collect_lock_fh = return_fh ();
 open ($collect_lock_fh, ">$collect_lock") || die "Can't open $collect_lock: $!";
 if ( lock_fh ($collect_lock_fh) != 1 ) {
-  fileit ("Can't get lock ($collect_lock).  Bailing.");
+  fileit ("Can't get lock ($collect_lock).  Bailing.", "err");
   exit (34);
 }
 
@@ -173,7 +172,7 @@ foreach $minute (keys %config) {
 		  exit (0);
 		}
 	      } else {
-		fileit ("Where the hell is $g_libexec/$stat_checker and or why can't I execute it? Movin' on.");
+		fileit ("Where the hell is $g_libexec/$stat_checker and or why can't I execute it? Movin' on.", "err");
 		exit ( 909 );
 	      }
 	    } else {
@@ -215,8 +214,7 @@ sub parse_config{
   local *F;
 
   if ( ! open (F, $g_conf) ) {
-    fileit ("Can't open $g_conf.  Exiting.");
-    print ("Can't open $g_conf.  Exiting.");
+    fileit ("Can't open $g_conf.  Exiting.", "err");
     exit (50);
   }
 

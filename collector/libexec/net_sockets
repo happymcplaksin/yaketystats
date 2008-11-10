@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 # Copyright (C) 2008 Board of Regents of the University System of Georgia
 
@@ -37,10 +37,11 @@ my $rrd_interval;
 our ($g_default_timeout, $g_host, $g_sep, $g_collector, $g_os);
 $main::g_host = get_hostname ();
 $main::g_collector = 'net_sockets';
+default_plugin_opts ();
 
 # If we haven't loaded subs.pl, then we've been run from the command-line.  That
 # means we're in test mode.  So load include, define $g_host, and print results.
-if (! defined (@ARGV) || (! defined ($ARGV[1]) && $ARGV[1] eq "calledfromcollect") ) {
+if ( !@ARGV || (! defined ($ARGV[1]) && $ARGV[1] eq "calledfromcollect") ) {
   # TODO: There must be a better way to get this path!  I think the better
   # way is called "perl module" :)
   local $main::g_fileit_mode = "test";
@@ -58,7 +59,7 @@ if (! defined (@ARGV) || (! defined ($ARGV[1]) && $ARGV[1] eq "calledfromcollect
   if ( defined ($ARGV[0]) && $ARGV[0] =~ /^\d+$/ ) {
     $rrd_interval = $ARGV[0];
   } else {
-    fileit ("Ack!  No interval for $g_collector.  Bailing.");
+    fileit ("Ack!  No interval for $g_collector.  Bailing.", "err");
     exit ();
   }
   get_ignores ();
@@ -70,6 +71,7 @@ if (! defined (@ARGV) || (! defined ($ARGV[1]) && $ARGV[1] eq "calledfromcollect
   }
 }
 
+# TCP Solaris:
 # netstat -f inet -a -P tcp -n | egrep -v '^TCP:|Local Address' |sed 's/[^A-Z]//g' | grep -v '^$' | sort | uniq -c
 # 1 BOUND
 # 454 ESTABLISHED
@@ -78,8 +80,6 @@ if (! defined (@ARGV) || (! defined ($ARGV[1]) && $ARGV[1] eq "calledfromcollect
 # 21 LISTEN
 # 2 SYNSENT
 # 16 TIMEWAIT
-
-# Solaris:
 # 
 # TCP: IPv4
 #    Local Address        Remote Address    Swind Send-Q Rwind Recv-Q  State
@@ -98,19 +98,19 @@ if (! defined (@ARGV) || (! defined ($ARGV[1]) && $ARGV[1] eq "calledfromcollect
 #       *.1234               *.*                0      0 49152      0 LISTEN
 #       *.1234               *.*                0      0 49152      0 LISTEN
 #       *.6001               *.*                0      0 49152      0 LISTEN
-# 168.24.81.63.22      168.24.82.64.55442   34256      0 48032      0 ESTABLISHED
+# 0.0.81.63.22      0.0.82.64.55442   34256      0 48032      0 ESTABLISHED
 # 127.0.0.1.6011             *.*                0      0 49152      0 LISTEN
-# 168.24.81.63.22      168.24.82.64.45859   16912      0 48144      0 ESTABLISHED
+# 0.0.81.63.22      0.0.82.64.45859   16912      0 48144      0 ESTABLISHED
 #       *.39658              *.*                0      0 49152      0 BOUND
-# 168.24.81.63.39661   168.24.81.86.8088    49001      0 49640      0 ESTABLISHED
-# 168.24.81.63.39663   168.24.81.86.8088    48511      0 49640      0 ESTABLISHED
+# 0.0.81.63.39661   0.0.81.86.8088    49001      0 49640      0 ESTABLISHED
+# 0.0.81.63.39663   0.0.81.86.8088    48511      0 49640      0 ESTABLISHED
 #       *.39740              *.*                0      0 49152      0 LISTEN
-# 168.24.81.63.39742   168.24.80.70.8834    49640      0 49131      0 ESTABLISHED
-# 168.24.81.63.39744   168.24.80.70.8834    49640      0 48888      0 ESTABLISHED
-# 168.24.81.63.39745   168.24.80.70.8834    49640      0 49424      0 ESTABLISHED
-# 168.24.81.63.39746   168.24.80.70.8834    49640      0 49058      0 ESTABLISHED
+# 0.0.81.63.39742   0.0.80.70.8834    49640      0 49131      0 ESTABLISHED
+# 0.0.81.63.39744   0.0.80.70.8834    49640      0 48888      0 ESTABLISHED
+# 0.0.81.63.39745   0.0.80.70.8834    49640      0 49424      0 ESTABLISHED
+# 0.0.81.63.39746   0.0.80.70.8834    49640      0 49058      0 ESTABLISHED
 #
-# Linux:
+# TCP Linux:
 # netstat -an --inet --tcp
 # Active Internet connections (servers and established)
 # Proto Recv-Q Send-Q Local Address           Foreign Address         State      
@@ -127,9 +127,9 @@ if (! defined (@ARGV) || (! defined ($ARGV[1]) && $ARGV[1] eq "calledfromcollect
 # tcp        0      0 127.0.0.1:6010          0.0.0.0:*               LISTEN     
 # tcp        0      0 0.0.0.0:443             0.0.0.0:*               LISTEN     
 # tcp        0      0 127.0.0.1:6011          0.0.0.0:*               LISTEN     
-# tcp        0      0 168.24.129.22:5666      168.24.80.67:59281      ESTABLISHED
+# tcp        0      0 0.0.129.22:5666      0.0.80.67:59281      ESTABLISHED
 #
-# HP-UX
+# TCP HP-UX:
 # netstat -an -f inet
 # Active Internet connections (including servers)Proto Recv-Q Send-Q  Local Address          Foreign Address        (state)
 # tcp        0      0  *.10222                *.*                     LISTEN
@@ -140,75 +140,127 @@ if (! defined (@ARGV) || (! defined ($ARGV[1]) && $ARGV[1] eq "calledfromcollect
 # tcp        0      0  127.0.0.1.5798         127.0.0.1.52122         ESTABLISHED
 # tcp        0      0  127.0.0.1.5798         127.0.0.1.52124         ESTABLISHED
 # tcp        0      0  127.0.0.1.5798         127.0.0.1.52126         ESTABLISHED
-# tcp        0     88  198.72.68.12.5798      168.24.80.30.3399       ESTABLISHED
+# tcp        0     88  0.0.68.12.5798      0.0.80.30.3399       ESTABLISHED
 # tcp        0      0  *.5666                 *.*                     LISTEN
 # tcp        0      0  *.1508                 *.*                     LISTEN
 # tcp        0      0  *.5555                 *.*                     LISTEN
-# tcp        0      0  198.72.68.12.58709     10.0.2.15.22            ESTABLISHED
-# tcp        0      0  198.72.68.12.50501     10.0.2.10.22            ESTABLISHED
-
+# tcp        0      0  0.0.68.12.58709     10.0.2.15.22            ESTABLISHED
+# tcp        0      0  0.0.68.12.50501     10.0.2.10.22            ESTABLISHED
+#
+# UDP Linux:
+#    netstat -an --inet --udp # and sometimes there's a state in the state column
+# Active Internet connections (servers and established)
+# Proto Recv-Q Send-Q Local Address               Foreign Address             State      
+# udp        0      0 0.0.0.0:514                 0.0.0.0:*                               
+# udp        0      0 0.0.0.0:514                 0.0.0.0:*                               
+# udp        0      0 0.0.0.0:7938                0.0.0.0:*                               
+# #
+# UDP HP-UX:
+#    netstat -an -f inet| grep udp # If something shows up in the state column I can't catch it
+# udp        0      0  127.0.0.1.55308        *.*                   
+# udp        0      0  127.0.0.1.53548        *.*                   
+# udp        0      0  127.0.0.1.55444        *.*                   
+# udp        0      0  127.0.0.1.123          *.*                   
+# udp        0      0  127.0.0.1.56310        *.*                   
+# udp        0      0  127.0.0.1.56153        *.*                   
+# #
+# UDP Solaris:
+#    netstat -f inet -a -P udp -n # Seems to have state in every line!
+# 
+# UDP: IPv4
+#    Local Address         Remote Address     State
+# -------------------- -------------------- -------
+#       *.13                                  Idle
+#       *.123                                 Idle
+# 127.0.0.1.123                               Idle
+# 10.10.72.9.123                              Idle
+# 10.10.72.10.123                             Idle
+# 127.0.0.1.53                                Idle
+# 10.10.72.10.53                              Idle
+#       *.*                                   Unbound
+#       *.*                                   Unbound
+# 10.10.72.10.53402                           Idle
+#       *.50452                               Idle
+# 10.10.72.10.26451   66.240.243.36.53       Connected
 sub doit {
-  my ($cmd, $status, @data, $line, $socket, @return, $time, %sockets);
-
+  my ($cmd, %cmds, $status, @data, $line, $socket, @return, $time,
+      %sockets, $proto, $pathadd);
   $cmd = 'netstat';
   $time = time ();
 
+  # TCP
   if ( $g_os eq "linux" ) {
-    $cmd = "$cmd -an --inet --tcp";
+    $cmds{'tcp'} = "$cmd -an --inet --tcp";
   } else {
     if ( $g_os eq "hpux" ) {
-      $cmd = "$cmd -an -f inet";
+      $cmds{'tcp'} = "$cmd -an -f inet";
     } else {
       if ( $g_os eq "solaris" ) {
-	$cmd = "$cmd -f inet -a -P tcp -n";
+	$cmds{'tcp'} = "$cmd -f inet -a -P tcp -n";
       } else {
 	fileit ("unknown os: $g_os");
 	return (undef);
       }
     }
   }
-  ($status, @data) = run_prg ($cmd, $g_default_timeout);
-  if ( $status != 0 ) {
-    fileit ("Bad status for $cmd:  $status.  Output was:  @data\n");
-    return (undef);
-  }
-  # Solaris:
-  # TCP: IPv4
-  #    Local Address        Remote Address    Swind Send-Q Rwind Recv-Q  State
-  # -------------------- -------------------- ----- ------ ----- ------ -------
-  #       *.*                  *.*                0      0 49152      0 IDLE
-  #
-  # Linux:
-  # netstat -an --inet --tcp
-  # Active Internet connections (servers and established)
-  # Proto Recv-Q Send-Q Local Address           Foreign Address         State      
-  # tcp        0      0 0.0.0.0:514             0.0.0.0:*               LISTEN     
-  #
-  # HP-UX
-  # netstat -an -f inet
-  # Active Internet connections (including servers)Proto Recv-Q Send-Q  Local Address          Foreign Address        (state)
-  # tcp        0      0  *.10222                *.*                     LISTEN
-
-
-  foreach $line (@data) {
-    if ( $line !~ /^TCP/ &&
-	 $line !~ /Local Address/ &&
-         $line !~ /^$/ &&
-	 $line !~ /---/ &&
-	 $line !~ /connections/ &&
-	 $line !~ /Proto/ &&
-	 $line !~ /---/ ) {
-      $line =~ s/[^A-Z]//g;
-      $line =~ s/tcp//;
-      if ( $line !~ /^$/ ) {
-        $sockets{$line}++;
+  # UDP
+  if ( $g_os eq "linux" ) {
+    $cmds{'udp'} = "$cmd -an --inet --udp";
+  } else {
+    if ( $g_os eq "hpux" ) {
+      $cmds{'udp'} = "$cmd -an -f inet";
+    } else {
+      if ( $g_os eq "solaris" ) {
+	$cmds{'udp'} = "$cmd -f inet -a -P udp -n";
       }
     }
   }
 
-  foreach $socket (keys (%sockets)) {
-    if ( ! ignoreit ('net_sockets', $socket) ) {
-      push (@return, "p=/$main::g_host/net/sockets/$socket${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$sockets{$socket}\n");
+  foreach $proto ('tcp', 'udp') {
+    undef (%sockets);
+    ($status, @data) = run_prg ($cmds{$proto}, $g_default_timeout);
+    if ( $status != 0 ) {
+      fileit ("Bad status for $cmd:  $status.  Output was:  @data\n");
+      return (undef);
+    }
+    foreach $line (@data) {
+      if ( ($line !~ /^TCP/ &&
+	    $line !~ /Local Address/ &&
+	    $line !~ /^$/ &&
+	    $line !~ /---/ &&
+	    $line !~ /connections/ &&
+	    $line !~ /Proto/ &&
+	    $line !~ /^UDP/ &&
+	    $line !~ /---/ ) &&
+           (($g_os eq 'hpux' && $proto eq 'udp' && $line =~ /^udp/) ||
+            ($g_os ne 'hpux' || $proto ne 'udp'))
+	 ) {
+	$line =~ s/tcp//;
+	$line =~ s/udp//;
+	$line =~ s/[^A-Z]//ig;
+	if ( $proto eq 'tcp' ) {
+	  if ( $line ne '' ) {
+	    $sockets{$line}++;
+	  }
+	} else {
+	  # For OSes w/ no UDP states, make up a state called 'misc'
+	  if ( $line eq '' ) {
+	    $line = 'misc';
+	  }
+	  $sockets{$line}++;
+	}
+      }
+    }
+
+    $pathadd = '';
+    if ( $proto eq 'udp' ) {
+      $pathadd = '_udp';
+    }
+
+    foreach $socket (keys (%sockets)) {
+      if ( ! ignoreit ('net_sockets', $socket) ) {
+	push (@return, "p=/$main::g_host/net/sockets${pathadd}/$socket${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$sockets{$socket}\n");
+      }
     }
   }
   return (@return);

@@ -18,6 +18,8 @@
 
 $|=1;
 
+use Getopt::Std;
+
 $ENV{'LANG'} = '';
 $ENV{'LC_ALL'} = '';
 $ENV{'PATH'} = "$ENV{'PATH'}:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:/usr/local/yaketystats/bin";
@@ -86,11 +88,10 @@ our $g_server_fqdn;
 our $g_server_protocol;
 our $g_server_uri;
 our $g_deadlog_dir = "/www/logs/rolledstats";
-
+our $g_host4host_file;
 our $g_max_collectors = 10;
 
 our $g_syslog_facility = "local5";
-our $g_syslog_priority = "info";
 our $g_syslog_tag = $g_user_agent;
 $g_syslog_tag =~ s/ .*//;
 our $g_syslog = 1;
