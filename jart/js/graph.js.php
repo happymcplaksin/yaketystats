@@ -1553,7 +1553,7 @@ print $out;
             seldiv.style.top             = '0px';
             seldiv.style.width           = '0px';
             seldiv.style.height          = G.graphs[me].ysize + 'px';
-            seldiv.style.backgroundColor = '#' + G.selColor;
+            seldiv.style.backgroundColor = G.selColor;
             seldiv.style.opacity         = parseInt(G.selOpacity,16) /255;
             seldiv.className             = 'seldiv';
             var contain                  = $('overlaycontainerdiv-' + me);
@@ -1563,7 +1563,7 @@ print $out;
         }
         overlayoffset[me] = Position.cumulativeOffset(pme);
         Event.observe(pme,'mousedown',selDragStart.bindAsEventListener());
-        mydrag = new Draggable(pme,{constraint:'horizontal',revert:false,reverteffect:function(){return;},ghosting:false,snap:[10,10],onEnd:function(el,e,me){selEnd(el,e,me)},change:function(e){selUpdate(mydrag.currentDelta(),overlayoffset[me],e,me)}});
+        mydrag = new Draggable(pme,{constraint:'horizontal',revert:true,reverteffect:function(){pme.style.left=0;},ghosting:false,snap:[10,10],onEnd:function(el,e,me){selEnd(el,e,me)},change:function(e){selUpdate(mydrag.currentDelta(),overlayoffset[me],e,me)}});
     }
     function selDragStart(e){
         var el            = Event.element(e);
@@ -1740,7 +1740,7 @@ print $out;
         var uphoc=$('upserphighopacityinp');
         var upo=$('upserphighopacityinp');
         upo.value = G.selOpacity;
-        uphc.value=G.selColor.replace(/^#/,'');
+        uphc.value=G.selColor;
         var uphcl=$('userphighlab');
         uphcl.style.backgroundColor = G.selColor;
         uphcl.style.opacity         = parseInt(G.selOpacity,16) /255;
@@ -1784,7 +1784,7 @@ print $out;
 
         var uphc=$('upserphighinp').value;
         var upho=$('upserphighopacityinp').value;
-        hash.set('selColor',uphc);
+        hash.set('selColor','#' + uphc);
         hash.set('selOpacity',upho);
         G.selColor = "#" + uphc;
         G.selOpacity = upho;
