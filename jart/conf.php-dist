@@ -4,6 +4,8 @@
 $admins = array();
 
 $dateformat = 'r';
+// if you're GMT+ you may want this dateformat:
+// $dateformat = 'D, j M Y H:i:s';
 $font  = 'Mono';
 
 $graphpath = './graphs';

@@ -53,15 +53,6 @@ class Graph {
         $this->number = $number;
         $this->opaths = $paths;
         $this->paths = $this->json->decode($paths);
-        //So, if you're in a timezone that's positive, relative to GMT
-        //(eg: +0400) or even GMT! (+0000) JSON can't handle it and strips
-        //the '+', so we have to put it back.
-        if ( preg_match('/.*  \d\d\d\d$/',$this->paths->end) ||
-             preg_match('/.*  \d\d\d\d$/',$this->paths->start) ){
-            $this->paths->end = preg_replace('/(.*)  (\d\d\d\d)$/','$1 +$2',$this->paths->end);
-            $this->paths->start = preg_replace('/(.*)  (\d\d\d\d)$/','$1 +$2',$this->paths->start);
-            $this->debugLog("I changed start and end because of your TZ\n",$this->paths->end,$this->paths->start);
-        }
         $this->redrawoverlay = $dooverlay;
         $this->debugLog($paths);
     }
@@ -76,7 +67,7 @@ class Graph {
         }
          */
         $this->comments[] = "'COMMENT:\\n' ";
-        $this->comments[] = "'COMMENT:Times displayed\\: ";
+        $this->comments[] = "'COMMENT:Start/End\\: ";
         $this->comments[] = $this->dateEscape($dateformat, $this->paths->start);
         $this->comments[] = " -- ";
         $this->comments[] = $this->dateEscape( $dateformat, $this->paths->end);
