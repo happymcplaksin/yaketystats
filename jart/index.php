@@ -1988,7 +1988,7 @@ $version = "2.1";
             G.closeAllGraphs(0);
         }
 
-        return{ 'navVis': navVis, 'initialPaths': initialPaths, 'init': init, 'toggleControl':toggleControl, 'savePlaylist':savePlaylist, 'loadPlaylist':loadPlaylist, 'handleError':handleError, 'newPlSub':newPlSub, 'help':help, 'hidehelp':hidehelp ,'findMatches':findMatches,'regexSavePlaylist':regexSavePlaylist, verify:verify}
+        return{ 'navVis': navVis, 'initialPaths': initialPaths, 'init': init, 'toggleControl':toggleControl, 'savePlaylist':savePlaylist, 'loadPlaylist':loadPlaylist, 'handleError':handleError, 'newPlSub':newPlSub, 'help':help, 'hidehelp':hidehelp ,'findMatches':findMatches,'regexSavePlaylist':regexSavePlaylist, verify:verify, removeErrors:removeErrors}
     })();
 
 
