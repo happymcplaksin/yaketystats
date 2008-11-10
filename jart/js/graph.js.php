@@ -1553,7 +1553,7 @@ print $out;
             seldiv.style.top             = '0px';
             seldiv.style.width           = '0px';
             seldiv.style.height          = G.graphs[me].ysize + 'px';
-            seldiv.style.backgroundColor = '#' + G.selColor;
+            seldiv.style.backgroundColor = G.selColor;
             seldiv.style.opacity         = parseInt(G.selOpacity,16) /255;
             seldiv.className             = 'seldiv';
             var contain                  = $('overlaycontainerdiv-' + me);
