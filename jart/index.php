@@ -85,6 +85,9 @@ class Graph {
         $this->comments[] = "'COMMENT:\\n' ";
         $this->comments[] = "'COMMENT:Graph created ";
         $this->comments[] =  $this->dateEscape( $dateformat, time() ). "' ";
+        $this->comments[] = "'COMMENT:\\n' ";
+        $this->comments[] = "'COMMENT:Amount of time shown\\: ";
+        $this->comments[] = $this->secToEng($this->paths->end - $this->paths->start) . "' ";
     }
 
     public function createCommandLine(){
