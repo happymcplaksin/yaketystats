@@ -1031,6 +1031,17 @@ print $out;
         span.appendChild(img);
         timecontainer.appendChild(span);
 
+        //SET ALL TIMES TO ME
+        var span           = document.createElement('span');
+        span.className     = 'timeresetbutton';
+        var img            = document.createElement('img');
+        img.src            = 'img/timezone3.png';
+        img.border         = '0';
+        img.title          = 'Set All Graph Times To This'
+        Event.observe(img,'click',function(){setAllTimesToMe(me)}.bindAsEventListener());
+        span.appendChild(img);
+        timecontainer.appendChild(span);
+
         //START
         var tdiv           = document.createElement('div');
         tdiv.className     = 'startandendtimes';
@@ -1417,6 +1428,11 @@ print $out;
         if ( n != 0 ){
             refreshd = setTimeout('G.autoRefreshReal(' + n + ')',n);
         }
+    }
+    function setAllTimesToMe(me){
+        var s = $('start-' + me ).value;
+        var e = $('end-' + me ).value;
+        setAllGraphTimes(s,e);
     }
     function createAllGraphImages(){
         for (key in G.graphs){
