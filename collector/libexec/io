@@ -379,6 +379,7 @@ sub linux {
   # Ignore ram and loop devices by default
   push (@{ $g_ignores{'io'} }, "^ram");
   push (@{ $g_ignores{'io'} }, "^loop");
+  push (@{ $g_ignores{'io'} }, "^fd");
   # The get data from iostat
   # This doesn't include tps
   #$cmd = 'iostat -x ALL 5 2';
