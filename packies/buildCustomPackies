@@ -142,7 +142,10 @@ function allPrep(){
     sed -e "s|SERVER-URL|${serverurl}|" ../collector/etc/client.conf.in > ../collector/etc/client.conf
     sed -e "s|INBOUND|${inbound}|" \
         -e "s|ROLLED|${rolled}|" \
+        -e "s|STUFFER-TRACK|${stuffer_track}|" \
         -e "s|RRDDIR|${rrddir}|" ../stuffer/etc/server.conf.in > ../stuffer/etc/server.conf
+    sed -e "s|RRDDIR|${rrddir}|" ../jart/conf.php-dist.in > ../jart/conf.php-dist
+    sed -e "s|RRDDIR|${rrddir}|" ../jart/makefscache.in > ../jart/makefscache
     rm -f ${me}/{depot,pkg,rpm}build.log
 }
 
@@ -381,6 +384,8 @@ else
         ask "Inbound stat directory" inbound
         ask "Rolled stats directory" rolled
         ask "RRD files directory" rrddir
+	stuffer_track=${stuffer_track:-"${logdir}/stuffer_track.dat"};
+        ask "Pathname of stuffer_track file" stuffer_track
     fi
 
 

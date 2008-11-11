@@ -10,6 +10,11 @@
 # Tell io plugin to ignore c0t0d0s0
 io: c0t0d0s0
 
+# The 2.1+ io plugin has a special feature since it collects so many stats
+# about each LV/partition/whatever.  You can tell it to ignore certain
+# *stats*, not just devices.  For example, tell it to ignore tps stats:
+io: tps
+
 # Ignore vmnet0 interface
 net: vmnet0
 
