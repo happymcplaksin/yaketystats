@@ -101,7 +101,7 @@ sub doit {
   my ($base_url, $ua, $req, $resp, $time, $start, $host, $timeout,
       @html, $line, @return, $reporthost, $status, @data);
 
-  get_eval_config ("$ENV{HOME}/etc/vista.config");
+  eval_file ("$ENV{HOME}/etc/vista.config");
   if ( ! %econfig ) {
     fileit ("No cluster hash.  You probably don't have a config file.  Death.", "err");
     exit (24);

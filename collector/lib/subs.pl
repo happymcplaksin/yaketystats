@@ -599,8 +599,8 @@ our ($g_server_fqdn, $g_server_protocol, $g_server_uri, $g_max_log_entries,
      $g_client_config, $g_server_config, $g_rrddir, $g_host4host_file);
 
 # econfig = eval_config
-our (%econfig);
-sub get_eval_config {
+our (%econfig, %host4host);
+sub eval_file {
   my ($file) = @_;
   my (@config);
   local *F;
@@ -615,8 +615,18 @@ sub get_eval_config {
     fileit ("Eval error:  $@\n", "err");
     exit 3;
   }
-  if ( $g_debug ) {
-    dumphash (%econfig);
+}
+
+sub dump2file {
+  my ($file, $ref, $name) = @_;
+
+  if ( defined ($file) ) {
+    if ( ! open (F, ">${file}") ) {
+      fileit ("Can't open $file: $!");
+    } else {
+      print F Data::Dumper->Dump ( [$ref], ["*${name}"] );
+      close (F);
+    }
   }
 }
 
@@ -841,29 +851,6 @@ sub default_plugin_opts {
   if ( defined ($opt_l) && $opt_l =~ /^\d+$/ ) {
     $g_debug_level = $opt_l;
     debug ("Debug level set to $g_debug_level");
-  }
-}
-
-our (%host4host);
-sub read_host4host {
-  if ( defined ($g_host4host_file) ) {
-    if ( ! open (F, $g_host4host_file) ) {
-      fileit ("Can't open $g_host4host_file: $!");
-    } else {
-      eval <F>;
-      close (F);
-    }
-  }
-}
-
-sub save_host4host {
-  if ( defined ($g_host4host_file) ) {
-    if ( ! open (F, ">${g_host4host_file}") ) {
-      fileit ("Can't open $g_host4host_file: $!");
-    } else {
-      print F Data::Dumper->Dump ( [\%host4host], ['*host4host'] );
-      close (F);
-    }
   }
 }
 

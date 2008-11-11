@@ -68,7 +68,7 @@ my $show_times = 1;
 my $start = time ();
 
 # Main
-read_host4host ();
+eval_file ($g_host4host_file);
 $show_times && fileit ("Starting at " . localtime ($start));
 not_v1 ();
 
@@ -93,7 +93,7 @@ if ( $diff != 0 ) {
   $show_times && fileit ("That's INFINITY stuffs per second!!  (It took 0 time)");
 }
 bivalve (@stats);
-save_host4host ();
+dump2file ($g_host4host_file, \%host4host, 'host4host');
 # End main
 
 close ($stuffer_lock_fh);

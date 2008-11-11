@@ -1,12 +1,5 @@
 #!/usr/bin/env perl
 
-# TODO: Remove hacks which made testing easier:
-#       - put list_dir_entries back in subs.pl
-#       - re-include require
-#       - delete fileit
-#
-#       Why doesn't list_dir_entries skip symlinks?
-
 $|=1;
 use warnings;
 use strict;
@@ -16,12 +9,12 @@ use Getopt::Long qw(:config bundling);
 our $g_dir = __FILE__;
 $g_dir =~ s/\/[^\/]+$//;
 $g_dir = realpath("$g_dir/..");
-#require "$g_dir/lib/include";
+require "$g_dir/lib/include";
 use Fcntl qw (:flock :mode); # get LOCK_* and S_IF*
 
 my ($host_only, $rrd_only, $all, $delete, $yes, $seconds,
     $date_format, $help, $oldest, $host4host, %hosts, %files);
-our ($g_rrddir, %host4host);
+our ($g_rrddir, %host4host, $g_host4host_file, $g_server_config);
 my ($dir, $host, $rrd, $last, $now);
 $now = time ();
 
@@ -60,48 +53,6 @@ sub usage {
   print "--oldest                       Sort hosts by least-recent update instead of most-recent\n";
   exit (0);
 }
-
-sub fileit {
-  my ($x) = @_;
-  print "$x\n";
-}
-
-sub list_dir_entries {
-  my ($dir, $type, $sort, $recurse) = @_;
-  local *F;
-  my ($entry, $entry_type, @return);
-
-  if ( !opendir (F, $dir) ) {
-    fileit ("Can't open $dir: $!");
-    return (());
-  } else {
-    WHILE: while ( ($entry = readdir (F)) ) {
-      if ( $entry !~ /^[.]/ && $entry !~ /^lost[+]found$/ ) {
-	($entry_type) = (stat ("$dir/$entry"))[2];
-	if ( defined ($recurse) && $recurse == 1 && $entry ne "lost+found") {
-	  if ( S_ISDIR($entry_type) ) {
-	    push (@return, list_dir_entries ("$dir/$entry", $type, $sort, $recurse));
-	    next WHILE;
-	  }
-	}
-	if ( defined ($type) ) {
-	  if ( ($type eq "file" && S_ISREG($entry_type) && !S_ISLNK($entry_type)) ||
-	       ($type eq "dir" && S_ISDIR($entry_type)) ) {
-	    push (@return, "$dir/$entry");
-	  }
-	} else {
-	  push (@return, "$dir/$entry");
-	}
-      }
-    }
-    closedir (F);
-    if ( defined ($sort) && $sort == 1 ) {
-      @return = sort (@return);
-    }
-    return (@return);
-  }
-}
-
 
 sub config {
   # defaults
@@ -224,8 +175,9 @@ sub mysort {
 sub display_host4host {
   my ($host);
 
-  read_host4host ();
+  get_config ("server");
+  eval_file ($g_host4host_file);
   foreach $host (sort (keys (%host4host))) {
-    print "$host, " . showtime ($host4host) . "\n";
+    print "$host, " . showtime ($host4host{$host}) . "\n";
   }
 }

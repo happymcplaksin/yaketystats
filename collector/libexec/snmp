@@ -77,7 +77,7 @@ sub doit {
   my ($host, $oid, $cmd, $status, @data, @return, $path, $time);
   my (%stupid);
 
-  get_eval_config ("$ENV{HOME}/etc/snmp.config");
+  eval_file ("$ENV{HOME}/etc/snmp.config");
 
   $time = time ();
   foreach $host (keys (%econfig)) {
