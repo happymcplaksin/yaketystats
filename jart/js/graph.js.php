@@ -27,7 +27,8 @@ $defaults = array(
                     'defaultsize'      => 50,
                     'selColor'         => "#ff0000",
                     'selOpacity'       => 56,
-                    'tool'             => 1
+                    'tool'             => 1,
+                    'zoompct'          => .125
                 );
 $arr = array();
 if ( file_exists($file) && is_readable($file) ){
@@ -666,7 +667,8 @@ print $out;
         }
     }
     function zoom(action,graph){
-        x_zoomTimes(G.graphs[graph].start,G.graphs[graph].end,action,graph,zoomCB);
+        amt=$('userpzoompct').value;
+        x_zoomTimes(G.graphs[graph].start,G.graphs[graph].end,amt,action,graph,zoomCB);
     }
     function zoomCB(s){
         var a = s.parseJSON();
@@ -1717,6 +1719,16 @@ print $out;
         updateTimes(a[0],a[1],a[2]);
         createGraphImage(a[0],1);
     }
+    function selectValue(select,newValue){
+        a = $(select);
+        if ( a ){
+            for( var i=0; i < a.options.length; i++ ){
+                if ( a.options[i].value == newValue ){
+                    a.selectedIndex=i;
+                }
+            }
+        }
+    }
     function userPrefsInit(){
         var ups=$('userpstart');
         ups.value=defaultstarttime;
@@ -1724,11 +1736,11 @@ print $out;
         var upe=$('userpend');
         upe.value=defaultendtime;
 
-        var upsize=$('userpsize');
-        upsize.value=defaultsize;
+        selectValue('userpsize',defaultsize);
 
-        var upt=$('userptool');
-        upt.value=G.tool;
+        selectValue('userptool',G.tool);
+
+        selectValue('userpzoompct',G.zoompct);
 
         var upc=$('upserpcanvasinp');
         var upoc=$('upserpcanvasopacityinp');
@@ -1778,6 +1790,9 @@ print $out;
         tools = ['dragtoolicon','seltoolicon'];
         setTool(tools[upt]);
         hash.set('tool',upt);
+
+        var upz=$('userpzoompct').value;
+        hash.set('zoompct',upz);
 
         var upc=$('upserpcanvasinp').value;
         G.defaultCanvasColor = upc;
@@ -1904,6 +1919,6 @@ print $out;
                             '#F5F800', '#CDCFC4', '#BCBEB3', '#AAABA1',
                             '#8F9286', '#797C6E', '#2E3127', '#0000FF');
     return {
-        'init': init, 'drawGraph': drawGraph, 'addRrdToGraph': addRrdToGraph, 'cg': cg, 'graphs': graphs, 'selColor': selColor, 'selOpacity': selOpacity, 'addGraph': addGraph, 'defaultpathlimit': defaultpathlimit, 'closeAllGraphs': closeAllGraphs, 'drawAllGraphs': drawAllGraphs, 'setAllGraphTimes':setAllGraphTimes, 'autoRefreshReal':autoRefreshReal, 'createAllGraphImages':createAllGraphImages, 'createGraphImage':createGraphImage, 'autoRefreshSetup':autoRefreshSetup, setAllGraphSizes:setAllGraphSizes, 'tool':tool, resetSizeForAll:resetSizeForAll, 'confirmcloseallgraphs':confirmcloseallgraphs, 'confirmdeleteplaylist':confirmdeleteplaylist, 'defaultstarttime':defaultstarttime, 'defaultendtime':defaultendtime, 'defaultsize':defaultsize, 'defaultCanvasColor':defaultCanvasColor, 'confirmoverwriteplaylist':confirmoverwriteplaylist
+        'init': init, 'drawGraph': drawGraph, 'addRrdToGraph': addRrdToGraph, 'cg': cg, 'graphs': graphs, 'selColor': selColor, 'selOpacity': selOpacity, 'addGraph': addGraph, 'defaultpathlimit': defaultpathlimit, 'closeAllGraphs': closeAllGraphs, 'drawAllGraphs': drawAllGraphs, 'setAllGraphTimes':setAllGraphTimes, 'autoRefreshReal':autoRefreshReal, 'createAllGraphImages':createAllGraphImages, 'createGraphImage':createGraphImage, 'autoRefreshSetup':autoRefreshSetup, setAllGraphSizes:setAllGraphSizes, 'tool':tool, zoompct:zoompct, resetSizeForAll:resetSizeForAll, 'confirmcloseallgraphs':confirmcloseallgraphs, 'confirmdeleteplaylist':confirmdeleteplaylist, 'defaultstarttime':defaultstarttime, 'defaultendtime':defaultendtime, 'defaultsize':defaultsize, 'defaultCanvasColor':defaultCanvasColor, 'confirmoverwriteplaylist':confirmoverwriteplaylist
     }
 })();

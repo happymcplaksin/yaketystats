@@ -1146,14 +1146,15 @@ function unTmpPlaylist($file){
     return $json->encode(array('SUCCESS',"Yea, $user maybe I saved your playlist. Who knows really? Not me. The URL for this playlist is ",$_SERVER['PHP_SELF'].'?pl='.$user.$outy,$dir.$user.$outy));
 }
 
-function zoomTimes($start,$end,$action,$graph){
+function zoomTimes($start,$end,$amt,$action,$graph){
     global $dateformat;
     $os    = $start;
     $oe    = $end;
     $start = strtotime($start);
     $end   = strtotime($end);
     $dur   = $end - $start;
-    $mv    = round($dur * .1);
+    $amt   = floatval($amt);
+    $mv    = round($dur * $amt);
     $json  = new Services_JSON();
     switch ($action){
         case 'left':
@@ -1167,12 +1168,6 @@ function zoomTimes($start,$end,$action,$graph){
         case 'out':
             $start -= $mv;
             $end += $mv;
-            $now = mktime();
-            if ( $end > $now ){
-                $dif = $end - $now;
-                $end = $now;
-                $start -= $dif;
-            }
             break;
         case 'in':
             $start += $mv;
@@ -2206,7 +2201,17 @@ $version = "2.1";
 
 <label for="userptool">Tool:</label><select name="userptool" id="userptool">
     <option value="0">Drag/CtC</option>
-    <option value="1">Highlight</option
+    <option value="1">Highlight</option>
+</select><br>
+
+<label for="userpzoompct">Zoom Percentage:</label><select name="userpzoompct" id="userpzoompct">
+    <option value=".05">10%</option>
+    <option value=".125">25%</option>
+    <option value=".25">50%</option>
+    <option value=".375">75%</option>
+    <option value=".50">100%</option>
+    <option value=".75">150%</option>
+    <option value="1">200%</option>
 </select><br>
 
 <strong>Canvas Color</strong>
