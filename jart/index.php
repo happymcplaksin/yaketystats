@@ -1172,6 +1172,9 @@ function zoomTimes($start,$end,$amt,$action,$graph){
         case 'in':
             $start += $mv;
             $end -= $mv;
+            if ( $end <= $start ){
+                $end = $start +1;
+            }
             break;
         default:
             $a     = array($os,$oe,$graph);
