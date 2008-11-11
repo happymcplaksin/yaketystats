@@ -2,6 +2,7 @@
 
 inbound_dir INBOUND
 rolled_dir  ROLLED
+stuffer_track STUFFER-TRACK
 max_log_entries 1000000
 max_rrd_entries 1000
 rrddir RRDDIR

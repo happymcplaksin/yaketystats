@@ -846,20 +846,24 @@ sub default_plugin_opts {
 
 our (%host4host);
 sub read_host4host {
-  if ( ! open (F, $g_host4host_file) ) {
-    fileit ("Can't open $g_host4host_file: $!");
-  } else {
-    eval <F>;
-    close (F);
+  if ( defined ($g_host4host_file) ) {
+    if ( ! open (F, $g_host4host_file) ) {
+      fileit ("Can't open $g_host4host_file: $!");
+    } else {
+      eval <F>;
+      close (F);
+    }
   }
 }
 
 sub save_host4host {
-  if ( ! open (F, ">${g_host4host_file}") ) {
-    fileit ("Can't open $g_host4host_file: $!");
-  } else {
-    print F Data::Dumper->Dump ( [\%host4host], ['*host4host'] );
-    close (F);
+  if ( defined ($g_host4host_file) ) {
+    if ( ! open (F, ">${g_host4host_file}") ) {
+      fileit ("Can't open $g_host4host_file: $!");
+    } else {
+      print F Data::Dumper->Dump ( [\%host4host], ['*host4host'] );
+      close (F);
+    }
   }
 }
 
