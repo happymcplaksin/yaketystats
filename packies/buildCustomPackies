@@ -144,6 +144,8 @@ function allPrep(){
         -e "s|ROLLED|${rolled}|" \
         -e "s|STUFFER-TRACK|${stuffer_track}|" \
         -e "s|RRDDIR|${rrddir}|" ../stuffer/etc/server.conf.in > ../stuffer/etc/server.conf
+    sed -e "s|RRDDIR|${rrddir}|" ../jart/conf.php-dist.in > ../jart/conf.php-dist
+    sed -e "s|RRDDIR|${rrddir}|" ../jart/makefscache.in > ../jart/makefscache
     rm -f ${me}/{depot,pkg,rpm}build.log
 }
 
