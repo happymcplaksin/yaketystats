@@ -1173,7 +1173,7 @@ function zoomTimes($start,$end,$amt,$action,$graph){
             $start += $mv;
             $end -= $mv;
             if ( $end <= $start ){
-                $end = $start +1;
+                $end = (2 + $start);
             }
             break;
         default:
