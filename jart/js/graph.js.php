@@ -434,6 +434,7 @@ print $out;
     }
     function closeAllGraphs(flc){
         $('graphspace').innerHTML = '';
+        dsPicker.removeErrors();
         G.graphs = new Array();
         resetSizeForAll();
         addGraph();
