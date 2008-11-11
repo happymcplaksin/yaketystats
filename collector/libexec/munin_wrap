@@ -21,7 +21,6 @@ fqdn=`cat /var/yaketystats/fqdn`
 tmp=`mktemp /tmp/munin_memory.XXXXXX`
 now=`date +%s`
 sep=''
-
 if [ $# -lt 2 ]
 then
   echo "need at least two args"
@@ -29,9 +28,16 @@ then
 fi
 
 do_one () {
+  munintype="`$munindir/$stat config | grep [.]type | head -1 | awk '{print \$2}'`"
+  if [ "$munintype" = "" ]
+  then
+    type=GAUGE
+  else
+    type=$munintype
+  fi
   $munindir/$stat | sed 's/[.]value//'  | while read name value
   do
-    echo "p=/${fqdn}/munin_$stat/${name}${sep}t=GAUGE${sep}i=${interval}${sep}ts=${now}${sep}v=${value}" >> $tmp
+    echo "p=/${fqdn}/munin_$stat/${name}${sep}t=${type}${sep}i=${interval}${sep}ts=${now}${sep}v=${value}" >> $tmp
   done
 }
 
