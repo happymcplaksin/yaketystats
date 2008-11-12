@@ -1159,19 +1159,23 @@ function zoomTimes($start,$end,$amt,$action,$graph){
     switch ($action){
         case 'left':
             $start -= $mv;
-            $end -= $mv;
+            $end   -= $mv;
             break;
         case 'right':
             $start += $mv;
-            $end += $mv;
+            $end   += $mv;
             break;
         case 'out':
             $start -= $mv;
-            $end += $mv;
+            $end   += $mv;
             break;
         case 'in':
+            if ( $amt >= .5 ){
+                $amt = .25;
+            }
+            $mv     = round($dur * $amt);
             $start += $mv;
-            $end -= $mv;
+            $end   -= $mv;
             if ( $end <= $start ){
                 $end = (2 + $start);
             }
@@ -1183,7 +1187,7 @@ function zoomTimes($start,$end,$amt,$action,$graph){
     }
     $start = date($dateformat,$start);
     $end   = date($dateformat,$end);
-    $a     = array($start,$end,$graph);
+    $a     = array($start,$end,$graph,$amt);
     return $json->encode($a);
 }
 
