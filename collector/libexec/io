@@ -50,7 +50,7 @@ default_plugin_opts ();
 $pvlv = 'pv';
 $which_stats = 'base3';
 # Linux-only "Technology Preview" for 2.1
-$keep_zeros = 1;
+$keep_zeros = 0;
 if ( basename ($0) eq 'io_pvlv' ) {
   $pvlv = 'pvlv';
 }
