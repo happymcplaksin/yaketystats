@@ -3944,7 +3944,9 @@ Object.extend(Event, (function() {
   }
 
   function getCacheForID(id) {
-    return cache[id] = cache[id] || { };
+    //return cache[id] = cache[id] || { };
+    // hack by sam
+    return ( cache[id] = ( cache[id] || { } ) );
   }
 
   function getWrappersForEventName(id, eventName) {
