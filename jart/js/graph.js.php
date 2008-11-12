@@ -1816,7 +1816,7 @@ print $out;
 
         var uphc=$('upserphighinp').value;
         var upho=$('upserphighopacityinp').value;
-        hash.set('selColor','#' + uphc);
+        hash.set('selColor', uphc);
         hash.set('selOpacity',upho);
         G.selColor = "#" + uphc;
         G.selOpacity = upho;
