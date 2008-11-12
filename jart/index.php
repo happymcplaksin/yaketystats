@@ -4,6 +4,7 @@
 #
 # This file is part of YaketyStats (see http://yaketystats.org/).
 # YaketyStats is free software: you can redistribute it and/or modify
+#
 # vim: set sw=4 sts=4 et tw=0 :
 
 require("Sajax.php");
