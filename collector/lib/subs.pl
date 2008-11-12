@@ -605,6 +605,10 @@ sub eval_file {
   my (@config);
   local *F;
 
+  if ( ! defined ($file) ) {
+    fileit ("No file defined.  Not loading anything.");
+    exit (89);
+  }
   if ( ! open (F, $file) ) {
     fileit ("Can't open $file: $!\n", "err");
     exit (33);

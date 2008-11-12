@@ -12,7 +12,7 @@ $graphpath = './graphs';
 $graphlinelimit = 16;
 
 $rrddir = 'RRDDIR';
-$rrdtool = '/usr/local/bin/rrdtool';
+$rrdtool = 'RRDTOOL';
 
 # Don't change this unless you know what you're doing.
 $webdir = dirname(__FILE__);
