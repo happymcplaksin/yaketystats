@@ -68,7 +68,7 @@ my $show_times = 1;
 my $start = time ();
 
 # Main
-eval_file ($g_host4host_file);
+eval_file ($g_host4host_file, 1);
 $show_times && fileit ("Starting at " . localtime ($start));
 not_v1 ();
 

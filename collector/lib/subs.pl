@@ -601,17 +601,30 @@ our ($g_server_fqdn, $g_server_protocol, $g_server_uri, $g_max_log_entries,
 # econfig = eval_config
 our (%econfig, %host4host);
 sub eval_file {
-  my ($file) = @_;
-  my (@config);
+  my ($file, $missingok) = @_;
+  my (@config, $exit);
   local *F;
+
+  $exit = 0;
+  if ( !defined($missingok) || $missingok == 0 ) {
+    $exit = 1;
+  }
 
   if ( ! defined ($file) ) {
     fileit ("No file defined.  Not loading anything.");
-    exit (89);
+    if ( $exit ) {
+      exit (89);
+    } else {
+      return ();
+    }
   }
   if ( ! open (F, $file) ) {
     fileit ("Can't open $file: $!\n", "err");
-    exit (33);
+    if ( $exit ) {
+      exit (33);
+    } else {
+      return ();
+    }
   }
   @config = <F>;
   eval "@config";
