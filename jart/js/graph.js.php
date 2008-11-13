@@ -1,3 +1,7 @@
+<?php
+header("content-type: application/x-javascript");
+ob_start ("ob_gzhandler");
+?>
 // Copyright (C) 2008 Board of Regents of the University System of Georgia
 //
 // This file is part of YaketyStats (see http://yaketystats.org/).
@@ -658,7 +662,7 @@ print $out;
         x_convertTime(myid,str,convertTimeCB);
     }
     function convertTimeCB(s){
-        var timea = s.parseJSON();
+        var timea = s.evalJSON();
         var me    = $(timea[0]);
         me.value  = timea[1];
         var mygraph = timea[0].replace(/[^-]*-(\d+)/,'$1');
@@ -673,7 +677,7 @@ print $out;
         x_zoomTimes(G.graphs[graph].start,G.graphs[graph].end,amt,action,graph,zoomCB);
     }
     function zoomCB(s){
-        var a = s.parseJSON();
+        var a = s.evalJSON();
         //just assume everything is great!
         var start   = $('start-' + a[2]);
         if ( start ){
@@ -702,13 +706,13 @@ print $out;
         var spin = $('spinnerfor-' + me);
         if ( ! spin ){ return; }
         Element.show(spin);
-        var paths = G.graphs[me].toJSONString();
+        var paths = Object.toJSON(G.graphs[me]);
         x_createGraphImage(me,paths,dooverlay,createGraphImageCB);
     }
     function createGraphImageCB(s){
         //console.log(s);
         //return;
-        var result = s.parseJSON();
+        var result = s.evalJSON();
         if ( result[0] == 'ERROR' ){
             //console.log(result[1]);
             dsPicker.handleError(result[1]);
@@ -1623,7 +1627,7 @@ print $out;
     }
     function selTimeCB(s){
         //console.log(s);
-        var a = s.parseJSON();
+        var a = s.evalJSON();
         updateTimes(a[0],a[1],a[2]);
         var sd         = $('seldiv-' + a[0]);
         sd.style.width = '0px';
@@ -1644,7 +1648,7 @@ print $out;
         //oi.width  = G.graphs[graph].xsize;
         Element.show('spinnerfor-' + graph);
         //console.log('NOT using cached image');
-        var paths = G.graphs[graph].toJSONString();
+        var paths = Object.toJSON(G.graphs[graph]);
         //console.log(paths);
         x_createGraphDragOverlay(graph,paths,createGraphDragOverlayCB);
     }
@@ -1652,7 +1656,7 @@ print $out;
         //console.log(s);
         //return;
         if ( typeof(s) == 'string' ){
-            var result = s.parseJSON();
+            var result = s.evalJSON();
         }else{
             var result = s;
         }
@@ -1697,7 +1701,7 @@ print $out;
     }
     function clickToCenterGraphCB(s){
         //console.log(s);
-        var a = s.parseJSON();
+        var a = s.evalJSON();
         updateTimes(a[0],a[1],a[2]);
         createGraphImage(a[0],1);
 
@@ -1728,7 +1732,7 @@ print $out;
     function dragTimeCB(s){
         // graph, start, end
         //console.log(s);
-        var a = s.parseJSON();
+        var a = s.evalJSON();
         if ( a[0] == 'ERROR' ){
             dsPicker.handleError(a[1]);
             return;

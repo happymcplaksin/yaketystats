@@ -1214,17 +1214,20 @@ $version = "2.1";
     <link rel="stylesheet" type="text/css" href="css/fonts-min.css">
     <link rel="stylesheet" type="text/css" href="css/grids-min.css">
     <link rel="stylesheet" type="text/css" href="colorPicker.css">
+    <script type="text/javascript" src="js.php"></script>
 <?php 
 /*
-    <script type="text/javascript" src="js.php"></script>
- */
-?>
-    <script type="text/javascript" src="js/json.js"></script>
     <script type="text/javascript" src="js/prototype.js"></script>
     <script type="text/javascript" src="js/prototype-plus.js"></script>
+ */
+?>
     <script type="text/javascript" src="js/scriptaculous.js"></script>
+<?php 
+/*
     <script type="text/javascript" src="js/yahoo.color.js"></script>
     <script type="text/javascript" src="js/colorPicker.js"></script>
+ */
+?>
     <script type="text/javascript" src="js/graph.js.php"></script>
     <script type="text/javascript">
 <?php
@@ -1274,7 +1277,7 @@ $version = "2.1";
         }
 
         function massAddCB(s){
-            var mypaths = s.parseJSON();
+            var mypaths = s.evalJSON();
             var target  = '';
             //console.log(mypaths);
             var i=0;
@@ -1308,7 +1311,7 @@ $version = "2.1";
         }
 
         function showTreeChildCB(s){
-            var nodes = s.parseJSON();
+            var nodes = s.evalJSON();
             var par   = $(nodes.id);
             //create a div called id+hide
             var hider = document.createElement('div');
@@ -1427,7 +1430,7 @@ $version = "2.1";
             x_findMatches(re,pb,G.defaultpathlimit,findAndLoadCB);
         }
         function findAndLoadCB(s){
-            var list = s.parseJSON();
+            var list = s.evalJSON();
             if ( G.graphs[0].regexavg == 'on' ){
                 var doavg = 1;
             }else{
@@ -1486,7 +1489,7 @@ $version = "2.1";
             x_findMatches(re,pb,G.defaultpathlimit,findMatchesCB);
         }
         function findMatchesCB(s){
-            var list = s.parseJSON();
+            var list = s.evalJSON();
             var rl = $('regexerlist');
             rl.value = '';
             rl.value = list.string;
@@ -1712,14 +1715,14 @@ $version = "2.1";
             if ( jt.checked ){
                 regexJustTotal();
             }
-            var playlist = G.graphs.toJSONString();
+            var playlist = Object.toJSON(G.graphs);
             x_savePlaylist(plname,pldir,G.confirmoverwriteplaylist,playlist,savePlaylistCB);
         }
         function realSavePlaylist(){
             var plname = $F('playlistname');
             var pldir  = $F('playlistsubs') + '/';
             //console.log(pldir+plname);
-            var playlist = G.graphs.toJSONString();
+            var playlist = Object.toJSON(G.graphs);
             x_savePlaylist(plname,pldir,G.confirmoverwriteplaylist,playlist,savePlaylistCB);
         }
         function toggleRegexTotals(){
@@ -1746,7 +1749,7 @@ $version = "2.1";
             G.drawAllGraphs();
         }
         function verifyPlaylistOverwrite(s){
-                var pl = s.parseJSON();
+                var pl = s.evalJSON();
                 pl = pl[1];
                 var yn = confirm('File ' + pl.replace(/.tmp/,'') + ' exists. Overwite?');
                 if ( yn ){
@@ -1756,7 +1759,7 @@ $version = "2.1";
                 }
         }
         function rmTmpPlaylistCB(s){
-            var msg = s.parseJSON();
+            var msg = s.evalJSON();
             if ( msg[0] == 'ERROR' ){
                 handleError(msg[1]);
             }else{
@@ -1771,14 +1774,14 @@ $version = "2.1";
         function savePlaylistCB(s){
             //console.log(s);
             if ( s.match(/\[\"ERROR\",/) ){
-                var error = s.parseJSON();
+                var error = s.evalJSON();
                 handleError(error[1]);
             }else if ( s.match(/\[\"VERIFY\",/) ){
                 verifyPlaylistOverwrite(s);
                 return;
             }else{
                 removeErrors();
-                var msg = s.parseJSON();
+                var msg = s.evalJSON();
                 var out = document.createTextNode(msg[1]);
                 var a   = document.createElement('a');
                 var o   = document.createTextNode(msg[2]);
@@ -1806,7 +1809,7 @@ $version = "2.1";
             x_deletePlaylist(path,n,deletePlaylistCB);
         }
         function deletePlaylistCB(s){
-            var a = s.parseJSON();
+            var a = s.evalJSON();
             if ( a[0] == 'ERROR' ){
                 handleError(error[1]);
             }else{
@@ -1831,7 +1834,7 @@ $version = "2.1";
         }
         function newPlSubCB(s){
             //console.log(s);
-            var a = s.parseJSON();
+            var a = s.evalJSON();
             if ( a[0] == 'ERROR' ){
                 handleError(error[1]);
             }else{
@@ -1866,11 +1869,11 @@ $version = "2.1";
         function loadPlaylistCB(s){
             //console.log(s);
             if ( s.match(/\[\"ERROR\",/) ){
-                var error = s.parseJSON();
+                var error = s.evalJSON();
                 handleError(error[1]);
             }else{
                 G.closeAllGraphs(1);
-                G.graphs = s.parseJSON();
+                G.graphs = s.evalJSON();
                 if ( G.graphs[0].regexlive != undefined ){
                     findAndLoad(G.graphs);
                 }else if ( G.graphs ){
@@ -1938,14 +1941,14 @@ $version = "2.1";
                 tmp.push(graph.end);
                 a.push(tmp);
             })
-            a = a.toJSONString();
+            a = a.toJSON();
             //console.log(a);
             x_convertAllTimes(a,convertAllTimesCB);
         }
         function convertAllTimesCB(s){
             //console.log(s);
             //FIX this prolly needs some error checking
-            var a = s.parseJSON();
+            var a = s.evalJSON();
             a.each(function(times){
                 G.graphs[times[0]].start = times[1];
                 G.graphs[times[0]].end   = times[2];
