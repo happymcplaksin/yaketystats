@@ -90,8 +90,10 @@ print $out;
     }
 
     function init(){
+        $('userpsave').onclick = function(){saveUserPrefs()};
+        $('userpcancel').onclick = function(){Element.hide('userprefsdiv'); userPrefsInit()};
+        $('userprefsbutton').onclick = function(){Element.toggle('userprefsdiv')};
         userPrefsInit();
-        var tpc = $('timepresetscontainer');
 
         addGraph();
         document.onkeypress = function(e){handleKeys(e)}.bindAsEventListener();
@@ -1781,9 +1783,6 @@ print $out;
         upcdp.checked = confirmdeleteplaylist;
         var upcop=$('userpconfirmoverwritepl');
         upcop.checked = confirmoverwriteplaylist;
-        $('userpsave').onclick = function(){saveUserPrefs()};
-        $('userpcancel').onclick = function(){Element.hide('userprefsdiv')};
-        $('userprefsbutton').onclick = function(){Element.toggle('userprefsdiv')};
     }
     function saveUserPrefs(){
         Element.hide('userprefsdiv');
