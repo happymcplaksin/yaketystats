@@ -1327,8 +1327,8 @@ $version = "2.1";
                     var span = document.createElement('span');
                     span.className = 'clickable';
                     var me = path.replace(/.*\/([^/]*).*/,'$1');
-                    mefirst = me.replace(/(.).*/,'$1').toUpperCase();
-                    me      = me.replace(/.(.*)/,mefirst + '$1');
+                    //mefirst = me.replace(/(.).*/,'$1').toUpperCase();
+                    //me      = me.replace(/.(.*)/,mefirst + '$1');
                     var txt  = document.createTextNode( me );
                     span.appendChild(txt);
                     //attach the event listener
@@ -1344,6 +1344,9 @@ $version = "2.1";
                         //attach the event listener
                         Event.observe(span,'click',function(e){ massAdd(e,path) }.bindAsEventListener());
                         pdiv.appendChild(span);
+                    }else{
+                        txt = document.createTextNode('/');
+                        span.appendChild(txt);
                     }
                     hider.appendChild(pdiv);
                 })
