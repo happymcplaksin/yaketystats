@@ -440,7 +440,7 @@ class Graph {
         $r = strtotime($t);
         if ( ! $r ){
             // FIX
-            //throw new GraphException( "Bad $l time: $t", 'literal' );
+            die( $this->json->encode(array('ERROR',"invalid $l time")));
         }
         return $r;
     }
