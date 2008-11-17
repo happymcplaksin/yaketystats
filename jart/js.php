@@ -11,7 +11,6 @@ clearstatcache();
 $cache   = 'playlists/min.js';
 $cachemt = 0;
 $jsfiles = array(
-                'json.js',
                 'prototype.js',
                 'prototype-plus.js',
                 //'scriptaculous.js',
