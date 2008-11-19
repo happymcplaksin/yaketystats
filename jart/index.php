@@ -163,8 +163,9 @@ class Graph {
             $out[]  = $ysize; // [10]
             //$out[]  = $this->redrawoverlay;
             if ( $this->redrawoverlay ){
-                $np = preg_replace('/"min":"[^"]*"/','"min":"'.$min.'"',$this->opaths);
-                $np = preg_replace('/"max":"[^"]*"/','"max":"'.$max.'"',$np);
+                $np = preg_replace('/"min": "[^"]*"/','"min": "'.$min.'"',$this->opaths);
+                $np = preg_replace('/"max": "[^"]*"/','"max": "'.$max.'"',$np);
+                $this->debugLog('np',$np);
                 $this->debugLog($min,$max,$this->opaths,$np);
                 $ol = createGraphDragOverlay($this->number,$np,1);
                 $out[]  = $ol; // [11]
