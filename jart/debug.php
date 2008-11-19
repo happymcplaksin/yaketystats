@@ -87,7 +87,7 @@ function debugRefreshFileList(){
     x_debugLogfiles(debugFileListCB);
 }
 function debugFileListCB(s){
-    debugLogfiles = s.parseJSON();
+    debugLogfiles = s.evalJSON();
 }
 function debugZeroFile(e,n){
     var lf = $('debugfilepicker-' + n).value;
@@ -118,7 +118,7 @@ function debugLoadLog(e,n){
 }
 function debugLoadLogCB(s){
     //console.log(s);
-    var a = s.parseJSON();
+    var a = s.evalJSON();
     $('debugTa-' + a[0]).value = a[1];
     Element.hide('spinnerfor-' + a[0]);
 }
