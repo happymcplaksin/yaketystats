@@ -37,7 +37,6 @@ fi
 echo "$fqdn" | grep '[.]' > /dev/null 2>&1
 if [ $? != 0 ]
 then
-  echo hostname -f
   fqdn="`hostname -f 2> /dev/null`"
 fi
 
