@@ -1278,7 +1278,7 @@ print $out;
         li.appendChild(span);
         // this span must be the previous sibling to the input for this
         // to keep working.
-        if ( path.name != 'avg' ){
+        if ( path.name != 'avg' && path.name != 'total' ){
             var einp       = document.createElement('input');
             einp.value     = path.name;
             einp.style.display = "none";
