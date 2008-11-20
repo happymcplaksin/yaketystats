@@ -268,7 +268,7 @@ class Graph {
             }else{
                 $path  = escapeshellcmd($v->path);
             }
-            if ( ! file_exists($v->path) && ! in_array($v->path,$fakerrds) ){
+            if ( ! file_exists($path) && ! in_array($path,$fakerrds) ){
                 $this->debugLog("BAD PATH:",$v->path);
                 continue;
             }
@@ -307,13 +307,13 @@ class Graph {
                 if ( $v->display != 0 && $this->iAmOverlay == 0 ){
                     $this->lines[] = " $drawt:${otherdefid}predict#$color:'$name'$stack$dashes ";
                 }
-            }elseif ( $v->path == 'total' ){
+            }elseif ( $path == 'total' ){
                 $defid = 'total';
                 if ( $v->display != 0 ){
                     $this->lines[] = " $drawt:$defid#$color:Total$stack ";
                 }
                 $defables["$path"] = $defid;
-            }elseif ( $v->path == 'avg' ){
+            }elseif ( $path == 'avg' ){
                 $defid = 'average';
                 if ( $v->display != 0 ){
                     $this->lines[] = " $drawt:$defid#$color:Average$stack ";
@@ -362,7 +362,7 @@ class Graph {
                     $this->defs[] = "VDEF:tg$defid=$defid,MINIMUM ";
                 }
             }
-            if ( ($this->paths->justtotal == 0 || $v->path == 'total' || $v->path == 'avg') && $v->display == 1 ){
+            if ( ($this->paths->justtotal == 0 || $path == 'total' || $path == 'avg') && $v->display == 1 ){
                 $this->lines[] = "'COMMENT:\\n' ";
                 $this->lines[] = "VDEF:AVG$i=$defid,AVERAGE ";
                 $this->lines[] = "'GPRINT:AVG$i:\\tAv%9.2lf%s' ";

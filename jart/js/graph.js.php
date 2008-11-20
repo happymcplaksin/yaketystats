@@ -1278,21 +1278,23 @@ print $out;
         li.appendChild(span);
         // this span must be the previous sibling to the input for this
         // to keep working.
-        var einp       = document.createElement('input');
-        einp.value     = path.name;
-        einp.style.display = "none";
-        einp.size      = '30';
-        li.appendChild(einp);
-        var img        = document.createElement('img');
-        // no the best image... get a better one
-        img.src        = 'img/stock_text_underlined-16.png';
-        img.style.verticalAlign = 'middle';
-        img.title      = "Edit this line label";
-        li.appendChild(img);
-        Event.observe(img,'click',function(){Element.toggle(span);Element.toggle(einp);}.bindAsEventListener());
-        Event.observe(einp,'change',function(e){updatePathLabel(e)}.bindAsEventListener());
-        var txt        = document.createTextNode(' ');
-        li.appendChild(txt);
+        if ( path.name != 'avg' ){
+            var einp       = document.createElement('input');
+            einp.value     = path.name;
+            einp.style.display = "none";
+            einp.size      = '30';
+            li.appendChild(einp);
+            var img        = document.createElement('img');
+            // no the best image... get a better one
+            img.src        = 'img/stock_text_underlined-16.png';
+            img.style.verticalAlign = 'middle';
+            img.title      = "Edit this line label";
+            li.appendChild(img);
+            Event.observe(img,'click',function(){Element.toggle(span);Element.toggle(einp);}.bindAsEventListener());
+            Event.observe(einp,'change',function(e){updatePathLabel(e)}.bindAsEventListener());
+            var txt        = document.createTextNode(' ');
+            li.appendChild(txt);
+        }
 
         //COLOR SWATCH
         var inp        = document.createElement('input');
@@ -1354,7 +1356,7 @@ print $out;
         li.appendChild(dcb);
         Event.observe(dcb,'change',function(e){toggleDsDisplay(e)}.bindAsEventListener());
         //PREDICT ICON
-        if ( path.isPredict === undefined || path.isPredict == 0 ){
+        if ( (path.isPredict === undefined || path.isPredict == 0) && path.name != 'avg' ){
             var txt = document.createTextNode(' | ');
             li.appendChild(txt);
             var img = document.createElement('img');
