@@ -69,15 +69,24 @@
         width: 90%;
     }
     select.linetype{
-        margin-left: 1.5em;
+        margin-left: .5em;
     }
     .removepath{
         cursor: pointer;
         cursor: hand;
+        margin-bottom: -4px;
+    }
+    .display{
+        margin-left: 2.0em;
+        margin-right: .5em;
+    }
+    .predicticon{
+        margin-right: .5em;
+        margin-bottom: -4px;
     }
     .colorexample{
-        margin-left: .1em;
-        margin-top: 6px;
+        margin-left: .5em;
+        margin-top: 4px;
         height: .8em;
         width:  .8em;
         font-size: small;

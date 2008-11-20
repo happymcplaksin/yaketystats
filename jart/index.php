@@ -1396,7 +1396,7 @@ $version = "2.1";
                 var sp  = document.createElement('span');
                 sp.className = 'closebutton';
                 var img = document.createElement('img');
-                img.src = 'img/stock_stop-16.png';
+                img.src = 'img/gtk-delete.png';
                 img.title = 'Delete this playlist';
                 sp.appendChild(img);
                 Event.observe(img,'click',function(e){ if (dsPicker.verify('deleteplaylist') ){deletePlaylist(path,div.id);} }.bindAsEventListener());

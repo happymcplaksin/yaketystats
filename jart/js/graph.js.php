@@ -1266,35 +1266,31 @@ print $out;
         li.id          = 'pathli-' + me + '_' + i;
         li.style.whiteSpace = 'nowrap';
         var img        = document.createElement('img');
-        img.src        = 'img/stock_stop-16.png';
+        img.src        = 'img/gtk-delete.png';
         img.border     = '0';
         img.title      = 'Remove This Path'; //FIX
         img.className  = 'removepath';
         li.appendChild(img);
         Event.observe(img,'click',function(e){removeGraphPath(me,e)}.bindAsEventListener());
-        var span       = document.createElement('span');
-        var txt        = document.createTextNode(' ' + path.name + ' ');
-        span.appendChild(txt);
-        li.appendChild(span);
-        // this span must be the previous sibling to the input for this
-        // to keep working.
-        if ( path.name != 'avg' && path.name != 'total' ){
-            var einp       = document.createElement('input');
-            einp.value     = path.name;
-            einp.style.display = "none";
-            einp.size      = '30';
-            li.appendChild(einp);
-            var img        = document.createElement('img');
-            // no the best image... get a better one
-            img.src        = 'img/stock_text_underlined-16.png';
-            img.style.verticalAlign = 'middle';
-            img.title      = "Edit this line label";
-            li.appendChild(img);
-            Event.observe(img,'click',function(){Element.toggle(span);Element.toggle(einp);}.bindAsEventListener());
-            Event.observe(einp,'change',function(e){updatePathLabel(e)}.bindAsEventListener());
-            var txt        = document.createTextNode(' ');
-            li.appendChild(txt);
-        }
+        //LINE TYPE
+        // what has the user defined the drawtype to be?
+        var thisDrawType = G.graphs[me].paths[i].drawtype;
+        var select = document.createElement('select');
+        Event.observe(select,'change',function(e){changeLineDrawType(me,e)}.bindAsEventListener());
+        select.className = 'linetype';
+
+        [ 'LINE1','LINE2','LINE3','AREA','STACK',
+          '-LINE1','-LINE2','-LINE3', '-AREA', '-STACK' ].each(function(drawt){
+            var option = document.createElement('option');
+            if ( thisDrawType == drawt ){
+                option.selected = true;
+            }
+            var txt    = document.createTextNode(drawt);
+            option.appendChild(txt);
+            option.value = drawt;
+            select.appendChild(option);
+        });
+        li.appendChild(select);
 
         //COLOR SWATCH
         var inp        = document.createElement('input');
@@ -1316,34 +1312,14 @@ print $out;
         lab.id         = 'colorexample' + me + i;
         lab.style.backgroundColor = path.color;
         lab.style.opacity         = parseInt(path.opacity,16) /255;
-        //Event.observe(lab,'click',colorPicker.display);
         new Control.ColorPicker( inp, { 'swatch':lab, 'opacityField':oinp, 'onUpdate':updateColor });
         li.appendChild(inp);
         li.appendChild(oinp);
         li.appendChild(lab);
 
-        //LINE TYPE
-        // what has the user defined the drawtype to be?
-        var thisDrawType = G.graphs[me].paths[i].drawtype;
-        var select = document.createElement('select');
-        Event.observe(select,'change',function(e){changeLineDrawType(me,e)}.bindAsEventListener());
-        select.className = 'linetype';
-
-        [ 'LINE1','LINE2','LINE3','AREA','STACK',
-          '-LINE1','-LINE2','-LINE3', '-AREA', '-STACK' ].each(function(drawt){
-            var option = document.createElement('option');
-            if ( thisDrawType == drawt ){
-                option.selected = true;
-            }
-            var txt    = document.createTextNode(drawt);
-            option.appendChild(txt);
-            option.value = drawt;
-            select.appendChild(option);
-        });
-        li.appendChild(select);
         //DISPLAY CHECKBOX
-        var txt = document.createTextNode(' | ');
-        li.appendChild(txt);
+        //var txt = document.createTextNode(' | ');
+        //li.appendChild(txt);
         var dcb       = document.createElement('input');
         dcb.type      = 'checkbox';
         dcb.title     = 'Display this DS';
@@ -1357,16 +1333,40 @@ print $out;
         Event.observe(dcb,'change',function(e){toggleDsDisplay(e)}.bindAsEventListener());
         //PREDICT ICON
         if ( (path.isPredict === undefined || path.isPredict == 0) && path.name != 'avg' ){
-            var txt = document.createTextNode(' | ');
-            li.appendChild(txt);
+            //var txt = document.createTextNode(' | ');
+            //li.appendChild(txt);
             var img = document.createElement('img');
             img.src = 'img/sc27059.png';
-            img.className = 'clickable';
+            img.className = 'clickable predicticon';
             img.title     = 'Predict this line';
             li.appendChild(img);
             var p = path.path;
             Event.observe(img,'click',function(){addPredictLine(p,me)}.bindAsEventListener());
         }
+        var img        = document.createElement('img');
+        // no the best image... get a better one
+        img.src        = 'img/stock_text_underlined-16.png';
+        img.style.verticalAlign = 'middle';
+        img.title      = "Edit this line label";
+        li.appendChild(img);
+        var span       = document.createElement('span');
+        var txt        = document.createTextNode(' ' + path.name + ' ');
+        span.appendChild(txt);
+        li.appendChild(span);
+        // this span must be the previous sibling to the input for this
+        // to keep working.
+        if ( path.name != 'avg' && path.name != 'total' ){
+            var einp       = document.createElement('input');
+            einp.value     = path.name;
+            einp.style.display = "none";
+            einp.size      = '30';
+            li.appendChild(einp);
+            Event.observe(img,'click',function(){Element.toggle(span);Element.toggle(einp);}.bindAsEventListener());
+            Event.observe(einp,'change',function(e){updatePathLabel(e)}.bindAsEventListener());
+            //var txt        = document.createTextNode(' ');
+            //li.appendChild(txt);
+        }
+
         return li;
     }
     function addPredictLine(path,graph){
