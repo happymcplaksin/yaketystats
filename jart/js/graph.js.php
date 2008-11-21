@@ -106,7 +106,7 @@ print $out;
         Event.observe(ngb,'click',addGraph.bindAsEventListener());
 
         var sat = $('setalltimesbutton');
-        Event.observe(sat,'click',function(e){dsPicker.toggleControl(e,'containerforallgraphtimes')}.bindAsEventListener());
+        Event.observe(sat,'click',function(e){dsPicker.toggleControl(e,'containerforallgraphtimes'); $('allgraphstart').focus() }.bindAsEventListener());
 
         var sas = $('setallsizesbutton');
         Event.observe(sas,'click',function(e){dsPicker.toggleControl(e,'containerforallgraphsizes')}.bindAsEventListener());

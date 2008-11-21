@@ -1665,7 +1665,7 @@ $version = "2.1";
             }
             hostList.appendChild(navPL);
             var button = $('saveplaylistbutton');
-            Event.observe(button,'click',function(e){ toggleControl(e,'containerforplaylistdialog') }.bindAsEventListener() );
+            Event.observe(button,'click',function(e){ toggleControl(e,'containerforplaylistdialog'); $('playlistname').focus() }.bindAsEventListener() );
             if ( initialPlaylist != undefined && initialPlaylist != '' ){
                 loadPlaylist(initialPlaylist);
             }
@@ -1828,6 +1828,7 @@ $version = "2.1";
             var n = e.target.value;
             if ( n == '~' ){
                 Element.show('newsubcontainer');
+                $('newsubname').focus();
                 e.target.value = '/';
             }
         }
@@ -1995,6 +1996,7 @@ $version = "2.1";
             hidePicker();
             Element.show('regexernav');
             Element.show('regexerout');
+            $('regextext').focus();
             G.closeAllGraphs(0);
         }
 
