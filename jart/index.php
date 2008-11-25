@@ -2028,7 +2028,6 @@ $version = "2.1";
                 <img src="img/stock_unknown-24.png" id="pickerregexerhelp" class="helpbutton">
                 <img src="img/gtk-preferences.png" id="userprefsbutton" class="prefsbutton" title="Preferences">
                 <br><span id="pickerbutton" class="clickable"><img src="img/stock_form-file-selection.png" title="Picker"></span> <span id="regexerbutton" class="clickable"><img src="img/stock_macro-stop-after-procedure.png" title="Regexer"></span>
-                <span id="prefsbutton" class="clickable"><img src="img/stock_edit-contour.png" title="Preferences" style="display:none"></span>
                 <br>
                 <br>
                 <span id="playlistdisplay" style="display:none"></span>
@@ -2281,6 +2280,8 @@ $version = "2.1";
     <dd>Selects the Picker controls. These controls allow interactive building of graphs and playlists.</dd>
     <dt><img src="img/stock_macro-stop-after-procedure.png" title="Regexer"></dt>
     <dd>Selects the Regexer. The Regexers allows you to build a playlist of graphs via regular expression. Knowledge of the regular expressions and the RRD layout is required for this option.</dd>
+    <dt><img src="img/gtk-preferences.png" title="Preferences"></dt>
+    <dd>Opens a dialog where various preferences can be set and saved.</dd>
     <dt><img src="img/stock_file-with-objects.png" title="New Graph"></dt>
     <dd>New Graph. This button creates a new graph. This is useful when creating graphs a line at a time.</dd>
     <dt><img src="img/stock_data-save.png" title="Save Playlist"></dt>
@@ -2289,6 +2290,8 @@ $version = "2.1";
     <dd>Set Times for All Graphs. This button brings up a dialog that allows you to change the start and end times of all displayed graphs.</dd>
     <dt><img src="img/stock_handles-simple.png" title="Set Sizes for All Graphs"></dt>
     <dd>Set Sizes for All Graphs. This button brings up a dialog that allows you to change the sizing for all displayed graphs.</dd>
+    <dt><img src="img/lc_formatpaintbrush.png" title="Redraw All Graphs"></dt>
+    <dd>Redraw All Graphs. This button redraws all graphs with their current times.</dd>
     <dt><img src="img/stock_delete.png" title="Delete All Graphs"></dt>
     <dd>Delete All Graphs. This button removes all graphs from view and adjusts the graph counter to 0.</dd>
     <dt><img src="img/lc_arrowshapes.quad-arrow.png" title="Drag/CtC"></dt>
