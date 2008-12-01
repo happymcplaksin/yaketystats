@@ -422,11 +422,13 @@ sub linux {
 	} else {
 	  ($dev, $s{'tps'}) = (split (/\s+/, $line))[0, 1];
 	}
-	# Sometimes you have this so turn / into _
+	# Sometimes you have this so turn / into .
 	# cciss/c0d0       53.48       401.35       671.90 1672396137 2799715492
 	# cciss/c0d0p1      0.00         0.03         0.01     127156      25308
 	# cciss/c0d0p2    117.33       401.32       671.89 1672267429 2799681488
 	$dev =~ s/\//./g;
+	# Do the same with colons becasue they're special to rrdtool
+	$dev =~ s/:/./g;
 	if ( ignoreit ('io', $dev) ) {
 	  next LOOP;
 	}
