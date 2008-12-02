@@ -362,7 +362,7 @@ class Graph {
                     $this->defs[] = "VDEF:tg$defid=$defid,MINIMUM ";
                 }
             }
-            if ( ($this->paths->justtotal == 0 || $path == 'total' || $path == 'avg') && $v->display == 1 ){
+            if ( ($this->paths->justtotal == 0 || $path == 'total' || $path == 'avg') && $v->isPredict != 1 && $v->display == 1 ){
                 $this->lines[] = "'COMMENT:\\n' ";
                 $this->lines[] = "VDEF:AVG$i=$defid,AVERAGE ";
                 $this->lines[] = "'GPRINT:AVG$i:\\tAv%9.2lf%s' ";
