@@ -68,19 +68,21 @@ class Graph {
         }
          */
         $this->comments[] = "'COMMENT:\\n' ";
-        $this->comments[] = "'COMMENT:Start/End\\: ";
+        $this->comments[] = "'COMMENT:Start\\: ";
         $this->comments[] = $this->dateEscape($dateformat, $this->paths->start);
-        $this->comments[] = " -- ";
+        $this->comments[] = "' ";
+        $this->comments[] = "'COMMENT:\\n' ";
+        $this->comments[] = "'COMMENT:  End\\: ";
         $this->comments[] = $this->dateEscape( $dateformat, $this->paths->end);
         $this->comments[] = "' ";
         $this->comments[] = "'COMMENT:\\n' ";
-        $this->comments[] = "'COMMENT:Most recent RRD update\\:  ";
+        $this->comments[] = "'COMMENT:Most recent RRD update\\: ";
         $this->comments[] = $this->dateEscape( $dateformat, $this->rrdlast)."' ";
         $this->comments[] = "'COMMENT:\\n' ";
-        $this->comments[] = "'COMMENT:Graph created ";
+        $this->comments[] = "'COMMENT:Graph created\\: ";
         $this->comments[] =  $this->dateEscape( $dateformat, time() ). "' ";
         $this->comments[] = "'COMMENT:\\n' ";
-        $this->comments[] = "'COMMENT:Amount of time shown\\: ";
+        $this->comments[] = "'COMMENT:Time shown\\: ";
         $this->comments[] = $this->secToEng($this->paths->end - $this->paths->start) . "' ";
     }
 
@@ -272,6 +274,9 @@ class Graph {
                 $this->debugLog("BAD PATH:",$v->path);
                 continue;
             }
+            if ( filesize($path) === 0 ){
+                die( $this->json->encode(array('ERROR',"$path is zero-length.")));
+            }
             if ( empty($this->minusb) ){
                 if ( preg_match('#/(memory|disk)/#',$path) ){
                     $this->minusb = '-b 1024 ';
@@ -365,11 +370,13 @@ class Graph {
             if ( ($this->paths->justtotal == 0 || $path == 'total' || $path == 'avg') && $v->isPredict != 1 && $v->display == 1 ){
                 $this->lines[] = "'COMMENT:\\n' ";
                 $this->lines[] = "VDEF:AVG$i=$defid,AVERAGE ";
-                $this->lines[] = "'GPRINT:AVG$i:\\tAv%9.2lf%s' ";
+                $this->lines[] = "'GPRINT:AVG$i:   Avg%7.2lf%s' ";
                 $this->lines[] = "VDEF:MIN$i=$defid,MINIMUM ";
-                $this->lines[] = "'GPRINT:MIN$i:Min%9.2lf%s' ";
+                $this->lines[] = "'GPRINT:MIN$i:Min%7.2lf%s' ";
                 $this->lines[] = "VDEF:MAX$i=$defid,MAXIMUM ";
-                $this->lines[] = "'GPRINT:MAX$i:Max\\:%9.2lf%s\\n' ";
+                $this->lines[] = "'GPRINT:MAX$i:Max%7.2lf%s' ";
+                $this->lines[] = "VDEF:LAST$i=$defid,LAST ";
+                $this->lines[] = "'GPRINT:LAST$i:Last%7.2lf%s\\n' ";
             }
             $i++;
         }
