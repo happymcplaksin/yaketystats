@@ -144,8 +144,6 @@ function allPrep(){
         -e "s|ROLLED|${rolled}|" \
         -e "s|STUFFER-TRACK|${stuffer_track}|" \
         -e "s|RRDDIR|${rrddir}|" ../stuffer/etc/server.conf.in > ../stuffer/etc/server.conf
-    sed -e "s|RRDDIR|${rrddir}|" \
-        -e "s|RRDTOOL|${rrdtool}|" ../jart/conf.php-dist.in > ../jart/conf.php-dist
     sed -e "s|RRDDIR|${rrddir}|" ../jart/makefscache.in > ../jart/makefscache
     rm -f ${me}/{depot,pkg,rpm}build.log
 }
@@ -369,7 +367,6 @@ else
     inbound=${inbound:-"/var/www/${serverfqdn}/inbound"}
     rolled=${rolled:-"/var/www/${serverfqdn}/rolled"}
     rrddir=${rrddir:-"/rrd"}
-    rrdtool=${rrdtool:-$(type -p rrdtool)}
     if [[ "${packielist}" = 'both' || "${packielist}" = "server" ]]
     then
         ask "Do you want this script to generate a virtual host file?" makevirthost
@@ -387,7 +384,6 @@ else
         ask "RRD files directory" rrddir
 	stuffer_track=${stuffer_track:-"${logdir}/stuffer_track.dat"};
         ask "Pathname of stuffer_track file" stuffer_track
-        ask "Pathname of rrdtool binary" rrdtool
     fi
 
     # Report

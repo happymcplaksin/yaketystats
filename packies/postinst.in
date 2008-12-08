@@ -61,7 +61,12 @@ fi
 
 MYHOME=$ROOTDIR/usr/local/$NAME
 
-CRONTAB_FILE="$ROOTDIR/var/spool/cron/crontabs/$OUR_USER"
+if [ -f /etc/redhat-release ]
+then
+  CRONTAB_FILE="$ROOTDIR/var/spool/cron/$OUR_USER"
+else
+  CRONTAB_FILE="$ROOTDIR/var/spool/cron/crontabs/$OUR_USER"
+fi
 # These are used after chroot
 CRONTAB="/usr/bin/crontab"
 DEFAULT_CRONTAB="/usr/local/$NAME/etc/crontab"
