@@ -67,7 +67,7 @@ class Graph {
             $this->comments[] = $this->secToEng($this->slidesize) . "' ";
         }
          */
-        $this->comments[] = "'COMMENT:\\n' ";
+        $this->comments[] = "'COMMENT: \\n' ";
         $this->comments[] = "'COMMENT:Start\\: ";
         $this->comments[] = $this->dateEscape($dateformat, $this->paths->start);
         $this->comments[] = "' ";
