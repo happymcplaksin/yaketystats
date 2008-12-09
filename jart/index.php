@@ -33,7 +33,7 @@ if ( ! is_dir("graphs") || ! is_writable("graphs") ){
 error_reporting(0);
 
 class Graph {
-    public $args      = array("-i -P -W 'YaketyStats' -E --rigid ");
+    public $args      = array("-i -P -W '<big>YaketyStats</big>' -E --rigid ");
     public $comments  = array();
     public $cmd       = array();
     public $defs      = array();
@@ -71,19 +71,26 @@ class Graph {
         $this->comments[] = "'COMMENT:Start\\: ";
         $this->comments[] = $this->dateEscape($dateformat, $this->paths->start);
         $this->comments[] = "' ";
+
         $this->comments[] = "'COMMENT:\\n' ";
         $this->comments[] = "'COMMENT:  End\\: ";
         $this->comments[] = $this->dateEscape( $dateformat, $this->paths->end);
         $this->comments[] = "' ";
-        $this->comments[] = "'COMMENT:\\n' ";
-        $this->comments[] = "'COMMENT:Most recent RRD update\\: ";
-        $this->comments[] = $this->dateEscape( $dateformat, $this->rrdlast)."' ";
-        $this->comments[] = "'COMMENT:\\n' ";
-        $this->comments[] = "'COMMENT:Graph created\\: ";
-        $this->comments[] =  $this->dateEscape( $dateformat, time() ). "' ";
+
         $this->comments[] = "'COMMENT:\\n' ";
         $this->comments[] = "'COMMENT:Time shown\\: ";
         $this->comments[] = $this->secToEng($this->paths->end - $this->paths->start) . "' ";
+
+        $this->comments[] = "'COMMENT:\\n' ";
+        $this->comments[] = "'COMMENT:Graph created\\: ";
+        $this->comments[] =  $this->dateEscape( $dateformat, time() ). "' ";
+
+        $this->comments[] = "'COMMENT:\\n' ";
+        $this->comments[] = "'COMMENT:Most recent RRD update\\: ";
+        $this->comments[] = $this->dateEscape( $dateformat, $this->rrdlast)."' ";
+
+        $this->comments[] = "'COMMENT: \\n' ";
+        $this->comments[] = "'COMMENT: \\n' ";
     }
 
     public function createCommandLine(){
