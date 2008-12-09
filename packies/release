@@ -1,0 +1,46 @@
+#!/bin/sh
+# vim: set sw=4 sts=4 et tw=0 :
+
+
+# git pull
+git pull
+# ask you if you're sure the version numbers are right
+echo "you sure the version numbers are right? ^c if not!"
+read no
+
+# ask for a version number for the tag
+echo "What string shall I use to tag this version? 2.0 for example: "
+read tagversion
+# prepend a 'v' & tag it!
+git tag "v${tagversion}"
+
+# push it! (real good)
+git push --tags 
+
+# create a tarball
+file=yaketystats-${tagversion}.tar.gz
+cd ..
+git archive master | gzip > ../../htdocs/downloads/${file}
+# link it to latest.tar.gz
+ln -sf $file ../../htdocs/downloads/yaketystats-latest.tar.gz
+# build linux packies
+cd packies
+rm -rf redhat
+./buildCustomPackies
+cp redhat/RPMS/noarch/* ../../htdocs/downloads/
+# tell you to build hp and sol packies
+echo ; echo ; echo ;
+echo "Build some HP and Sol packies, eh?"
+read
+# tell you to upload to SF
+echo ;
+echo "Upload this crap to SF.net"
+read
+# open an editor with the files that contain version numbers
+echo "I'm about to open an editor so you can update the version numbers"
+read 
+vi ../jart/index.php
+vi ../collector/lib/include
+# tell you to read the rest of http://yaketystats.org/redmine/wiki/yaketystats/HowToRelease
+echo "Read this: http://yaketystats.org/redmine/wiki/yaketystats/HowToRelease "
+exit 0
