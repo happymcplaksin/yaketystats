@@ -1,7 +1,8 @@
-#!/bin/sh
+#!/bin/bash
 # vim: set sw=4 sts=4 et tw=0 :
 
 
+rm env
 # git pull
 git pull
 # ask you if you're sure the version numbers are right
@@ -20,7 +21,7 @@ git push --tags
 # create a tarball
 file=yaketystats-${tagversion}.tar.gz
 cd ..
-git archive master --prefix=yaketystats-${tagversion}/ | gzip > ../htdocs/downloads/${file}
+git archive --prefix=yaketystats-${tagversion}/ master | gzip > ../htdocs/downloads/${file}
 # link it to latest.tar.gz
 ln -sf $file ../htdocs/downloads/yaketystats-latest.tar.gz
 # build linux packies
