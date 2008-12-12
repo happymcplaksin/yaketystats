@@ -40,12 +40,12 @@ require "$g_dir/lib/include";
 our ($g_rrddir, %host4host, $g_host4host_file, $g_server_config,
      $g_default_timeout, $g_debug);
 my ($config_file, $munin_rrds, $dry_run, $help, $use_munin_labels,
-    %config, %labels, @script, $munin_datafile, %plugins);
+    %config, %labels, @script, $munin_datafile, $munin_datafile_override,
+    %plugins);
 #$config_file = "../etc/munin2ys.config";
 $use_munin_labels=1;
 
 config ();
-$munin_datafile = "${munin_rrds}/../datafile";
 #read_munin_config ($config_file);
 read_munin_datafile ($munin_datafile);
 create_commands ($munin_rrds);
@@ -71,10 +71,19 @@ sub create_commands {
   my ($dir) = @_;
 
   my (@files, $file, $tmp, $plugin, $short_plugin, $hostname, $ok, $p,
-      $path, $script);
+      $path, $script, $topdir);
 
   @files = list_dir_entries($dir, "file", 0, 1);
    OUTER: foreach $file (@files) {
+    if ( $file !~ /[.]rrd$/ ) {
+      next OUTER;
+    }
+    $topdir = $file;
+    $topdir =~ s/^${dir}\///;
+    $topdir =~ s/(^[^\/]*)\/.*/$1/;
+    print "file=$file, topdir=$topdir\n";
+
+    $file =~ s/^${topdir}\///;
     $ok = 0;
     $file = basename ($file);
     $tmp = $file;
@@ -102,7 +111,7 @@ sub create_commands {
     #my $re = "$config{$plugin}{'match'}.rrd";
     my $re = "^$plugin-(.*)-[a-z].rrd\$";
     debug2 ("comparing $tmp to");
-    debug2 ("          $re");
+    debug2 ("         $re");
     if ( $tmp !~ /$re/ ) {
       print "Gack!  No match!\n";
     } else {
@@ -123,7 +132,7 @@ sub create_commands {
       $path = "$plugin/${important}";
       debug2 ("So name the new file: $path.");
       push (@script, "mkdir -p " . dirname ("${g_rrddir}/${hostname}/${path}") . "\n");
-      push (@script, "rrdtool dump ${dir}/${file} | sed 's#<name> 42 </name>#<name> yabba </name>#' > /tmp/munin2ys.tmp && rrdtool restore /tmp/munin2ys.tmp ${g_rrddir}/${hostname}/${path}.rrd\n\n");
+      push (@script, "rrdtool dump ${dir}/${topdir}/${file} | sed 's#<name> 42 </name>#<name> yabba </name>#' > /tmp/munin2ys.tmp && rrdtool restore /tmp/munin2ys.tmp ${g_rrddir}/${hostname}/${path}.rrd\n\n");
     }
     debug2 ("");
   }
@@ -200,7 +209,7 @@ sub config {
   if ( !GetOptions (
 		    "debug" => \$g_debug,
 		    "dry-run" => \$dry_run,
-		    "munin-datafile=s" => \$munin_datafile,
+		    "munin-datafile=s" => \$munin_datafile_override,
 		    "munin-rrd-dir=s" => \$munin_rrds,
 		    "output-rrd-dir=s" => \$g_rrddir,
 #		    "use-munin-labels" => \$use_munin_labels,
@@ -215,6 +224,10 @@ sub config {
   if ( !defined ($munin_rrds) ) {
     print "--munin-rrd-dir is required.\n";
     usage ();
+  }
+  $munin_datafile = "${munin_rrds}/../datafile";
+  if ( defined ($munin_datafile_override) ) {
+    $munin_datafile = $munin_datafile_override;
   }
 }
 
