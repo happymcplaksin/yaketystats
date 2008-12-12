@@ -232,8 +232,8 @@ sub usage {
   print "\n";
   print "List of arguments:\n";
   print "--debug                         Print debug info to stderr\n";
-  print "--dry-run                       Echo rrdtool commands instead of running them";
-  print "--munin-datafile=FILE           Use FILE instead of \${munin_rrds}/../datafile";
+  print "--dry-run                       Echo rrdtool commands instead of running them\n";
+  print "--munin-datafile=FILE           Use FILE instead of \${munin_rrds}/../datafile\n";
   print "--munin-rrd-dir=DIR             Directory containing Munin RRD files\n";
   print "--output-rrd-dir=DIR            Write YaketyStats RRD files to DIR instead of ${g_rrddir}/munin\n";
 #  print "--no-use-munin-labels           Don't Munin labels when naming RRD files\n";
