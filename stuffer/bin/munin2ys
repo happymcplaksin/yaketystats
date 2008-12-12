@@ -41,7 +41,7 @@ our ($g_rrddir, %host4host, $g_host4host_file, $g_server_config,
      $g_default_timeout, $g_debug);
 my ($config_file, $munin_rrds, $dry_run, $help, $use_munin_labels,
     %config, %labels, @script, $munin_datafile, $munin_datafile_override,
-    %plugins);
+    %plugins, %hostnames);
 #$config_file = "../etc/munin2ys.config";
 $use_munin_labels=1;
 
@@ -71,7 +71,7 @@ sub create_commands {
   my ($dir) = @_;
 
   my (@files, $file, $tmp, $plugin, $short_plugin, $hostname, $ok, $p,
-      $path, $script, $topdir);
+      $path, $script, $topdir, $h);
 
   @files = list_dir_entries($dir, "file", 0, 1);
    OUTER: foreach $file (@files) {
@@ -87,12 +87,18 @@ sub create_commands {
     $ok = 0;
     $file = basename ($file);
     $tmp = $file;
-    # trim hostname
+    # old
+    #$hostname = basename ($file);
+    #debug2 ("hostname = $hostname");
+    #$hostname =~ s/(^[^-]*)-.*/$1/;
+    # find hostname
     debug2 ("file = $file");
-    $hostname = basename ($file);
-    debug2 ("hostname = $hostname");
-    $hostname =~ s/(^[^-]*)-.*/$1/;
-    #$hostname =~ s/^..([^\/]*)\/.*/$1/;
+    HOSTNAME: foreach $h (sort {length ($b) <=> length ($a) } keys %hostnames) {
+      if ( $file =~ /^${h}/ ) {
+	$hostname = $h;
+	last HOSTNAME;
+      }
+    }
     debug2 ("hostname = $hostname");
     $tmp =~ s/^${hostname}-//;
     # Sort by length so, eg, df_inode gets found properly instead of df
@@ -159,6 +165,8 @@ sub read_munin_datafile {
     $line =~ s/^.*;//;
     $hostname = $line;
     $hostname =~ s/:.*//;
+    # Store the hostname
+    $hostnames{$hostname} = 1;
     $line =~ s/^${hostname}://;
     # Get the plugin name
     $plugin = $line;
