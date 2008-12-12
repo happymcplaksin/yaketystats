@@ -114,7 +114,7 @@ sub create_commands {
       debug2 ("Important part for $plugin is $important");
       if ( defined ($labels{$plugin}) ) {
 	if ( defined ($labels{$plugin}{$hostname}{$important}) ) {
-	  $important = "${important}_$labels{$plugin}{$hostname}{$important}";
+	  $important = "$labels{$plugin}{$hostname}{$important}";
 	} else {
 	  print "Can't find $important in \$labels{$plugin}.  Skipping.\n";
 	  next OUTER;
