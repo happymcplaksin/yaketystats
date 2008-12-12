@@ -25,6 +25,7 @@ use warnings;
 use RRDs;
 use Cwd 'realpath';
 use Fcntl ':mode';
+use Getopt::Long qw(:config bundling);
 use Data::Dumper;
 $Data::Dumper::Purity = 1;
 $Data::Dumper::Deepcopy = 1;
@@ -34,32 +35,52 @@ $g_dir =~ s/\/[^\/]+$//;
 $g_dir = realpath("$g_dir/..");
 require "$g_dir/lib/include";
 
-our ($g_default_timeout);
-my $munin_plugins = "/usr/share/munin/plugins";
-my $munin_dir = "/var/lib/munin/localdomain";
-my (%config, %labels);
-my $conf = "../etc/munin2ys.config";
+our ($g_rrddir, %host4host, $g_host4host_file, $g_server_config,
+     $g_default_timeout, $g_debug);
+my ($munin_plugins, $config_file, $munin_rrds, $dry_run, $help,
+    %config, %labels, @script);
+$munin_plugins = "/usr/share/munin/plugins";
+$config_file = "../etc/munin2ys.config";
 
-read_config ();
-get_files ($munin_dir);
+config ();
+read_munin_config ($config_file);
+create_commands ($munin_rrds);
+run_commands ();
 
-sub get_files {
+sub run_commands {
+  my ($command, $status, @data);
+
+  foreach $command (@script) {
+    if ( $dry_run ) {
+      print "dry-run: $command\n";
+    } else {
+      print "Running $command\n";
+      ($status, @data) = run_prg ($command, $g_default_timeout);
+      if ( $status != 0 ) {
+	print "Problem: $!  Pressing on.\n";
+      }
+    }
+  }
+}
+
+sub create_commands {
   my ($dir) = @_;
-  local *SCRIPT;
 
   my (@files, $file, $tmp, $plugin, $short_plugin, $hostname, $ok, $p,
-      $path, $script, @script, $rrd_dir);
+      $path, $script);
 
-  $rrd_dir = "/tmp/munin";
-  $script = "/tmp/script";
-  @files = list_dir_entries($dir, "file");
+  @files = list_dir_entries($dir, "file", 0, 1);
    OUTER: foreach $file (@files) {
     $ok = 0;
     $file = basename ($file);
     $tmp = $file;
     # trim hostname
-    # HACK:
-    $hostname = "localhost.localdomain";
+    debug2 ("file = $file");
+    $hostname = basename ($file);
+    debug2 ("hostname = $hostname");
+    $hostname =~ s/(^[^-]*)-.*/$1/;
+    #$hostname =~ s/^..([^\/]*)\/.*/$1/;
+    debug2 ("hostname = $hostname");
     $tmp =~ s/^${hostname}-//;
     # Sort by length so, eg, df_inode gets found properly instead of df
     INNER: foreach $p (sort {length ($a) < length ($b) } keys %config) {
@@ -70,42 +91,38 @@ sub get_files {
       }
     }
     if ( $ok != 1 ) {
-      print "Can't find plugin for $tmp.  Skipping\n\n";
+      print "Can't find plugin for $tmp.  Skipping.\n\n";
       next OUTER;
     }
-    print "file = $file.\n";
+    debug2 ("file = $file.");
     my $re = "$config{$plugin}{'match'}.rrd";
-    print "comparing $tmp to\n";
-    print "          $re\n";
+    debug2 ("comparing $tmp to");
+    debug2 ("          $re");
     if ( $tmp !~ /$re/ ) {
       print "Gack!  No match!\n";
     } else {
       my $important = $1;
-      print "Important part is is $important\n";
+      if ( !defined ($important) ) {
+	print "Failed to find important part.  Skipping.\n";
+	next OUTER;
+      }
+      debug2 ("Important part is is $important");
       if ( defined ($labels{$plugin}) ) {
 	if ( defined ($labels{$plugin}{$important}) ) {
 	  $important = "${important}_$labels{$plugin}{$important}";
 	} else {
-	  print "Can't find $important in \$labels{$plugin}.  Death.\n";
-	  exit (3);
+	  print "Can't find $important in \$labels{$plugin}.  Skipping.\n";
+	  next OUTER;
 	}
       }
       $path = $config{$plugin}{'path'};
       $path =~ s/\$1/$important/;
-      print "So name the new file: $path.\n";
-      push (@script, "mkdir -p " . dirname ("${rrd_dir}/${path}") . "\n");
-      push (@script, "rrdtool dump $munin_dir/$file | sed 's#<name> 42 </name>#<name> yabba </name>#' > /tmp/munin2ys.tmp && rrdtool restore /tmp/munin2ys.tmp ${rrd_dir}/${path}.rrd\n\n");
+      debug2 ("So name the new file: $path.");
+      push (@script, "mkdir -p " . dirname ("${g_rrddir}/${hostname}/${path}") . "\n");
+      push (@script, "rrdtool dump ${dir}/${file} | sed 's#<name> 42 </name>#<name> yabba </name>#' > /tmp/munin2ys.tmp && rrdtool restore /tmp/munin2ys.tmp ${g_rrddir}/${hostname}/${path}.rrd\n\n");
     }
-    print "\n";
+    debug2 ("");
   }
-
-  if ( ! open (SCRIPT, ">$script") ) {
-    print "Can'b open $script: $!  Death.\n";
-    exit (4);
-  }
-  print SCRIPT "#!/bin/sh\n\n";
-  print SCRIPT @script;
-  close (SCRIPT);
 }
 
 # 'irqstats config' output:
@@ -235,12 +252,14 @@ sub find_labels {
   }
 }
 
-sub read_config {
+sub read_munin_config {
+  my ($config_file) = @_;
+
   local *F;
   my ($line, $plugin, $match, $path, $findlabel);
 
-  if ( ! open (F, $conf) ) {
-    print "Can't open $conf: $!  Death.\n";
+  if ( ! open (F, $config_file) ) {
+    print "Can't open $config_file: $!  Death.\n";
     exit (1);
   }
   while ( <F> ) {
@@ -256,4 +275,49 @@ sub read_config {
     }
   }
   close (F);
+}
+
+sub config {
+  get_config("server");
+  if ( !GetOptions (
+		    "config=s" => \$config_file,
+		    "debug" => \$g_debug,
+		    "dry-run" => \$dry_run,
+		    "munin-rrd-dir=s" => \$munin_rrds,
+		    "output-rrd-dir=s" => \$g_rrddir,
+		    "plugin-dir=s" => \$munin_plugins,
+		    "help" => \$help
+		   ) ) {
+    print "Trouble w/ options.  Feed me, Seymour\n";
+    exit (1);
+  }
+  if ( $help ) {
+    usage ();
+  }
+  if ( !defined ($munin_rrds) ) {
+    print "--munin-rrd-dir is required.\n";
+    exit (5);
+  }
+}
+
+sub debug2 {
+  my ($s) = @_;
+
+  if ( $g_debug ) {
+    print STDERR "$s\n";
+  }
+}
+
+sub usage {
+  print "$0: Create YaketyStats RRD files from Munin RRD files.\n";
+  print "    You must supply --munin-rrd-dir\n";
+  print "\n";
+  print "List of arguments:\n";
+  print "--config=FILE                   Use FILE as config file instead of $config_file\n";
+  print "--debug                         Print debug info to stderr\n";
+  print "--dry-run                       Echo rrdtool commands instead of running themn";
+  print "--munin-rrd-dir=DIR             Directory containing Munin RRD files\n";
+  print "--output-rrd-dir=DIR            Write YaketyStats RRD files to DIR instead of ${g_rrddir}/munin\n";
+  print "--plugin-dir=DIR                Look for munin plugin in DIR instead of /usr/share/munin/plugins\n";
+  exit (0);
 }
