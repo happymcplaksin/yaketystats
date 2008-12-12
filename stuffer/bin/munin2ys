@@ -16,8 +16,10 @@
 # You should have received a copy of the GNU General Public License
 # along with YaketyStats.  If not, see <http://www.gnu.org/licenses/>.
 
-# Read logs and stuff data into RRDs.
+# Turn Munin RRDs into YaketyStats RRDs.
 
+# todo: get plugin list from datafile and maybe don't need config file (but
+# what about names?)
 $|=1;
 
 use strict;
@@ -37,13 +39,15 @@ require "$g_dir/lib/include";
 
 our ($g_rrddir, %host4host, $g_host4host_file, $g_server_config,
      $g_default_timeout, $g_debug);
-my ($munin_plugins, $config_file, $munin_rrds, $dry_run, $help,
-    %config, %labels, @script);
-$munin_plugins = "/usr/share/munin/plugins";
-$config_file = "../etc/munin2ys.config";
+my ($config_file, $munin_rrds, $dry_run, $help, $use_munin_labels,
+    %config, %labels, @script, $munin_datafile, %plugins);
+#$config_file = "../etc/munin2ys.config";
+$use_munin_labels=1;
 
 config ();
-read_munin_config ($config_file);
+$munin_datafile = "${munin_rrds}/../datafile";
+#read_munin_config ($config_file);
+read_munin_datafile ($munin_datafile);
 create_commands ($munin_rrds);
 run_commands ();
 
@@ -83,8 +87,8 @@ sub create_commands {
     debug2 ("hostname = $hostname");
     $tmp =~ s/^${hostname}-//;
     # Sort by length so, eg, df_inode gets found properly instead of df
-    INNER: foreach $p (sort {length ($a) < length ($b) } keys %config) {
-      if ( $tmp =~ /^$p/ ) {
+    INNER: foreach $p (sort {length ($b) <=> length ($a) } keys %plugins) {
+      if ( $tmp =~ /^${p}-/ ) {
 	$plugin = $p;
 	$ok = 1;
 	last INNER;
@@ -95,7 +99,8 @@ sub create_commands {
       next OUTER;
     }
     debug2 ("file = $file.");
-    my $re = "$config{$plugin}{'match'}.rrd";
+    #my $re = "$config{$plugin}{'match'}.rrd";
+    my $re = "^$plugin-(.*)-[a-z].rrd\$";
     debug2 ("comparing $tmp to");
     debug2 ("          $re");
     if ( $tmp !~ /$re/ ) {
@@ -106,17 +111,16 @@ sub create_commands {
 	print "Failed to find important part.  Skipping.\n";
 	next OUTER;
       }
-      debug2 ("Important part is is $important");
+      debug2 ("Important part for $plugin is $important");
       if ( defined ($labels{$plugin}) ) {
-	if ( defined ($labels{$plugin}{$important}) ) {
-	  $important = "${important}_$labels{$plugin}{$important}";
+	if ( defined ($labels{$plugin}{$hostname}{$important}) ) {
+	  $important = "${important}_$labels{$plugin}{$hostname}{$important}";
 	} else {
 	  print "Can't find $important in \$labels{$plugin}.  Skipping.\n";
 	  next OUTER;
 	}
       }
-      $path = $config{$plugin}{'path'};
-      $path =~ s/\$1/$important/;
+      $path = "$plugin/${important}";
       debug2 ("So name the new file: $path.");
       push (@script, "mkdir -p " . dirname ("${g_rrddir}/${hostname}/${path}") . "\n");
       push (@script, "rrdtool dump ${dir}/${file} | sed 's#<name> 42 </name>#<name> yabba </name>#' > /tmp/munin2ys.tmp && rrdtool restore /tmp/munin2ys.tmp ${g_rrddir}/${hostname}/${path}.rrd\n\n");
@@ -125,133 +129,46 @@ sub create_commands {
   }
 }
 
-# 'irqstats config' output:
-# graph_title Individual interrupts
-# graph_args --base 1000 -l 0;
-# graph_vlabel interrupts / ${graph_period}
-# graph_category system
-# graph_order i0 i1 i4 i6 i7 i8 i9 i12 i14 i15 i16 i17 i18 i19 i20 i21 i22 i23 iNMI iLOC iRES iCAL iTLB iTRM iSPU iERR iMIS
-# i0.label timer
-# i0.info Interrupt 0, for device(s): timer
-# i0.type DERIVE
-# i0.min 0
-# i1.label i8042
-# i1.info Interrupt 1, for device(s): i8042
-# i1.type DERIVE
-# i1.min 0
-# i4.label 4
-# i4.type DERIVE
-# i4.min 0
-# i6.label floppy
-# i6.info Interrupt 6, for device(s): floppy
-# i6.type DERIVE
-# i6.min 0
-# i7.label 7
-# i7.type DERIVE
-# i7.min 0
-# i8.label rtc
-# i8.info Interrupt 8, for device(s): rtc
-# i8.type DERIVE
-# i8.min 0
-# i9.label acpi
-# i9.info Interrupt 9, for device(s): acpi
-# i9.type DERIVE
-# i9.min 0
-# i12.label i8042
-# i12.info Interrupt 12, for device(s): i8042
-# i12.type DERIVE
-# i12.min 0
-# i14.label libata
-# i14.info Interrupt 14, for device(s): libata
-# i14.type DERIVE
-# i14.min 0
-# i15.label libata
-# i15.info Interrupt 15, for device(s): libata
-# i15.type DERIVE
-# i15.min 0
-# i16.label ohci_hcd:usb1, sata_nv
-# i16.info Interrupt 16, for device(s): ohci_hcd:usb1, sata_nv
-# i16.type DERIVE
-# i16.min 0
-# i17.label eth0, NVidia CK804
-# i17.info Interrupt 17, for device(s): eth0, NVidia CK804
-# i17.type DERIVE
-# i17.min 0
-# i18.label ehci_hcd:usb2
-# i18.info Interrupt 18, for device(s): ehci_hcd:usb2
-# i18.type DERIVE
-# i18.min 0
-# i19.label sata_nv
-# i19.info Interrupt 19, for device(s): sata_nv
-# i19.type DERIVE
-# i19.min 0
-# i20.label ohci1394
-# i20.info Interrupt 20, for device(s): ohci1394
-# i20.type DERIVE
-# i20.min 0
-# i21.label ioc0
-# i21.info Interrupt 21, for device(s): ioc0
-# i21.type DERIVE
-# i21.min 0
-# i22.label ioc1
-# i22.info Interrupt 22, for device(s): ioc1
-# i22.type DERIVE
-# i22.min 0
-# i23.label nvidia
-# i23.info Interrupt 23, for device(s): nvidia
-# i23.type DERIVE
-# i23.min 0
-# iNMI.label NMI
-# iNMI.type DERIVE
-# iNMI.min 0
-# iLOC.label LOC
-# iLOC.type DERIVE
-# iLOC.min 0
-# iRES.label RES
-# iRES.type DERIVE
-# iRES.min 0
-# iCAL.label CAL
-# iCAL.type DERIVE
-# iCAL.min 0
-# iTLB.label TLB
-# iTLB.type DERIVE
-# iTLB.min 0
-# iTRM.label TRM
-# iTRM.type DERIVE
-# iTRM.min 0
-# iSPU.label SPU
-# iSPU.type DERIVE
-# iSPU.min 0
-# iERR.label ERR
-# iERR.type DERIVE
-# iERR.min 0
-# iMIS.label MIS
-# iMIS.type DERIVE
-# iMIS.min 0
-sub find_labels {
-  my ($plugin) = @_;
+# localdomain;localhost.localdomain:irqstats.iNMI.label NMI
+sub read_munin_datafile {
+  local *F;
+  my ($status, @data, $line, $in, $out, $plugin, $hostname);
 
-  my ($status, @data, $line, $in, $out);
-
-  ($status, @data) = run_prg ("$munin_plugins/$plugin config", $g_default_timeout);
-  if ( $status != 0 ) {
-    print "Bad status running $plugin.  Death.\n";
-    exit (2);
+  if ( !open (F, $munin_datafile) ) {
+    print "Can't open $munin_datafile: $!  Death.\n";
+    exit (6);
   }
 
-  foreach $line (@data) {
+  LOOP: while (<F>) {
+    $line = $_;
     chomp ($line);
-    # i23.label nvidia
-    if ( $line =~ /[.]label/ ) {
-      ($in, $out) = split (/ /, $line);
-      $in =~ s/[.]label//;
-      # Drop : so sending file name to rrdtool is easy
+
+    if ( $line =~ /^(version|tmpldir|htmldir|dbdir|rundir|logdir)/ ) {
+      next LOOP;
+    }
+    # Get the hostname
+    $line =~ s/^.*;//;
+    $hostname = $line;
+    $hostname =~ s/:.*//;
+    $line =~ s/^${hostname}://;
+    # Get the plugin name
+    $plugin = $line;
+    $plugin =~ s/(^[^.]*)[.].*/$1/;
+    # Store plugin name
+    $plugins{$plugin} = 1;
+    $line =~ s/^${plugin}.//;
+
+    if ( $line =~ /[.]label / ) {
+      # iNMI.label NMI
+      ($in, $out) = (split (/[. ]/, $line))[0,2];
       $out =~ s/:/_/g;
-      $labels{$plugin}{$in} = $out;
+      $labels{$plugin}{$hostname}{$in} = $out;
     }
   }
 }
 
+# TODO:  DELETE!
+# Written before I discovered Munin's datafile and wrote read_munin_datafile
 sub read_munin_config {
   my ($config_file) = @_;
 
@@ -267,10 +184,11 @@ sub read_munin_config {
     chomp ($line);
     if ( $line !~ /^$/ && $line !~ /^#/ ) {
       ($plugin, $match, $path, $findlabel) = split (/\s+/, $line);
+      debug2 ("Adding plugin: $plugin\n");
       $config{$plugin}{'match'} = $match;
       $config{$plugin}{'path'} = $path;
       if ( defined ($findlabel) ) {
-	find_labels ($plugin);
+	$config{$plugin}{'findlabel'} = 1;
       }
     }
   }
@@ -280,12 +198,12 @@ sub read_munin_config {
 sub config {
   get_config("server");
   if ( !GetOptions (
-		    "config=s" => \$config_file,
 		    "debug" => \$g_debug,
 		    "dry-run" => \$dry_run,
+		    "munin-datafile=s" => \$munin_datafile,
 		    "munin-rrd-dir=s" => \$munin_rrds,
 		    "output-rrd-dir=s" => \$g_rrddir,
-		    "plugin-dir=s" => \$munin_plugins,
+#		    "use-munin-labels" => \$use_munin_labels,
 		    "help" => \$help
 		   ) ) {
     print "Trouble w/ options.  Feed me, Seymour\n";
@@ -296,7 +214,7 @@ sub config {
   }
   if ( !defined ($munin_rrds) ) {
     print "--munin-rrd-dir is required.\n";
-    exit (5);
+    usage ();
   }
 }
 
@@ -313,11 +231,11 @@ sub usage {
   print "    You must supply --munin-rrd-dir\n";
   print "\n";
   print "List of arguments:\n";
-  print "--config=FILE                   Use FILE as config file instead of $config_file\n";
   print "--debug                         Print debug info to stderr\n";
-  print "--dry-run                       Echo rrdtool commands instead of running themn";
+  print "--dry-run                       Echo rrdtool commands instead of running them";
+  print "--munin-datafile=FILE           Use FILE instead of \${munin_rrds}/../datafile";
   print "--munin-rrd-dir=DIR             Directory containing Munin RRD files\n";
   print "--output-rrd-dir=DIR            Write YaketyStats RRD files to DIR instead of ${g_rrddir}/munin\n";
-  print "--plugin-dir=DIR                Look for munin plugin in DIR instead of /usr/share/munin/plugins\n";
+#  print "--no-use-munin-labels           Don't Munin labels when naming RRD files\n";
   exit (0);
 }
