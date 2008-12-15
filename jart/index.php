@@ -1515,6 +1515,8 @@ $version = "2.2pre";
             list.graphs.each(function(g){
                 //console.log(g);
                 G.addGraph();
+                var label = g[0].replace(/.*\/([^/]+\/[^/]+)\/[^/]+.rrd/,'$1');
+                G.graphs[G.cg].graphlabel = label;
                 g.each(function(path){
                     //console.log(path);
                     G.addRrdToGraph(path,0);
