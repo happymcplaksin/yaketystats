@@ -1,0 +1,23 @@
+#!/bin/bash
+
+tmp=$(mktemp /tmp/onesec_entropy.XXXXXX)
+
+sep=''
+fqdn=$(cat /var/yaketystats/fqdn)
+bivalve=/usr/local/yaketystats/bin/bivalve
+
+while true
+do
+  ts=$(date +%s)
+  entropy=$(cat /proc/sys/kernel/random/entropy_avail)
+  echo "p=/${fqdn}/kernel/entropy/onesec${sep}t=GAUGE${sep}i=1${sep}ts=${ts}${sep}v=${entropy}" >> $tmp
+  # Call bivalve once a minute
+  let "remains = $ts % 60"
+  if [ $remains = 0 ]
+  then
+    $bivalve onesec_entropy $fqdn < $tmp
+    rm -f $tmp
+  fi
+  sleep 1
+done
+
