@@ -22,6 +22,8 @@
 # what about names?)
 $|=1;
 
+print "TODO:\nFix 'I/O' label.\nFix files named '.rrd'\n\n";exit;
+
 use strict;
 use warnings;
 use RRDs;
