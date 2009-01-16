@@ -928,6 +928,37 @@ function massAdd($path,$limit,$target){
     return $out;
 }
 
+function mergePlaylists($paths,$name){
+    global $webdir;
+    $json = new Services_JSON();
+    $paths = $json->decode($paths);
+    if ( empty($paths) ){
+        return $json->encode(array('ERROR',"No playlists."));
+    }
+    $a = array();
+    foreach($paths as $path){
+        $x = file_get_contents($path);
+        $y = $json->decode($x);
+        if ( $y[0] == 'ERROR' ){
+            return $y[1];
+        }
+        foreach ($y as $graph){
+            $a[] = $graph;
+        }
+    }
+    $a = $json->encode($a);
+    $name = preg_replace('`\W`','',$name);
+    $name = trim($name);
+    $name  = "$webdir/playlists/".$_SERVER['PHP_AUTH_USER'].'/'.$name.'.pspl';
+    $fp   = @fopen($name,'w');
+    if ($fp==0){
+        return $json->encode(array('ERROR',"Unable to write to file [$file]. Check permissions."));
+    }
+    $blah = fwrite($fp,"$a");
+    fclose($fp);
+    return $json->encode(array('SUCCESS',$name));
+}
+
 function newPlSub($name){
     global $webdir;
     $user = $_SERVER['PHP_AUTH_USER'];
@@ -1209,7 +1240,7 @@ function zoomTimes($start,$end,$amt,$action,$graph){
 
 sajax_init();
 //$sajax_debug_mode = 1;
-$exports = array('clickToCenterTime','convertAllTimes','convertTime','createGraphDragOverlay','createGraphImage','deletePlaylist','dragTime','findMatches','loadPlaylist','massAdd','newPlSub','rmTmpPlaylist','savePlaylist','saveUserPrefs','selTime','showTreeChild','unTmpPlaylist','zoomTimes');
+$exports = array('clickToCenterTime','convertAllTimes','convertTime','createGraphDragOverlay','createGraphImage','deletePlaylist','dragTime','findMatches','loadPlaylist','massAdd','mergePlaylists','newPlSub','rmTmpPlaylist','savePlaylist','saveUserPrefs','selTime','showTreeChild','unTmpPlaylist','zoomTimes');
 if ( in_array($_SERVER['PHP_AUTH_USER'],$admins) ){
     array_push($exports,'debugLogfiles','debugLoadLog','debugZeroFile');
 }
@@ -1394,7 +1425,8 @@ $version = "2.2pre";
         }
 
         function nameAttachPlaylist(path,div){
-            var path = path.replace(/.pspl$/,'');
+            var opath = path;
+            var path  = path.replace(/.pspl$/,'');
             var id    = path.replace(/[/.]/g,'');
             var ex    = $(id);
             if ( ex !== null ){
@@ -1415,6 +1447,16 @@ $version = "2.2pre";
                 sp.appendChild(img);
                 Event.observe(img,'click',function(e){ if (dsPicker.verify('deleteplaylist') ){deletePlaylist(path,div.id);} }.bindAsEventListener());
                 div.appendChild(sp);
+                var ck = document.createElement('input');
+                ck.type = 'checkbox';
+                ck.value = opath;
+                ck.title = 'Select for Merging';
+                ck.className = 'mergecheckbox';
+                if ( G.showMergeCheckboxes == 0 ){
+                    ck.style.display = 'none';
+                }
+                Event.observe(ck,'click',showMerge.bindAsEventListener());
+                div.appendChild(ck);
             }
             var span = document.createElement('span');
             span.className = 'clickable';
@@ -1431,6 +1473,59 @@ $version = "2.2pre";
             var txt   = document.createTextNode('[URL]');
             urla.appendChild(txt);
             div.appendChild(urla);
+        }
+
+        function showMerge(){
+            var pls = $$('input.mergecheckbox');
+            var i = 0;
+            pls.each(function(p){
+                if ( p.checked ){
+                    i++;
+                }
+            })
+            if ( i > 1 ){ // 1, not 0 because you don't want to merge 1 playlist.
+                Element.show('mergedplaylistname');
+            }else{
+                var inp = $('mergedplaylistname');
+                inp.value = 'Input merged playlist name and hit Enter';
+                Element.hide(inp);
+            }
+        }
+
+        function mergePlaylists(){
+            name = $('mergedplaylistname').value;
+            if ( name == '' ){
+                handleError('You must supply a name for the merged playlist.');
+                return;
+            }
+            var pls = $$('input.mergecheckbox');
+            var i = [];
+            pls.each(function(p){
+                if ( p.checked ){
+                    i.push(p.value);
+                }
+            })
+            i = Object.toJSON(i);
+            x_mergePlaylists(i,name,mergePlaylistsCB);
+        }
+
+        function mergePlaylistsCB(s){
+            a = s.evalJSON();
+            if ( a[0] != 'ERROR' ){
+                var par = a[1].replace(/(.*\/).*/,'$1');
+                par     = par.replace(/\W/g,'');
+                par    += 'hide';
+                par     = $(par);
+                if ( par ){
+                    var div   = document.createElement('div');
+                    nameAttachPlaylist(a[1],div);
+                    par.appendChild(div);
+
+                }
+                nameAttachPlaylist
+            }else{
+                handleError(a[1]);
+            }
         }
 
         function findAndLoad(a){
@@ -1614,7 +1709,17 @@ $version = "2.2pre";
             var navPL           = document.createElement('div');
             navPL.id            = 'navPL';
             navPL.className     = 'closeme';
-            navPL.style.display = 'none'
+            navPL.style.display = 'none';
+            var inp = document.createElement('input');
+            inp.type = 'text';
+            inp.size = 40;
+            inp.value = 'Input merged playlist name and hit Enter';
+            inp.id = 'mergedplaylistname';
+            Event.observe(inp,'click',function(){ inp.value = '' }.bindAsEventListener());
+            inp.style.display = 'none';
+            navPL.appendChild(inp);
+            var br = document.createElement('br');
+            navPL.appendChild(br);
             var navDiv;  // eg navC
             var hostDiv; // eg wwwrrdbeansborusgedu
             dsPicker.initialPaths.each(function(path){
@@ -2016,7 +2121,7 @@ $version = "2.2pre";
             G.closeAllGraphs(0);
         }
 
-        return{ 'navVis': navVis, 'initialPaths': initialPaths, 'init': init, 'toggleControl':toggleControl, 'savePlaylist':savePlaylist, 'loadPlaylist':loadPlaylist, 'handleError':handleError, 'newPlSub':newPlSub, 'help':help, 'hidehelp':hidehelp ,'findMatches':findMatches,'regexSavePlaylist':regexSavePlaylist, verify:verify, removeErrors:removeErrors}
+        return{ 'navVis': navVis, 'initialPaths': initialPaths, 'init': init, 'toggleControl':toggleControl, 'savePlaylist':savePlaylist, 'loadPlaylist':loadPlaylist, 'handleError':handleError, 'newPlSub':newPlSub, 'help':help, 'hidehelp':hidehelp ,'findMatches':findMatches,'regexSavePlaylist':regexSavePlaylist, verify:verify, removeErrors:removeErrors, mergePlaylists:mergePlaylists}
     })();
 
 
@@ -2109,7 +2214,9 @@ $version = "2.2pre";
             <div id="allgraphcontrols" class="yui-g">
             <div class="yui-u first">
                 <span class="clickable" id="newgraphbutton"><img src="img/stock_file-with-objects.png" title="New Graph"></span>
+                <span class="clickable" id="showmergecheckboxesbutton"><img src="img/stock-tool-button-scale.png" title="Show Playlist Merge UI"></span>
                 <span class="clickable" id="saveplaylistbutton"><img src="img/stock_data-save.png" title="Save Playlist"></span>
+                <br>
                 <span class="clickable" id="setalltimesbutton"><img src="img/stock_timer.png" title="Set Times for All Graphs"></span>
                 <span class="clickable" id="setallsizesbutton"><img src="img/stock_handles-simple.png" title="Set Sizes for All Graphs"></span>
                 <span class="clickable" id="redrawallgraphsbutton"><img src="img/lc_formatpaintbrush.png" title="Redraw All Graphs"></span>
@@ -2265,6 +2372,9 @@ $version = "2.2pre";
 <label for="userpconfirmdeletepl">Confirm Overwrite Playlist</label>
 <input type="checkbox" id="userpconfirmoverwritepl"><br>
 
+<label for="userpshowmergeck">Show Merge-playlist Checkboxes</label>
+<input type="checkbox" id="userpshowmergeck"><br>
+
 <input type="button" value="Save" id="userpsave">
 <input type="button" value="Cancel" id="userpcancel">
 </div>
@@ -2300,6 +2410,8 @@ $version = "2.2pre";
     <dd>Opens a dialog where various preferences can be set and saved.</dd>
     <dt><img src="img/stock_file-with-objects.png" title="New Graph"></dt>
     <dd>New Graph. This button creates a new graph. This is useful when creating graphs a line at a time.</dd>
+    <dt><img src="img/stock-tool-button-scale.png" title="Show Playlist Merge UI"></dt>
+    <dd>Show Playlist Merge UI. Clicking this icon toggles checkboxes next to your playlist names that can be used to merge them. If you check more than one checkbox, a text-field will appear for entering the name of the new &quot;merged&quot; playlist. Hit &quot;Enter&quot; in that field to save.</dd>
     <dt><img src="img/stock_data-save.png" title="Save Playlist"></dt>
     <dd>Save Playlist. This button brings up the Save Playlist dialog. A playlist saved from this button is made up of the currently displayed graphs.</dd>
     <dt><img src="img/stock_timer.png" title="Set Times for All Graphs"></dt>

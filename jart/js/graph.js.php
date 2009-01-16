@@ -31,6 +31,7 @@ $defaults = array(
                     'defaultsize'      => 50,
                     'selColor'         => "#ff0000",
                     'selOpacity'       => 56,
+                    'showMergeCheckboxes' => 0,
                     'tool'             => 1,
                     'zoompct'          => .125
                 );
@@ -105,6 +106,9 @@ print $out;
         var ngb = $('newgraphbutton');
         Event.observe(ngb,'click',addGraph.bindAsEventListener());
 
+        var mtb = $('showmergecheckboxesbutton');
+        Event.observe(mtb,'click',toggleMergeCheckboxes.bindAsEventListener());
+
         var sat = $('setalltimesbutton');
         Event.observe(sat,'click',function(e){dsPicker.toggleControl(e,'containerforallgraphtimes'); $('allgraphstart').focus() }.bindAsEventListener());
 
@@ -171,6 +175,9 @@ print $out;
             case "allgraphstart":
             case "allgraphend":
                 G.setAllGraphTimes(0,0);
+                break;
+            case "mergedplaylistname":
+                dsPicker.mergePlaylists();
                 break;
             case "playlistname":
                 dsPicker.savePlaylist();
@@ -1789,6 +1796,8 @@ print $out;
         upcdp.checked = confirmdeleteplaylist;
         var upcop=$('userpconfirmoverwritepl');
         upcop.checked = confirmoverwriteplaylist;
+        var upsmc=$('userpshowmergeck');
+        upsmc.checked = showMergeCheckboxes;
     }
     function saveUserPrefs(){
         Element.hide('userprefsdiv');
@@ -1848,9 +1857,10 @@ print $out;
         }
         hash.set('confirmdeleteplaylist',ucd);
         G.confirmdeleteplaylist = ucd;
-        if ( G.graphs[0].paths[0] === undefined ){
-            closeAllGraphs(0);
-        }
+        //  what was this trying to accomplish?
+        //if ( G.graphs[0].paths[0] === undefined ){
+            //closeAllGraphs(0);
+        //}
         var uco = 0;
         var upcop=$('userpconfirmoverwritepl').checked;
         if ( upcop ){
@@ -1859,10 +1869,44 @@ print $out;
         hash.set('confirmoverwriteplaylist',uco);
         G.confirmoverwriteplaylist = uco;
 
+        var tacos = 0;
+        var upsmc=$('userpshowmergeck').checked;
+        if ( upsmc ){
+            tacos = 1;
+        }
+        hash.set('showMergeCheckboxes',tacos);
+        if ( G.showMergeCheckboxes != tacos ){
+            toggleMergeCheckboxes();
+        }
+
         x_saveUserPrefs(hash.toJSON(),saveUserPrefsCB);
     }
     function saveUserPrefsCB(s){
         dsPicker.handleError('Preferences:' + s + ', bro!');
+    }
+    function toggleMergeCheckboxes(){
+        var v = G.showMergeCheckboxes;
+        if ( v == 1 ){
+            G.showMergeCheckboxes = 0;
+            Element.hide('mergedplaylistname');
+            var cbs = $$('input.mergecheckbox');
+            cbs.each(function(c){
+                c.style.display="none";
+            })
+        }else{
+            G.showMergeCheckboxes = 1;
+            var cbs = $$('input.mergecheckbox');
+            var i = 0;
+            cbs.each(function(c){
+                c.style.display="";
+                if ( c.checked ){
+                    i++;
+                }
+            })
+            if ( i > 1 ){ // 1, not 0 because you don't want to merge 1 playlist.
+                Element.show('mergedplaylistname');
+            }
+        }
     }
     function blendColors(me,e){
         var c1 = G.graphs[me].paths[0].color.replace(/#/,'');
@@ -1940,6 +1984,6 @@ print $out;
                             '#F5F800', '#CDCFC4', '#BCBEB3', '#AAABA1',
                             '#8F9286', '#797C6E', '#2E3127', '#0000FF');
     return {
-        'init': init, 'drawGraph': drawGraph, 'addRrdToGraph': addRrdToGraph, 'cg': cg, 'graphs': graphs, 'selColor': selColor, 'selOpacity': selOpacity, 'addGraph': addGraph, 'defaultpathlimit': defaultpathlimit, 'closeAllGraphs': closeAllGraphs, 'drawAllGraphs': drawAllGraphs, 'setAllGraphTimes':setAllGraphTimes, 'autoRefreshReal':autoRefreshReal, 'createAllGraphImages':createAllGraphImages, 'createGraphImage':createGraphImage, 'autoRefreshSetup':autoRefreshSetup, setAllGraphSizes:setAllGraphSizes, 'tool':tool, zoompct:zoompct, resetSizeForAll:resetSizeForAll, 'confirmcloseallgraphs':confirmcloseallgraphs, 'confirmdeleteplaylist':confirmdeleteplaylist, 'defaultstarttime':defaultstarttime, 'defaultendtime':defaultendtime, 'defaultsize':defaultsize, 'defaultCanvasColor':defaultCanvasColor, 'confirmoverwriteplaylist':confirmoverwriteplaylist
+        'init': init, 'drawGraph': drawGraph, 'addRrdToGraph': addRrdToGraph, 'cg': cg, 'graphs': graphs, 'selColor': selColor, 'selOpacity': selOpacity, 'addGraph': addGraph, 'defaultpathlimit': defaultpathlimit, 'closeAllGraphs': closeAllGraphs, 'drawAllGraphs': drawAllGraphs, 'setAllGraphTimes':setAllGraphTimes, 'autoRefreshReal':autoRefreshReal, 'createAllGraphImages':createAllGraphImages, 'createGraphImage':createGraphImage, 'autoRefreshSetup':autoRefreshSetup, setAllGraphSizes:setAllGraphSizes, 'tool':tool, zoompct:zoompct, resetSizeForAll:resetSizeForAll, 'confirmcloseallgraphs':confirmcloseallgraphs, 'confirmdeleteplaylist':confirmdeleteplaylist, 'defaultstarttime':defaultstarttime, 'defaultendtime':defaultendtime, 'defaultsize':defaultsize, 'defaultCanvasColor':defaultCanvasColor, 'confirmoverwriteplaylist':confirmoverwriteplaylist, showMergeCheckboxes:showMergeCheckboxes
     }
 })();
