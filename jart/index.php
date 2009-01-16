@@ -1522,7 +1522,14 @@ $version = "2.2pre";
                     par.appendChild(div);
 
                 }
-                nameAttachPlaylist
+                handleError('Success!');
+                var pls = $$('input.mergecheckbox');
+                pls.each(function(p){
+                    p.checked = false;
+                })
+                var inp = $('mergedplaylistname');
+                inp.value = 'Input merged playlist name and hit Enter';
+                Element.hide(inp);
             }else{
                 handleError(a[1]);
             }
