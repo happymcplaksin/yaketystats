@@ -591,11 +591,7 @@ print $out;
                 }
             }else{
                 if ( path.path == 'total' && path.isPredict == 0){
-                    G.graphs[me].total = 0;
-                    G.graphs[me].justtotal = 0;
-                    var jtf = $('justtotalfor-' + me);
-                    jtf.checked = false;
-                    Element.hide(jtf);
+                    noJustTotal(me);
                 }
                 if ( path.path == 'avg' ){
                     G.graphs[me].avg = 0;
@@ -917,7 +913,7 @@ print $out;
 
         //Redraw
         var span           = document.createElement('span');
-        span.className     = 'redrawgraphbutton';
+        span.className     = 'redrawgraphbutton clickable';
         var img            = document.createElement('img');
         img.src            = 'img/sc_formatpaintbrush.png';
         img.title          = 'Redraw Graph';
@@ -1386,11 +1382,26 @@ print $out;
         var i  = e.currentTarget.id.replace(/display-\d+_(\d+)/,'$1');
         if ( e.currentTarget.checked == true ){
             G.graphs[me].paths[i].display = 1;
+            if ( G.graphs[me].paths[i].path == 'total' ){
+                G.graphs[me].total = 1;
+                var jtf = $('justtotalfor-' + me);
+                Element.show(jtf);
+            }
         }else{
             G.graphs[me].paths[i].display = 0;
+            if ( G.graphs[me].paths[i].path == 'total' ){
+                noJustTotal(me);
+            }
         }
         setCurrentGraph(me);
         createGraphImage(me,0);
+    }
+    function noJustTotal(graph){
+        G.graphs[graph].total = 0;
+        G.graphs[graph].justtotal = 0;
+        var jtf = $('justtotalfor-' + graph);
+        jtf.checked = false;
+        Element.hide(jtf);
     }
     function updatePathLabel(e){
         var ele  = e.currentTarget;
