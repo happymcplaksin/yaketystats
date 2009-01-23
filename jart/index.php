@@ -1624,6 +1624,7 @@ $version = "2.2pre";
                     G.addRrdToGraph(path,0);
                 });
             });
+            G.graphs[0].regex = $F('regextext');
             Element.show('regexersaver');
             //console.log(G.graphs);
         }
