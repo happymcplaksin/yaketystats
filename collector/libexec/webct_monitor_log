@@ -238,7 +238,7 @@ sub read_webct_monitor_config {
   }
   while (<F>) {
     $line = $_;
-    if ( $_ !~ /^#/ ) {
+    if ( $_ !~ /^#/ && $_ !~ /^$/ ) {
       chomp ($line);
       ($label, $type, $string) = split (/\|/, $line);
       $collectem{$string}{'label'} = $label;
