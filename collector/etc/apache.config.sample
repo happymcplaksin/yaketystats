@@ -1,0 +1,2 @@
+push (@{ $econfig{'apache'}{'hosts'} }, "host1.example.com");
+push (@{ $econfig{'apache'}{'hosts'} }, "host2.example.com");
