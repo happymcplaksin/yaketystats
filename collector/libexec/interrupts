@@ -30,7 +30,7 @@ my (@data);
 # These are the defaults.  They could be semi-overridden by specifying a
 # different interval in the client config file, but the RRD file would still have
 # space for updates every $interval as defined below.
-my $rrd_type = "GAUGE";
+my $rrd_type = "DERIVE";
 my $rrd_interval;
 
 our ($g_exit, $g_default_timeout, $g_host, $g_sep, $g_collector, $g_os);
@@ -185,7 +185,7 @@ sub doit {
       }
       for ($i = 0; $i < @cpucounts; $i++) {
 	if ( defined ($cpucounts[$i]) ) {
-	  push (@return, "p=/$main::g_host/kernel/irq/cpu${i}/${name}${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$cpucounts[$i]\n");
+	  push (@return, "p=/$main::g_host/kernel/irq/${name}/cpu${i}${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$cpucounts[$i]\n");
 	}
       }
     }
