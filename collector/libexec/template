@@ -73,5 +73,11 @@ if ( !@ARGV || (! defined ($ARGV[1]) && $ARGV[1] eq "calledfromcollect") ) {
 }
 
 sub doit {
-  DOIT
+  my ($status, @data, $time, @return);
+
+  $time = time ();
+
+  DOIT;
+
+  return (@return);
 }
