@@ -429,7 +429,7 @@ sub linux {
 	$dev =~ s/\//./g;
 	# Do the same with colons becasue they're special to rrdtool
 	$dev =~ s/:/./g;
-	if ( ignoreit ('io', $dev) ) {
+	if ( $dev eq '' || ignoreit ('io', $dev) ) {
 	  next LOOP;
 	}
 	if ( $dev =~ /^dm-/ ) {
@@ -457,8 +457,11 @@ sub linux {
 	if ( $skip != keys (%s) ) {
 	  foreach $i (keys (%s)) {
 	    if ( !ignoreit ('io', $i) ) {
-	      push (@return,
-		    "p=/$main::g_host/io/${i}/${dev}${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$s{$i}\n");
+	      # Sometimes (during high load?) we get bogus data so avoid that
+	      if ( $s{$i} =~ /^[.0-9]+$/ ) {
+		push (@return,
+		      "p=/$main::g_host/io/${i}/${dev}${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$s{$i}\n");
+	      }
 	    }
 	  }
 	}
