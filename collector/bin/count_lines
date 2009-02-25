@@ -1,0 +1,19 @@
+#!/bin/bash
+
+if [[ $# != 4 ]]
+then
+  echo "Usage: $0 FILENAME PATH PATTERN INTERVAL"
+  echo "Where PATH gets tacked on after the hostname.  As in /jojo.example.com/PATH"
+  exit 1
+fi
+
+file="$1"
+path="$2"
+pattern="$3"
+interval="$4"
+
+count=$(grep -c "$pattern" $1)
+ts=$(date +%s)
+fqdn=$(cat /var/yaketystats/fqdn)
+
+echo "p=/${fqdn}/${path}${sep}t=GAUGE${sep}i=${interval}${sep}ts=${ts}${sep}v=${count}" | /usr/local/yaketystats/bin/bivalve count_lines $(basename $file)
