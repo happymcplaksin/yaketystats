@@ -12,6 +12,7 @@ path="$2"
 pattern="$3"
 interval="$4"
 
+sep=''
 count=$(grep -c "$pattern" $1)
 ts=$(date +%s)
 fqdn=$(cat /var/yaketystats/fqdn)
