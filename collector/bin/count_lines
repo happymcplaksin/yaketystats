@@ -13,8 +13,22 @@ pattern="$3"
 interval="$4"
 
 sep=''
-count=$(grep -c "$pattern" $1)
-ts=$(date +%s)
-fqdn=$(cat /var/yaketystats/fqdn)
 
-echo "p=/${fqdn}/${path}${sep}t=GAUGE${sep}i=${interval}${sep}ts=${ts}${sep}v=${count}" | /usr/local/yaketystats/bin/bivalve count_lines $(basename $file)
+grep=grep
+if [[ "$file" =~ 'gz$' ]]
+then
+  grep=zgrep
+fi
+if [[ "$file" =~ 'bz2$' ]]
+then
+  grep=bzgrep
+fi
+
+if [[ -e ${file} ]]
+then
+  count=$(grep -c "$pattern" ${file})
+  ts=$(date +%s)
+  fqdn=$(cat /var/yaketystats/fqdn)
+  
+  echo "p=/${fqdn}/${path}${sep}t=GAUGE${sep}i=${interval}${sep}ts=${ts}${sep}v=${count}" | /usr/local/yaketystats/bin/bivalve count_lines $(basename $file)
+fi
