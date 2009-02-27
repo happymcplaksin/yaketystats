@@ -73,6 +73,7 @@ print $out;
         this.avg         = 0;
         this.bglastdrawn = 0;
         this.canvas      = G.defaultCanvasColor;
+        this.description = '';
         this.end         = G.defaultendtime;
         this.graphlabel  = '';
         this.max         = 'nan';
@@ -133,8 +134,11 @@ print $out;
         var mb    = $('monthbutton');
         Event.observe(mb,'click',function(e){setAllGraphTimes('1 month ago','now')}.bindAsEventListener());
 
-        var ts    = $('autorefresh');
-        Event.observe(ts,'change',autoRefresh.bindAsEventListener());
+        //var ts    = $('autorefresh');
+        //Event.observe(ts,'change',autoRefresh.bindAsEventListener());
+
+        $('playlistmoreinfobutton').onclick = function(){ Element.toggle('playlistmoreinfo');  };
+        $('playlistsavemore').onclick = function(){ Element.toggle('saveplaylistmorehide') };
 
         var hti   = $('seltoolicon');
         Event.observe(hti,'click',setTool.bindAsEventListener());
@@ -442,7 +446,7 @@ print $out;
             resetSizeForAll();
             G.graphs = new Array();
             addGraph();
-            $('playlistdisplay').innerHTML = '';
+            $('playlistlink').innerHTML = '';
             Element.hide('playlistdisplay');
         }
     }
@@ -454,7 +458,7 @@ print $out;
         addGraph();
         G.cg = 0;
         if ( ! flc ){
-            $('playlistdisplay').innerHTML = '';
+            $('playlistlink').innerHTML = '';
             Element.hide('playlistdisplay');
         }
     }

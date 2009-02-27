@@ -1583,7 +1583,6 @@ $version = "2.2pre";
             }else{
                 var dojusttotals = 0;
             }
-            G.closeAllGraphs(0);
             G.cg = 0;
             G.graphs = [];
             G.addGraph();
@@ -1871,6 +1870,7 @@ $version = "2.2pre";
         function realSavePlaylist(){
             var plname = $F('playlistname');
             var pldir  = $F('playlistsubs') + '/';
+            G.graphs[0].description = $F('playlistdescription');
             //console.log(pldir+plname);
             var playlist = Object.toJSON(G.graphs);
             x_savePlaylist(plname,pldir,G.confirmoverwriteplaylist,playlist,savePlaylistCB);
@@ -2013,7 +2013,7 @@ $version = "2.2pre";
         }
         function loadPlaylist(path){
             var op = path.replace(/.*playlists\/(.*)/,'$1');
-            $('playlistdisplay').innerHTML = 'Playlist: <a href="<?php $_SERVER['PHP_SELF'] ?>?pl=' + op + '">' + op + '</a>';
+            $('playlistlink').innerHTML = 'Playlist: <a href="<?php $_SERVER['PHP_SELF'] ?>?pl=' + op + '">' + op + '</a>';
             Element.show('playlistdisplay');
             x_loadPlaylist(path,loadPlaylistCB);
         }
@@ -2027,11 +2027,26 @@ $version = "2.2pre";
                 G.graphs = s.evalJSON();
                 if ( G.graphs[0].regexlive != undefined ){
                     findAndLoad(G.graphs);
+                    $('playlistregexdisplay').value = G.graphs[0].regexlive;
+                    //if ( G.graphs[0].description != undefined ){
+                        //$('playlistdescriptiondisplay').value = G.graphs[0].description;
+                    //}else{
+                        //$('playlistdescriptiondisplay').value = '';
+                    //}
                 }else if ( G.graphs ){
                     G.drawAllGraphs();
+                    if ( G.graphs[0].regex != undefined ){
+                        $('playlistregexdisplay').value = G.graphs[0].regex;
+                    }
+                    if ( G.graphs[0].description != undefined ){
+                        $('playlistdescriptiondisplay').value = G.graphs[0].description;
+                    }else{
+                        $('playlistdescriptiondisplay').value = '';
+                    }
                 }else{
                     G.graphs = [];
                     G.addGraph();
+                    Element.hide('playlistdisplay');
                 }
             }
         }
@@ -2174,10 +2189,9 @@ $version = "2.2pre";
                 <img src="img/stock_unknown-24.png" id="pickerregexerhelp" class="helpbutton">
                 <img src="img/gtk-preferences.png" id="userprefsbutton" class="prefsbutton" title="Preferences">
                 <br><span id="pickerbutton" class="clickable"><img src="img/stock_form-file-selection.png" title="Picker"></span> <span id="regexerbutton" class="clickable"><img src="img/stock_macro-stop-after-procedure.png" title="Regexer"></span>
+                <br>
                 <a href="feed.php"><img src="img/feed-icon_orange-16px.png" id="userprefsbutton" class="feedicon" title="ATOM Feed for recent playlists"></a>
                 <br>
-                <br>
-                <span id="playlistdisplay" style="display:none"></span>
             </div>
             <div id="timepresetscontainer" style="display:none">
             <span class="clickable button" id="daybutton">Day</span>&nbsp;<span class="clickable button" id="twodaysbutton">2 Days</span>&nbsp;<span class="clickable button" id="weekbutton">Week</span>&nbsp;<span class="clickable button" id="monthbutton">Month</span>
@@ -2196,7 +2210,12 @@ $version = "2.2pre";
                     <br>
                     <label for="playlisttimes">Make All Times Absolute:</label>
                     <input id="playlisttimes" type="checkbox">
+                    <div id="saveplaylistmorehide" style="display:none">
+                    <label for="playlistdescription">Description:</label><br>
+                    <textarea id="playlistdescription"></textarea>
+                    </div>
                     <br>
+                    <span class="clickable" id="playlistsavemore">More</span>
                     <input type="button" onClick="dsPicker.savePlaylist(); return false;" value="Go!">
                     <input type="button" onClick="Element.toggle($('containerforplaylistdialog')); return false;" value="Cancel">
 
@@ -2247,6 +2266,8 @@ $version = "2.2pre";
                 <span class="clickable" id="setallsizesbutton"><img src="img/stock_handles-simple.png" title="Set Sizes for All Graphs"></span>
                 <span class="clickable" id="redrawallgraphsbutton"><img src="img/lc_formatpaintbrush.png" title="Redraw All Graphs"></span>
                 <br>
+            <?php 
+            /*
             <br class="clear"><br>
             <label for="autorefresh" id="arl">Auto-Refresh</label>
             <select name="autorefresh" id="autorefresh">
@@ -2255,8 +2276,7 @@ $version = "2.2pre";
                 <option value="1800000">30 Minutes</option>
                 <option value="3600000">60 Minutes</option>
             </select>
-            <?php 
-            /*if ( in_array($_SERVER['PHP_AUTH_USER'],$admins) ){
+             * if ( in_array($_SERVER['PHP_AUTH_USER'],$admins) ){
             <br>
             <label for="debuglog">DebugLog</label>
             <input type="checkbox" onClick="debugLogTog()" id="debuglog">
@@ -2265,8 +2285,8 @@ $version = "2.2pre";
             */
             ?>
 <?php if (isset($_GET['pl']) ){ ?>
-            <a href="<?php echo $_SERVER['PHP_SELF'] ?>"><img src="img/stock_repeat-16.png" title="Reset Page"></a>
             <br>
+            <a href="<?php echo $_SERVER['PHP_SELF'] ?>"><img src="img/stock_repeat-16.png" title="Reset Page"></a>
 <?php } ?>
 <?php if ( in_array($_SERVER['PHP_AUTH_USER'],$admins) ){ ?>
             <input type="button" onClick="debugShow(debugcount); debugcount++; return false;" value="more!">
@@ -2277,6 +2297,19 @@ $version = "2.2pre";
             </div>
             <img src="img/stock_help-chat.png" height="24" width="24" id="smiley">
         </div>
+<br style="clear: all">
+            <div id="playlistdisplay" style="display:none">
+                <span id="playlistmoreinfobutton" class="clickable">More</span>
+                <span id="playlistlink"></span>
+                <div  id="playlistmoreinfo" style="display:none">
+                    <div id="playlistregexdisplayhide" style="display:hidden">
+                        <label for="playlistregexdisplay">Regex:</label><br>
+                        <input type="text" id="playlistregexdisplay"><br>
+                    </div>
+                    <label for="playlistdescriptiondisplay">Description</label><br>
+                    <textarea id="playlistdescriptiondisplay"></textarea>
+                </div>
+            </div>
 
             <?php 
             if ( file_exists('local.html') ){

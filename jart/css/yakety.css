@@ -218,6 +218,14 @@
     #playlistdialog input,label{
         font-size: small;
     }
+    #playlistdescription{
+        width: 250px;
+        height: 100px;
+    }
+    #playlistsubs{
+        margin-left: 1.4em;
+        width: 12em;
+    }
     #toolmenu{
         border: 1px solid black;
         float: right;
@@ -243,8 +251,11 @@
     #timepresetscontainer img {
         margin-bottom: -4px;
     }
-    #smiley, .feedicon{
+    #smiley, .feedicon, .helpbutton, #playlistmoreinfobutton, #playlistsavemore{
         float: right;
+    }
+    #playlistsavemore{
+        margin-top: 1em;
     }
     .roll:hover {
         background-color: #fff;
@@ -294,9 +305,6 @@
     .smaller {
         font-size: smaller;
     }
-    .helpbutton {
-        float: right;
-    }
     dt {
         font-weight: bold;
     }
@@ -313,6 +321,8 @@
         font-size: smaller;
         white-space: nowrap;
         overflow: hidden;
+        width: 290px;
+        margin-bottom: .1em;
     }
     .prefsbutton{
         float: right;
@@ -324,6 +334,13 @@
     }
     .mergecheckbox{
         margin-right: -4px;
+    }
+    #playlistdescriptiondisplay{
+        width: 250px;
+        height: 100px;
+    }
+    #playlistregexdisplay{
+        width: 250px;
     }
     -->
     </style>
