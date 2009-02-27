@@ -2028,6 +2028,7 @@ $version = "2.2pre";
                 if ( G.graphs[0].regexlive != undefined ){
                     findAndLoad(G.graphs);
                     $('playlistregexdisplay').value = G.graphs[0].regexlive;
+                    // currently there's no way to add a desc to regexlive
                     //if ( G.graphs[0].description != undefined ){
                         //$('playlistdescriptiondisplay').value = G.graphs[0].description;
                     //}else{
@@ -2210,12 +2211,11 @@ $version = "2.2pre";
                     <br>
                     <label for="playlisttimes">Make All Times Absolute:</label>
                     <input id="playlisttimes" type="checkbox">
-                    <div id="saveplaylistmorehide" style="display:none">
+                    <div id="saveplaylistmorehide">
                     <label for="playlistdescription">Description:</label><br>
                     <textarea id="playlistdescription"></textarea>
                     </div>
                     <br>
-                    <span class="clickable" id="playlistsavemore">More</span>
                     <input type="button" onClick="dsPicker.savePlaylist(); return false;" value="Go!">
                     <input type="button" onClick="Element.toggle($('containerforplaylistdialog')); return false;" value="Cancel">
 

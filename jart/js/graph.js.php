@@ -138,7 +138,6 @@ print $out;
         //Event.observe(ts,'change',autoRefresh.bindAsEventListener());
 
         $('playlistmoreinfobutton').onclick = function(){ Element.toggle('playlistmoreinfo');  };
-        $('playlistsavemore').onclick = function(){ Element.toggle('saveplaylistmorehide') };
 
         var hti   = $('seltoolicon');
         Event.observe(hti,'click',setTool.bindAsEventListener());
