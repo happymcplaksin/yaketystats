@@ -2157,6 +2157,7 @@ $version = "2.2pre";
                 <img src="img/stock_unknown-24.png" id="pickerregexerhelp" class="helpbutton">
                 <img src="img/gtk-preferences.png" id="userprefsbutton" class="prefsbutton" title="Preferences">
                 <br><span id="pickerbutton" class="clickable"><img src="img/stock_form-file-selection.png" title="Picker"></span> <span id="regexerbutton" class="clickable"><img src="img/stock_macro-stop-after-procedure.png" title="Regexer"></span>
+                <a href="feed.php"><img src="img/feed-icon_orange-16px.png" id="userprefsbutton" class="feedicon" title="ATOM Feed for recent playlists"></a>
                 <br>
                 <br>
                 <span id="playlistdisplay" style="display:none"></span>
