@@ -94,7 +94,6 @@ class Graph {
     }
 
     public function createCommandLine(){
-        global $rrdtool;
         $this->paths->end = $this->stt($this->paths->end,'end');
         $this->paths->start = $this->stt($this->paths->start,'start');
         $this->timeArgs();
@@ -105,7 +104,7 @@ class Graph {
         $this->commentArgs();
         $tmp  = array_merge($this->args,$this->defs,$this->lines,$this->comments);
         $tmpa = join('',$tmp);
-        $out  = "$rrdtool graphv ". $this->nameGraph();
+        $out  = "graphv ". $this->nameGraph();
         $out .= " ". $this->minusb . $tmpa;
         $this->cmd = $out;
         $this->debugLog('command:',$out,"\n\n");
@@ -133,7 +132,25 @@ class Graph {
 
     public function draw(){
         $this->createCommandLine();
-        $str = exec( $this->cmd . " 2>&1",$output,$retval);
+        global $rrdtool;
+        //$str = exec( $this->cmd . " 2>&1",$output,$retval);
+        $descriptors = array(
+            0 => array("pipe", "r"),
+            1 => array("pipe", "w"),
+            2 => array("pipe", "w"),
+        );
+        $exec = proc_open("$rrdtool -",$descriptors,$pipes);
+        if ( is_resource($exec) ){
+            fwrite($pipes[0],$this->cmd);
+            fclose($pipes[0]);
+            $output  = stream_get_contents($pipes[1]);
+            fclose($pipes[1]);
+            $stderr = stream_get_contents($pipes[2]);
+            fclose($pipes[2]);
+            $retval = proc_close($exec);
+        }
+        $output = split("\n",$output);
+
         if ( $retval != 0 ){
             //FIX
             $out[] = 'ERROR';
@@ -180,7 +197,7 @@ class Graph {
                 $out[]  = $ol; // [11]
             }
         }
-        $this->debugLog($output,$out,$this->args,$this->defs);
+        $this->debugLog($output,$stderr,$out,$this->args,$this->defs);
         $this->debugWriteLog();
         //return $this->json->encode($out);
         return $out;
