@@ -26,7 +26,7 @@ fi
 
 if [[ -e ${file} ]]
 then
-  count=$(grep -c "$pattern" ${file})
+  count=$(${grep} -c "$pattern" ${file})
   ts=$(date +%s)
   fqdn=$(cat /var/yaketystats/fqdn)
   
