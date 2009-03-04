@@ -334,7 +334,7 @@ class Graph {
                 }
                      */
                 if ( $v->display != 0 && $this->iAmOverlay == 0 ){
-                    $this->lines[] = " $drawt:${otherdefid}predict#$color:'$name'$stack$dashes ";
+                    $this->lines[] = " $drawt:${otherdefid}predict#$color:'$name\\n'$stack$dashes ";
                 }
             }elseif ( $path == 'total' ){
                 $defid = 'total';
