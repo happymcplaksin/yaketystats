@@ -137,7 +137,7 @@ print $out;
         //var ts    = $('autorefresh');
         //Event.observe(ts,'change',autoRefresh.bindAsEventListener());
 
-        $('playlistmoreinfobutton').onclick = function(){ Element.toggle('playlistmoreinfo');  };
+        $('playlistmoreinfobutton').onclick = function(){ Element.toggle('playlistmoreinfo'); lessMore('playlistmoreinfobutton');  };
 
         var hti   = $('seltoolicon');
         Event.observe(hti,'click',setTool.bindAsEventListener());
@@ -166,6 +166,15 @@ print $out;
             setOpacity(hil,4);
         }
         slider = new Control.Slider('slidehandleforall','slidedivforall', {sliderValue: 50,range:$R(0,200),values:[0,50,100,150,200], onSlide: function(v){$('sizeindicatorforall').innerHTML = v}, onChange:function(v){G.setAllGraphSizes(v); Element.hide('containerforallgraphsizes');}});
+    }
+
+    function lessMore(ele){
+        var ele = $(ele);
+        if ( ele.innerHTML == 'More' ){
+            ele.innerHTML = 'Less';
+        }else{
+            ele.innerHTML = 'More';
+        }
     }
 
     function handleKeys(e){
