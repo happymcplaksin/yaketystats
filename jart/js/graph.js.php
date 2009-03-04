@@ -1636,7 +1636,6 @@ print $out;
     }
     function selUpdate(s,co,e,me){
         var sd = $('seldiv-' + me);
-        var oldleft = parseInt(sd.style.left);
         var posi = s[0] * -1;
         if ( s[0] < 0 ){
             sd.style.left     = sd.oleft + s[0] + 'px';
