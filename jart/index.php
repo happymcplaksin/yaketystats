@@ -154,7 +154,7 @@ class Graph {
         if ( $retval != 0 ){
             //FIX
             $out[] = 'ERROR';
-            $out[] = implode(" ", $output). " $retval ".$this->cmd;
+            $out[] = "$stderr  " . implode(" ", $output). " $retval ".$this->cmd;
             $out[] = $this->number;
         }else{
             $out[] = 'image'; // [0]
