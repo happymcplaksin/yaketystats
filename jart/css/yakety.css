@@ -229,9 +229,13 @@
     #toolmenu{
         border: 1px solid black;
         float: right;
+        padding: 2px;
     }
     #seltools{
         padding-bottom: 1em;
+        padding-left: .5em;
+        padding-top: .8em;
+        border-top: 1px solid black;
     }
     #errorspace{
         font-size: small;
@@ -251,7 +255,7 @@
     #timepresetscontainer img {
         margin-bottom: -4px;
     }
-    #smiley, .feedicon, .helpbutton, #playlistmoreinfobutton, #playlistsavemore{
+    #smiley, .feedicon, .helpbutton, #playlistmoreinfobutton, #playlistsavemore, .floatright{
         float: right;
     }
     #playlistsavemore{
@@ -323,6 +327,13 @@
         overflow: hidden;
         width: 290px;
         margin-bottom: .1em;
+    }
+    #pickertop{
+        border-bottom: 1px solid black;
+        margin-bottom: 1em;
+    }
+    #slidedivforall{
+        width: 200px;
     }
     .prefsbutton{
         float: right;

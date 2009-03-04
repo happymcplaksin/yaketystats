@@ -2034,6 +2034,7 @@ $version = "2.2pre";
                 if ( G.graphs[0].regexlive != undefined ){
                     findAndLoad(G.graphs);
                     $('playlistregexdisplay').value = G.graphs[0].regexlive;
+                    Element.show('playlistregexdisplayhide');
                     // currently there's no way to add a desc to regexlive
                     //if ( G.graphs[0].description != undefined ){
                         //$('playlistdescriptiondisplay').value = G.graphs[0].description;
@@ -2044,7 +2045,9 @@ $version = "2.2pre";
                     G.drawAllGraphs();
                     if ( G.graphs[0].regex != undefined ){
                         $('playlistregexdisplay').value = G.graphs[0].regex;
+                        Element.show('playlistregexdisplayhide');
                     }else{
+                        Element.hide('playlistregexdisplayhide');
                         $('playlistregexdisplay').value = '';
                     }
                     if ( G.graphs[0].description != undefined ){
@@ -2194,7 +2197,7 @@ $version = "2.2pre";
 <div id="doc3" class="yui-t6">
     <div id="bd">
         <div id="picker" class="yui-b">
-            <div style="border-bottom: 1px solid black; margin-bottom: 1em;">
+            <div id="pickertop">
                 <img src="img/stock_unknown-24.png" id="pickerregexerhelp" class="helpbutton">
                 <img src="img/gtk-preferences.png" id="userprefsbutton" class="prefsbutton" title="Preferences">
                 <br><span id="pickerbutton" class="clickable"><img src="img/stock_form-file-selection.png" title="Picker"></span> <span id="regexerbutton" class="clickable"><img src="img/stock_macro-stop-after-procedure.png" title="Regexer"></span>
@@ -2259,7 +2262,7 @@ $version = "2.2pre";
             <div style="display:none" id="containerforallgraphsizes">
                 <div id="allgraphsizesdialog">
                     Size:
-                    <div class="slidediv roomy" id="slidedivforall" style="width:200px"><div class="slidehandle" id="slidehandleforall"><img src="img/stock_up.png"></div></div>
+                    <div class="slidediv roomy" id="slidedivforall"><div class="slidehandle" id="slidehandleforall"><img src="img/stock_up.png"></div></div>
                     <div id="sizeindicatorforall">50</div>
                     <input type="button" onClick="Element.toggle($('containerforallgraphsizes')); return false;" value="Cancel">
                 </div>
@@ -2301,7 +2304,7 @@ $version = "2.2pre";
 <?php } ?>
             </div>
             <div class="yui-u">
-                <span class="clickable" style="float: right" onClick="if ( dsPicker.verify('closeallgraphs')){ G.closeAllGraphs(0);};"><img src="img/stock_delete.png" title="Close All Graphs"></span>
+                <span class="clickable floatright" onClick="if ( dsPicker.verify('closeallgraphs')){ G.closeAllGraphs(0);};"><img src="img/stock_delete.png" title="Close All Graphs"></span>
             </div>
             <img src="img/stock_help-chat.png" height="24" width="24" id="smiley">
         </div>
@@ -2310,7 +2313,7 @@ $version = "2.2pre";
                 <span id="playlistmoreinfobutton" class="clickable">More</span>
                 <span id="playlistlink"></span>
                 <div  id="playlistmoreinfo" style="display:none">
-                    <div id="playlistregexdisplayhide" style="display:hidden">
+                    <div id="playlistregexdisplayhide" style="display:none">
                         <label for="playlistregexdisplay">Regex:</label><br>
                         <input type="text" id="playlistregexdisplay"><br>
                     </div>
@@ -2325,7 +2328,7 @@ $version = "2.2pre";
             }
             ?>
             <br>
-            <span class="clickable" style="float: right"><img id="pickerspinner" style="display: none" src="img/scanner-transparent-back.gif"></span>
+            <span class="clickable floatright"><img id="pickerspinner" style="display: none" src="img/scanner-transparent-back.gif"></span>
             <div id="alphanav">
             </div>
             <div id="hostlist">
@@ -2349,10 +2352,10 @@ $version = "2.2pre";
         </div>
         <div id="yui-main">
             <div id="containerforgraphspace" class="yui-b">
-                <div id="toolmenu" style="padding: 2px;">
+                <div id="toolmenu">
                     <span class="clickable" id="dragtool"><img src="img/lc_arrowshapes.quad-arrow.png" id="dragtoolicon" title="Drag/CtC"></span>
                     <span class="clickable" id="seltool"><img src="img/lc_flowchartshapes.png" id="seltoolicon" title="Highlight"></span>
-                    <div id="seltools" style="padding-left: .5em; padding-top: .8em; border-top: 1px solid black;">
+                    <div id="seltools">
                         <form name="seltools">
                             <input type="radio" name="seltools" value="time" id="seltoolstime"><label for="seltoolstime"><img src="img/sc10937.png" title="Selection Sets Time"></label>
                             <br>
