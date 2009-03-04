@@ -1631,12 +1631,19 @@ print $out;
         overlayoffset[me] = co;
         var sd            = $('seldiv-' + me);
         sd.style.left     = x - co[0] + 'px';
+        sd.oleft          = x -co[0];
         sd.style.width    = '0px';
     }
     function selUpdate(s,co,e,me){
         var sd = $('seldiv-' + me);
-        var seloff = sd.style.left;
-        sd.style.width = s[0] + 'px';
+        var oldleft = parseInt(sd.style.left);
+        var posi = s[0] * -1;
+        if ( s[0] < 0 ){
+            sd.style.left     = sd.oleft + s[0] + 'px';
+            sd.style.width = posi + 'px';
+        }else{
+            sd.style.width = s[0] + 'px';
+        }
     }
     function selEnd(el,e,me){
         var time = $('seltoolstime').checked;
