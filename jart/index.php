@@ -2044,6 +2044,8 @@ $version = "2.2pre";
                     G.drawAllGraphs();
                     if ( G.graphs[0].regex != undefined ){
                         $('playlistregexdisplay').value = G.graphs[0].regex;
+                    }else{
+                        $('playlistregexdisplay').value = '';
                     }
                     if ( G.graphs[0].description != undefined ){
                         $('playlistdescriptiondisplay').value = G.graphs[0].description;
