@@ -960,6 +960,12 @@ function mergePlaylists($paths,$name){
             return $y[1];
         }
         foreach ($y as $graph){
+            if ( isset($graph->description) ){
+                $graph->description = '';
+            }
+            if ( isset($graph->regex) ){
+                $graph->regex = '';
+            }
             $a[] = $graph;
         }
     }
