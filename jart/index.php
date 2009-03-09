@@ -2315,10 +2315,10 @@ $version = "2.2pre";
                 <div  id="playlistmoreinfo" style="display:none">
                     <div id="playlistregexdisplayhide" style="display:none">
                         <label for="playlistregexdisplay">Regex:</label><br>
-                        <input type="text" id="playlistregexdisplay"><br>
+                        <input type="text" disabled="true" id="playlistregexdisplay"><br>
                     </div>
                     <label for="playlistdescriptiondisplay">Description</label><br>
-                    <textarea id="playlistdescriptiondisplay"></textarea>
+                    <textarea disabled="true" id="playlistdescriptiondisplay"></textarea>
                 </div>
             </div>
 
