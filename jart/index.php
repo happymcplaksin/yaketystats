@@ -954,6 +954,9 @@ function mergePlaylists($paths,$name){
     }
     $a = array();
     foreach($paths as $path){
+        if ( ! file_exists($path) ){
+            return $json->encode(array('ERROR',"Couldn't find $path."));
+        }
         $x = file_get_contents($path);
         $y = $json->decode($x);
         if ( $y[0] == 'ERROR' ){
@@ -1952,7 +1955,7 @@ $version = "2.2pre";
                 par     = $(par);
                 if ( par ){
                     var div   = document.createElement('div');
-                    nameAttachPlaylist(msg[3],div);
+                    nameAttachPlaylist(msg[3] + '.pspl',div);
                     par.appendChild(div);
 
                 }
