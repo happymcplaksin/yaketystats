@@ -744,11 +744,11 @@ sub bivalve {
 	}
 	close (F);
       } else {
-	fileit ("Failed to open $outfile: $!  Holy crap!", "err");
+	fileit ("Failed to open $outfile for $g_host, $g_collector: $!  Holy crap!", "err");
 	exit (908);
       }
     } else {
-      fileit ("Can't open $lockfile: $! after 30 seconds. Bailing.");
+      fileit ("Can't open $lockfile for $g_host, $g_collector: $! after 30 seconds. Bailing.");
     }
     # delete the I/O lock
     unlock_fh ($goldie_locks{'outputfilelock'});
