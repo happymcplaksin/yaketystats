@@ -2265,7 +2265,7 @@ $version = "2.2pre";
             <div style="display:none" id="containerforallgraphsizes">
                 <div id="allgraphsizesdialog">
                     Size:
-                    <div class="slidediv roomy" id="slidedivforall"><div class="slidehandle" id="slidehandleforall"><img src="img/stock_up.png"></div></div>
+                    <div class="slidediv roomy" id="slidedivforall" style="width :200px"><div class="slidehandle" id="slidehandleforall"><img src="img/stock_up.png"></div></div>
                     <div id="sizeindicatorforall">50</div>
                     <input type="button" onClick="Element.toggle($('containerforallgraphsizes')); return false;" value="Cancel">
                 </div>
