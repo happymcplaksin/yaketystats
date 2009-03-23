@@ -218,12 +218,24 @@
     #playlistdialog input,label{
         font-size: small;
     }
+    #playlistdescription{
+        width: 250px;
+        height: 100px;
+    }
+    #playlistsubs{
+        margin-left: 1.4em;
+        width: 12em;
+    }
     #toolmenu{
         border: 1px solid black;
         float: right;
+        padding: 2px;
     }
     #seltools{
         padding-bottom: 1em;
+        padding-left: .5em;
+        padding-top: .8em;
+        border-top: 1px solid black;
     }
     #errorspace{
         font-size: small;
@@ -243,8 +255,11 @@
     #timepresetscontainer img {
         margin-bottom: -4px;
     }
-    #smiley, .feedicon{
+    #smiley, .feedicon, .helpbutton, #playlistmoreinfobutton, #playlistsavemore, .floatright{
         float: right;
+    }
+    #playlistsavemore{
+        margin-top: 1em;
     }
     .roll:hover {
         background-color: #fff;
@@ -294,9 +309,6 @@
     .smaller {
         font-size: smaller;
     }
-    .helpbutton {
-        float: right;
-    }
     dt {
         font-weight: bold;
     }
@@ -313,6 +325,12 @@
         font-size: smaller;
         white-space: nowrap;
         overflow: hidden;
+        width: 290px;
+        margin-bottom: .1em;
+    }
+    #pickertop{
+        border-bottom: 1px solid black;
+        margin-bottom: 1em;
     }
     .prefsbutton{
         float: right;
@@ -324,6 +342,13 @@
     }
     .mergecheckbox{
         margin-right: -4px;
+    }
+    #playlistdescriptiondisplay{
+        width: 250px;
+        height: 100px;
+    }
+    #playlistregexdisplay{
+        width: 250px;
     }
     -->
     </style>

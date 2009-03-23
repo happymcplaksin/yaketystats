@@ -73,6 +73,7 @@ print $out;
         this.avg         = 0;
         this.bglastdrawn = 0;
         this.canvas      = G.defaultCanvasColor;
+        this.description = '';
         this.end         = G.defaultendtime;
         this.graphlabel  = '';
         this.max         = 'nan';
@@ -133,8 +134,10 @@ print $out;
         var mb    = $('monthbutton');
         Event.observe(mb,'click',function(e){setAllGraphTimes('1 month ago','now')}.bindAsEventListener());
 
-        var ts    = $('autorefresh');
-        Event.observe(ts,'change',autoRefresh.bindAsEventListener());
+        //var ts    = $('autorefresh');
+        //Event.observe(ts,'change',autoRefresh.bindAsEventListener());
+
+        $('playlistmoreinfobutton').onclick = function(){ Element.toggle('playlistmoreinfo'); lessMore('playlistmoreinfobutton');  };
 
         var hti   = $('seltoolicon');
         Event.observe(hti,'click',setTool.bindAsEventListener());
@@ -163,6 +166,15 @@ print $out;
             setOpacity(hil,4);
         }
         slider = new Control.Slider('slidehandleforall','slidedivforall', {sliderValue: 50,range:$R(0,200),values:[0,50,100,150,200], onSlide: function(v){$('sizeindicatorforall').innerHTML = v}, onChange:function(v){G.setAllGraphSizes(v); Element.hide('containerforallgraphsizes');}});
+    }
+
+    function lessMore(ele){
+        var ele = $(ele);
+        if ( ele.innerHTML == 'More' ){
+            ele.innerHTML = 'Less';
+        }else{
+            ele.innerHTML = 'More';
+        }
     }
 
     function handleKeys(e){
@@ -442,7 +454,7 @@ print $out;
             resetSizeForAll();
             G.graphs = new Array();
             addGraph();
-            $('playlistdisplay').innerHTML = '';
+            $('playlistlink').innerHTML = '';
             Element.hide('playlistdisplay');
         }
     }
@@ -454,7 +466,7 @@ print $out;
         addGraph();
         G.cg = 0;
         if ( ! flc ){
-            $('playlistdisplay').innerHTML = '';
+            $('playlistlink').innerHTML = '';
             Element.hide('playlistdisplay');
         }
     }
@@ -1619,12 +1631,18 @@ print $out;
         overlayoffset[me] = co;
         var sd            = $('seldiv-' + me);
         sd.style.left     = x - co[0] + 'px';
+        sd.oleft          = x -co[0];
         sd.style.width    = '0px';
     }
     function selUpdate(s,co,e,me){
         var sd = $('seldiv-' + me);
-        var seloff = sd.style.left;
-        sd.style.width = s[0] + 'px';
+        var posi = s[0] * -1;
+        if ( s[0] < 0 ){
+            sd.style.left     = sd.oleft + s[0] + 'px';
+            sd.style.width = posi + 'px';
+        }else{
+            sd.style.width = s[0] + 'px';
+        }
     }
     function selEnd(el,e,me){
         var time = $('seltoolstime').checked;

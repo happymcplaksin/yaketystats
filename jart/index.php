@@ -94,7 +94,6 @@ class Graph {
     }
 
     public function createCommandLine(){
-        global $rrdtool;
         $this->paths->end = $this->stt($this->paths->end,'end');
         $this->paths->start = $this->stt($this->paths->start,'start');
         $this->timeArgs();
@@ -105,7 +104,7 @@ class Graph {
         $this->commentArgs();
         $tmp  = array_merge($this->args,$this->defs,$this->lines,$this->comments);
         $tmpa = join('',$tmp);
-        $out  = "$rrdtool graphv ". $this->nameGraph();
+        $out  = "graphv ". $this->nameGraph();
         $out .= " ". $this->minusb . $tmpa;
         $this->cmd = $out;
         $this->debugLog('command:',$out,"\n\n");
@@ -133,11 +132,29 @@ class Graph {
 
     public function draw(){
         $this->createCommandLine();
-        $str = exec( $this->cmd . " 2>&1",$output,$retval);
+        global $rrdtool;
+        //$str = exec( $this->cmd . " 2>&1",$output,$retval);
+        $descriptors = array(
+            0 => array("pipe", "r"),
+            1 => array("pipe", "w"),
+            2 => array("pipe", "w"),
+        );
+        $exec = proc_open("$rrdtool -",$descriptors,$pipes);
+        if ( is_resource($exec) ){
+            fwrite($pipes[0],$this->cmd);
+            fclose($pipes[0]);
+            $output  = stream_get_contents($pipes[1]);
+            fclose($pipes[1]);
+            $stderr = stream_get_contents($pipes[2]);
+            fclose($pipes[2]);
+            $retval = proc_close($exec);
+        }
+        $output = split("\n",$output);
+
         if ( $retval != 0 ){
             //FIX
             $out[] = 'ERROR';
-            $out[] = implode(" ", $output). " $retval ".$this->cmd;
+            $out[] = "$stderr  " . implode(" ", $output). " $retval ".$this->cmd;
             $out[] = $this->number;
         }else{
             $out[] = 'image'; // [0]
@@ -180,7 +197,7 @@ class Graph {
                 $out[]  = $ol; // [11]
             }
         }
-        $this->debugLog($output,$out,$this->args,$this->defs);
+        $this->debugLog($output,$stderr,$out,$this->args,$this->defs);
         $this->debugWriteLog();
         //return $this->json->encode($out);
         return $out;
@@ -317,7 +334,7 @@ class Graph {
                 }
                      */
                 if ( $v->display != 0 && $this->iAmOverlay == 0 ){
-                    $this->lines[] = " $drawt:${otherdefid}predict#$color:'$name'$stack$dashes ";
+                    $this->lines[] = " $drawt:${otherdefid}predict#$color:'$name\\n'$stack$dashes ";
                 }
             }elseif ( $path == 'total' ){
                 $defid = 'total';
@@ -937,12 +954,21 @@ function mergePlaylists($paths,$name){
     }
     $a = array();
     foreach($paths as $path){
+        if ( ! file_exists($path) ){
+            return $json->encode(array('ERROR',"Couldn't find $path."));
+        }
         $x = file_get_contents($path);
         $y = $json->decode($x);
         if ( $y[0] == 'ERROR' ){
             return $y[1];
         }
         foreach ($y as $graph){
+            if ( isset($graph->description) ){
+                $graph->description = '';
+            }
+            if ( isset($graph->regex) ){
+                $graph->regex = '';
+            }
             $a[] = $graph;
         }
     }
@@ -1566,7 +1592,6 @@ $version = "2.2pre";
             }else{
                 var dojusttotals = 0;
             }
-            G.closeAllGraphs(0);
             G.cg = 0;
             G.graphs = [];
             G.addGraph();
@@ -1854,6 +1879,7 @@ $version = "2.2pre";
         function realSavePlaylist(){
             var plname = $F('playlistname');
             var pldir  = $F('playlistsubs') + '/';
+            G.graphs[0].description = $F('playlistdescription');
             //console.log(pldir+plname);
             var playlist = Object.toJSON(G.graphs);
             x_savePlaylist(plname,pldir,G.confirmoverwriteplaylist,playlist,savePlaylistCB);
@@ -1929,7 +1955,7 @@ $version = "2.2pre";
                 par     = $(par);
                 if ( par ){
                     var div   = document.createElement('div');
-                    nameAttachPlaylist(msg[3],div);
+                    nameAttachPlaylist(msg[3] + '.pspl',div);
                     par.appendChild(div);
 
                 }
@@ -1996,7 +2022,7 @@ $version = "2.2pre";
         }
         function loadPlaylist(path){
             var op = path.replace(/.*playlists\/(.*)/,'$1');
-            $('playlistdisplay').innerHTML = 'Playlist: <a href="<?php $_SERVER['PHP_SELF'] ?>?pl=' + op + '">' + op + '</a>';
+            $('playlistlink').innerHTML = 'Playlist: <a href="<?php $_SERVER['PHP_SELF'] ?>?pl=' + op + '">' + op + '</a>';
             Element.show('playlistdisplay');
             x_loadPlaylist(path,loadPlaylistCB);
         }
@@ -2010,11 +2036,32 @@ $version = "2.2pre";
                 G.graphs = s.evalJSON();
                 if ( G.graphs[0].regexlive != undefined ){
                     findAndLoad(G.graphs);
+                    $('playlistregexdisplay').value = G.graphs[0].regexlive;
+                    Element.show('playlistregexdisplayhide');
+                    // currently there's no way to add a desc to regexlive
+                    //if ( G.graphs[0].description != undefined ){
+                        //$('playlistdescriptiondisplay').value = G.graphs[0].description;
+                    //}else{
+                        //$('playlistdescriptiondisplay').value = '';
+                    //}
                 }else if ( G.graphs ){
                     G.drawAllGraphs();
+                    if ( G.graphs[0].regex != undefined ){
+                        $('playlistregexdisplay').value = G.graphs[0].regex;
+                        Element.show('playlistregexdisplayhide');
+                    }else{
+                        Element.hide('playlistregexdisplayhide');
+                        $('playlistregexdisplay').value = '';
+                    }
+                    if ( G.graphs[0].description != undefined ){
+                        $('playlistdescriptiondisplay').value = G.graphs[0].description;
+                    }else{
+                        $('playlistdescriptiondisplay').value = '';
+                    }
                 }else{
                     G.graphs = [];
                     G.addGraph();
+                    Element.hide('playlistdisplay');
                 }
             }
         }
@@ -2153,14 +2200,13 @@ $version = "2.2pre";
 <div id="doc3" class="yui-t6">
     <div id="bd">
         <div id="picker" class="yui-b">
-            <div style="border-bottom: 1px solid black; margin-bottom: 1em;">
+            <div id="pickertop">
                 <img src="img/stock_unknown-24.png" id="pickerregexerhelp" class="helpbutton">
                 <img src="img/gtk-preferences.png" id="userprefsbutton" class="prefsbutton" title="Preferences">
                 <br><span id="pickerbutton" class="clickable"><img src="img/stock_form-file-selection.png" title="Picker"></span> <span id="regexerbutton" class="clickable"><img src="img/stock_macro-stop-after-procedure.png" title="Regexer"></span>
+                <br>
                 <a href="feed.php"><img src="img/feed-icon_orange-16px.png" id="userprefsbutton" class="feedicon" title="ATOM Feed for recent playlists"></a>
                 <br>
-                <br>
-                <span id="playlistdisplay" style="display:none"></span>
             </div>
             <div id="timepresetscontainer" style="display:none">
             <span class="clickable button" id="daybutton">Day</span>&nbsp;<span class="clickable button" id="twodaysbutton">2 Days</span>&nbsp;<span class="clickable button" id="weekbutton">Week</span>&nbsp;<span class="clickable button" id="monthbutton">Month</span>
@@ -2179,6 +2225,10 @@ $version = "2.2pre";
                     <br>
                     <label for="playlisttimes">Make All Times Absolute:</label>
                     <input id="playlisttimes" type="checkbox">
+                    <div id="saveplaylistmorehide">
+                    <label for="playlistdescription">Description:</label><br>
+                    <textarea id="playlistdescription"></textarea>
+                    </div>
                     <br>
                     <input type="button" onClick="dsPicker.savePlaylist(); return false;" value="Go!">
                     <input type="button" onClick="Element.toggle($('containerforplaylistdialog')); return false;" value="Cancel">
@@ -2215,7 +2265,7 @@ $version = "2.2pre";
             <div style="display:none" id="containerforallgraphsizes">
                 <div id="allgraphsizesdialog">
                     Size:
-                    <div class="slidediv roomy" id="slidedivforall" style="width:200px"><div class="slidehandle" id="slidehandleforall"><img src="img/stock_up.png"></div></div>
+                    <div class="slidediv roomy" id="slidedivforall" style="width :200px"><div class="slidehandle" id="slidehandleforall"><img src="img/stock_up.png"></div></div>
                     <div id="sizeindicatorforall">50</div>
                     <input type="button" onClick="Element.toggle($('containerforallgraphsizes')); return false;" value="Cancel">
                 </div>
@@ -2230,6 +2280,8 @@ $version = "2.2pre";
                 <span class="clickable" id="setallsizesbutton"><img src="img/stock_handles-simple.png" title="Set Sizes for All Graphs"></span>
                 <span class="clickable" id="redrawallgraphsbutton"><img src="img/lc_formatpaintbrush.png" title="Redraw All Graphs"></span>
                 <br>
+            <?php 
+            /*
             <br class="clear"><br>
             <label for="autorefresh" id="arl">Auto-Refresh</label>
             <select name="autorefresh" id="autorefresh">
@@ -2238,8 +2290,7 @@ $version = "2.2pre";
                 <option value="1800000">30 Minutes</option>
                 <option value="3600000">60 Minutes</option>
             </select>
-            <?php 
-            /*if ( in_array($_SERVER['PHP_AUTH_USER'],$admins) ){
+             * if ( in_array($_SERVER['PHP_AUTH_USER'],$admins) ){
             <br>
             <label for="debuglog">DebugLog</label>
             <input type="checkbox" onClick="debugLogTog()" id="debuglog">
@@ -2248,18 +2299,31 @@ $version = "2.2pre";
             */
             ?>
 <?php if (isset($_GET['pl']) ){ ?>
-            <a href="<?php echo $_SERVER['PHP_SELF'] ?>"><img src="img/stock_repeat-16.png" title="Reset Page"></a>
             <br>
+            <a href="<?php echo $_SERVER['PHP_SELF'] ?>"><img src="img/stock_repeat-16.png" title="Reset Page"></a>
 <?php } ?>
 <?php if ( in_array($_SERVER['PHP_AUTH_USER'],$admins) ){ ?>
             <input type="button" onClick="debugShow(debugcount); debugcount++; return false;" value="more!">
 <?php } ?>
             </div>
             <div class="yui-u">
-                <span class="clickable" style="float: right" onClick="if ( dsPicker.verify('closeallgraphs')){ G.closeAllGraphs(0);};"><img src="img/stock_delete.png" title="Close All Graphs"></span>
+                <span class="clickable floatright" onClick="if ( dsPicker.verify('closeallgraphs')){ G.closeAllGraphs(0);};"><img src="img/stock_delete.png" title="Close All Graphs"></span>
             </div>
             <img src="img/stock_help-chat.png" height="24" width="24" id="smiley">
         </div>
+<br style="clear: all">
+            <div id="playlistdisplay" style="display:none">
+                <span id="playlistmoreinfobutton" class="clickable">More</span>
+                <span id="playlistlink"></span>
+                <div  id="playlistmoreinfo" style="display:none">
+                    <div id="playlistregexdisplayhide" style="display:none">
+                        <label for="playlistregexdisplay">Regex:</label><br>
+                        <input type="text" disabled="true" id="playlistregexdisplay"><br>
+                    </div>
+                    <label for="playlistdescriptiondisplay">Description</label><br>
+                    <textarea disabled="true" id="playlistdescriptiondisplay"></textarea>
+                </div>
+            </div>
 
             <?php 
             if ( file_exists('local.html') ){
@@ -2267,7 +2331,7 @@ $version = "2.2pre";
             }
             ?>
             <br>
-            <span class="clickable" style="float: right"><img id="pickerspinner" style="display: none" src="img/scanner-transparent-back.gif"></span>
+            <span class="clickable floatright"><img id="pickerspinner" style="display: none" src="img/scanner-transparent-back.gif"></span>
             <div id="alphanav">
             </div>
             <div id="hostlist">
@@ -2291,10 +2355,10 @@ $version = "2.2pre";
         </div>
         <div id="yui-main">
             <div id="containerforgraphspace" class="yui-b">
-                <div id="toolmenu" style="padding: 2px;">
+                <div id="toolmenu">
                     <span class="clickable" id="dragtool"><img src="img/lc_arrowshapes.quad-arrow.png" id="dragtoolicon" title="Drag/CtC"></span>
                     <span class="clickable" id="seltool"><img src="img/lc_flowchartshapes.png" id="seltoolicon" title="Highlight"></span>
-                    <div id="seltools" style="padding-left: .5em; padding-top: .8em; border-top: 1px solid black;">
+                    <div id="seltools">
                         <form name="seltools">
                             <input type="radio" name="seltools" value="time" id="seltoolstime"><label for="seltoolstime"><img src="img/sc10937.png" title="Selection Sets Time"></label>
                             <br>
