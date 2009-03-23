@@ -287,7 +287,7 @@ sub check_vars {
     my (undef, undef, $sub) = (caller (1))[1,2,3];
     fileit ("Undefined variables from $sub:  @bad");
     if ( $exit ) {
-      fileit ("exiting because of badness in check_vars.", "err");
+      fileit ("exiting because of badness in check_vars.", "info");
       exit (22);
     }
     return (1);
