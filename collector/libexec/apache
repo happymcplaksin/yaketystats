@@ -219,6 +219,8 @@ sub check_one {
       $value *= $factor;
     }
     $value = $value;
-    push (@return, "p=/${host}/apache/${path}${g_sep}t=${type}${g_sep}i=${rrd_interval}${g_sep}ts=${time}${g_sep}v=${value}\n");
+    if ( $value =~ /^[.0-9]+$/ ) {
+      push (@return, "p=/${host}/apache/${path}${g_sep}t=${type}${g_sep}i=${rrd_interval}${g_sep}ts=${time}${g_sep}v=${value}\n");
+    }
   }
 }
