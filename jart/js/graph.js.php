@@ -1358,12 +1358,14 @@ print $out;
             var p = path.path;
             Event.observe(img,'click',function(){addPredictLine(p,me)}.bindAsEventListener());
         }
-        var img        = document.createElement('img');
-        // no the best image... get a better one
-        img.src        = 'img/stock_text_underlined-16.png';
-        img.style.verticalAlign = 'middle';
-        img.title      = "Edit this line label";
-        li.appendChild(img);
+        if ( path.name != 'avg' && path.name != 'total' ){
+            var img        = document.createElement('img');
+            // not the best image... get a better one
+            img.src        = 'img/stock_text_underlined-16.png';
+            img.style.verticalAlign = 'middle';
+            img.title      = "Edit this line label";
+            li.appendChild(img);
+        }
         var span       = document.createElement('span');
         var txt        = document.createTextNode(' ' + path.name + ' ');
         span.appendChild(txt);
