@@ -83,8 +83,8 @@ if ( !@ARGV || (! defined ($ARGV[1]) && $ARGV[1] eq "calledfromcollect") ) {
 ## 
 ## list=`eval $GETFSES | sort`
 sub doit {
-  my ($cmd, $status, @data, $line, @return, $time, $dev_col, $fs_col, %fses,
-      $dev, $fs, $size, $used, $avail, $pct, $i_col, $i_used, @cmds);
+  my ($cmd, $status, @data, $line, $time, $dev_col, $fs_col, %fses,
+      $dev, $fs, $size, $used, $avail, $pct, $i_col, $i_used, @cmds, %return);
 
   $time = time ();
   $cmd = 'mount';
@@ -165,10 +165,10 @@ sub doit {
 	  $size *= 1024;
 	  $used *= 1024;
 	  $avail *= 1024;
-	  push (@return,
-		"p=/$main::g_host/disk/size/$fs${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$size\n");
-	  push (@return,
-		"p=/$main::g_host/disk/used/$fs${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$used\n");
+	  $return{"disk/size/$fs"} =
+	    "p=/$main::g_host/disk/size/$fs${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$size\n";
+	  $return{"disk/used/$fs"} =
+	    "p=/$main::g_host/disk/used/$fs${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$used\n";
 	}
       }
     }
@@ -225,12 +225,12 @@ sub doit {
 	       !ignoreit ('disk', $fs)
 	     ) {
 	    $fs = renamefs ($fs);
-	    push (@return,
-		  "p=/$main::g_host/disk/inodes/$fs${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$i_used\n");
+	    $return{"disk/inodes/$fs"} =
+	      "p=/$main::g_host/disk/inodes/$fs${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$i_used\n";
 	  }
 	}
       }
     }
   }
-  return (@return);
+  return (values(%return));
 }
