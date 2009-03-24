@@ -251,7 +251,7 @@ class Graph {
 
     private function pathArgs(){
         // the default Ystats DS
-        $a         = 0;
+        $a         = 0;  // the average counter
         $ds        = 'yabba';
         $fakerrds  = array('total','avg');
         $i         = 0;
@@ -262,13 +262,14 @@ class Graph {
         if ($this->paths->total == 1 || $this->paths->total == 1 ){
             $this->naniszero = 1;
         }
-        if ( $this->paths->predicting == 1 ){
-            $slide = floor(($this->paths->end - $this->paths->start)/2);
-            $this->slidesize = $slide;
-            $slideStart = $this->paths->start - $slide;
-            $slideEnd = $this->paths->end + $slide; 
-        }
+        //if ( $this->paths->predicting == 1 ){
+            //$slide = floor(($this->paths->end - $this->paths->start)/2);
+            //$this->slidesize = $slide;
+            //$slideStart = $this->paths->start - $slide;
+            //$slideEnd = $this->paths->end + $slide; 
+        //}
         foreach ($this->paths->paths as $v) {
+            $negative  = 0;
             if ( ! isset($v->display) ){
                 $this->debugLog('display was not set for ',$v);
                 $v->display = 1;
@@ -364,20 +365,20 @@ class Graph {
                   $rpn = $defid;
                 }
                 $this->defs[] = "DEF:$defid=$path:$ds:$rra ";
-                if ( $this->paths->justtotal == 0 ){
+                //if ( $this->paths->justtotal == 0 ){
                     if ( $negative ){
                         $rpn = "0,$rpn,-";
                         //$defs .= "CDEF:neg$defid=0,$defid,- ";
                         $this->defs[] = "CDEF:neg$defid=$rpn ";
-                        if ( $v->display != 0 ){
+                        if ( $v->display != 0 && $this->paths->justtotal == 0){
                             $this->lines[] = "$drawt:neg$defid#$color:'$name'$stack ";
                         }
                     }else{
-                        if ( $v->display != 0 ){
+                        if ( $v->display != 0 && $this->paths->justtotal == 0){
                             $this->lines[] = "$drawt:$defid#$color:'$name'$stack ";
                         }
                     }
-                }
+                //}
                 if ( $this->paths->avg ){
                     $avgargs .= "$rpn,";
                     $a++;

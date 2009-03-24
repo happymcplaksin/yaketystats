@@ -12,7 +12,7 @@ var G = (function() {
     var graphs       = new Array();
     var cg           = 0;
     var defaultdrawtype    = 'LINE1';
-    var defaultpathlimit   = 15;
+    var defaultpathlimit   = 25;
 
 <?php
 require("../conf.php");
