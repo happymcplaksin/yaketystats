@@ -259,7 +259,7 @@ class Graph {
         $defables  = array();
         //$trendtotaldefs  = array();
         $predctdefs = array();
-        if ($this->paths->total == 1 || $this->paths->total == 1 ){
+        if ($this->paths->total == 1 ){
             $this->naniszero = 1;
         }
         //if ( $this->paths->predicting == 1 ){
@@ -296,7 +296,7 @@ class Graph {
                 $path  = escapeshellcmd($v->path);
             }
             if ( ! file_exists($path) && ! in_array($path,$fakerrds) ){
-                $this->debugLog("BAD PATH:",$v->path);
+                $this->debugLog("BAD PATH:",$path);
                 continue;
             }
             if ( filesize($path) === 0 ){
@@ -321,19 +321,22 @@ class Graph {
                 if ( $drawt != 'AREA' ){
                     $dashes = ':dashes';
                 }
-                //if ( $otherdefid != 'total'){
+                // This didn't work for making Happy's vista*predict_8 playlist
+                // work. :(
+                /*
+                if ( $otherdefid == 'total'){
+                    $muppy = preg_replace('/WUB([^,]*),UN,0,WUB[^,]*,IF/','TWUB$1',$totalargs);
+                    $muppypl = substr($plusses, 0, -3);
+                    $this->defs[] = 'CDEF:supertotal='.$muppy.$muppypl.' ';
+                    $otherdefid = 'supertotal';
+                }
+                 */
                     //$this->defs[] = "DEF:${otherdefid}slide=$path:$ds:$rra:start=${slideStart}:end=${slideEnd} ";
                     //$this->defs[] = "CDEF:${otherdefid}trend=${otherdefid}slide,$slide,TRENDNAN ";
                     $predictdefs[] = "VDEF:${otherdefid}slope=${otherdefid},LSLSLOPE ";
                     $predictdefs[] = "VDEF:${otherdefid}int=${otherdefid},LSLINT ";
                     $predictdefs[] = "VDEF:${otherdefid}corr=${otherdefid},LSLCORREL ";
                     $predictdefs[] = "CDEF:${otherdefid}predict=${otherdefid},POP,${otherdefid}slope,COUNT,*,${otherdefid}int,+ ";
-                    /*
-                }else{
-                    $d2 = "CDEF:${otherdefid}trend=${otherdefid}slide,$slide,TRENDNAN ";
-                    $totalt = $d2;
-                }
-                     */
                 if ( $v->display != 0 && $this->iAmOverlay == 0 ){
                     $this->lines[] = " $drawt:${otherdefid}predict#$color:'$name\\n'$stack$dashes ";
                 }
@@ -354,10 +357,11 @@ class Graph {
                 }
                 // $i adds some uniqueness in case someone dupes a color
                 $defid  = "WUB$i";
-                if ( $this->paths->predictTotal == 1 ){
+                //if ( $this->paths->predictTotal == 1 ){
                     //$trendtotaldefs[] = "DEF:TWUB$i=$path:$ds:$rra:start=${slideStart}:end=${slideEnd} ";
-                }
+                //}
                 $defables["$path"] = $defid;
+                // 0's pull the prediction down, so don't do it if we're predicting the total which often has nans
                 if ( $this->naniszero == 1 && $this->paths->predictTotal == 0) {
                   # CDEF:result=value,UN,0,value,IF
                   $rpn = "${defid},UN,0,${defid},IF";
@@ -408,17 +412,19 @@ class Graph {
         if ( $this->paths->total ){
             $plusses = substr($plusses, 0, -3);
             $this->defs[] = 'CDEF:total='.$totalargs.$plusses.' ';
-            $this->defs[] = 'VDEF:supertotal=total,MAXIMUM ';
+            //$this->defs[] = 'VDEF:supertotal=total,MAXIMUM ';
         }
         if ( $this->paths->avg ){
             $this->defs[] = 'CDEF:average='.$avgargs.$a.',AVG ';
         }
+        /*
         if ( isset($totalt) ){
             $this->defs[] = join('',$trendtotaldefs);
             $muppy = preg_replace('/WUB([^,]*),UN,0,WUB[^,]*,IF/','TWUB$1',$totalargs);
             $this->defs[] = "CDEF:totalslide=${muppy}${plusses} ";
             $this->defs[] = $totalt;
         }
+         */
         if ( $this->iAmOverlay == 0 ){
             foreach ($predictdefs as $t){
                 $this->defs[] = $t;
