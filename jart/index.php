@@ -270,6 +270,7 @@ class Graph {
         //}
         foreach ($this->paths->paths as $v) {
             $negative  = 0;
+            $stack = '';
             if ( ! isset($v->display) ){
                 $this->debugLog('display was not set for ',$v);
                 $v->display = 1;
