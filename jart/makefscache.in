@@ -4,4 +4,4 @@ rrddir=RRDDIR
 
 find $rrddir -follow > fscache.tmp
 sort fscache.tmp > fscache
-rm fscache.tmp
+rm -f fscache.tmp 2> /dev/null

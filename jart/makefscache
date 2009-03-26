@@ -1,7 +1,0 @@
-#!/bin/sh
-
-rrddir=/rrd
-
-find $rrddir -follow > fscache.tmp
-sort fscache.tmp > fscache
-rm fscache.tmp

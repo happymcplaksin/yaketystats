@@ -18,8 +18,6 @@
 
 # Turn Munin RRDs into YaketyStats RRDs.
 
-# todo: get plugin list from datafile and maybe don't need config file (but
-# what about names?)
 $|=1;
 
 print "TODO:\nFix 'I/O' label.\nFix files named '.rrd'\n\n";exit;

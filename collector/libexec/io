@@ -458,7 +458,7 @@ sub linux {
 	  foreach $i (keys (%s)) {
 	    if ( !ignoreit ('io', $i) ) {
 	      # Sometimes (during high load?) we get bogus data so avoid that
-	      if ( $s{$i} =~ /^[.0-9]+$/ ) {
+	      if ( defined ($s{$i}) && $s{$i} =~ /^[.0-9]+$/ ) {
 		push (@return,
 		      "p=/$main::g_host/io/${i}/${dev}${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$s{$i}\n");
 	      }

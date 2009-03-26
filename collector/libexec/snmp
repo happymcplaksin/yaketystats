@@ -65,7 +65,6 @@ if ( !@ARGV || (! defined ($ARGV[1]) && $ARGV[1] eq "calledfromcollect") ) {
   }
   get_ignores ();
   @data = doit ();
-  bivalve (@data);
   if ( defined ($data[0]) ) {
     bivalve (@data);
   } else {
