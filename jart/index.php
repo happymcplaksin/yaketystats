@@ -1715,7 +1715,7 @@ $version = "2.2pre";
         function init(){
             var pickerButton    = $('pickerbutton');
             var regexerButton   = $('regexerbutton');
-            Event.observe(pickerButton,'click',function(){showPicker()}.bindAsEventListener());
+            Event.observe(pickerButton,'click',function(){showPicker(0)}.bindAsEventListener());
             Event.observe(regexerButton,'click',showRegexer.bindAsEventListener());
             // regexer
             var go = $('regexgo');
