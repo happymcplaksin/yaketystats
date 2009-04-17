@@ -248,9 +248,22 @@ class Graph {
 
     public function eventArgs(){
         global $dateformat,$webdir;
+        $user  = $_SERVER['PHP_AUTH_USER'];
         //$this->events = array(' VRULE:' . strtotime('yesterday 10am') . "#fFffff:'EMERGENCY LOAD TEST ". strtotime('yesterday 10am') ."\\n' ");
         $stupid = 'sqlite:'.$webdir.'/events.db';
         if ( file_exists($webdir.'/events.db') ){
+            switch ( $this->paths->events ){
+                case "none":
+                    return;
+                case "my":
+                    $where = " AND user='$user'";
+                    break;
+                case "other":
+                    $where = " AND user!='$user'";
+                    break;
+                default:
+                    $where = '';
+            }
             try {
                 $db = new PDO($stupid);
             }catch (PDOException $e){
@@ -258,10 +271,10 @@ class Graph {
             }
             $s = $this->paths->start;
             $e = $this->paths->end;
-            $sql = 'SELECT * FROM events WHERE edate > ' . $s . ' AND edate < ' . $e . ' ORDER BY edate';
+            $sql = 'SELECT * FROM events WHERE edate > ' . $s . ' AND edate < ' . $e  . $where . ' ORDER BY edate';
             foreach ( $db->query($sql) as $q ){
                 $this->debugLog('in here');
-                $this->events[] = ' VRULE:' . $q['edate'] . "#fFffff:'". $q['title'] .' '. $this->dateEscape($dateformat, $q['edate']) ."\\n' ";
+                $this->events[] = ' VRULE:' . $q['edate'] . "#fF00ff:'". $q['title'] .' '. $this->dateEscape($dateformat, $q['edate']) ."\\n':dashes ";
                 if ( ! empty($q['comment']) ){
                     $x = addcslashes($q['comment'],"\n\t:");
                     $x = preg_replace("/['\"]/",'',$x);
