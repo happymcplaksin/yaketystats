@@ -20,12 +20,33 @@ if ( ! is_executable($rrdtool) ){
     exit;
 }
 
-if ( ! is_dir("playlists") || ! is_writable("playlists") ){
-    print "Unable to find or write to the playlists directory. Please check permissions.\n";
+if ( ! is_writable($webdir) ){
+    print "Unable to write to $webdir. Please check permissions.\n";
     exit;
 }
 
-if ( ! is_dir("graphs") || ! is_writable("graphs") ){
+if ( ! is_dir("playlists") ){
+    $bool = mkdir("$webdir/playlists");
+    if ( ! $bool ){
+        print "Unable to create missing $webdir/playlists directory. Please check permissions.\n";
+        exit;
+    }
+}
+
+if ( ! is_writable("playlists") ){
+    print "Unable to write to $webdir/playlists directory. Please check permissions.\n";
+    exit;
+}
+
+if ( ! is_dir("graphs") ){
+    $bool = mkdir("$webdir/graphs");
+    if ( ! $bool ){
+        print "Unable to create missing $webdir/graphs directory. Please check permissions.\n";
+        exit;
+    }
+}
+
+if ( ! is_writable("graphs") ){
     print "Unable to find or write to the graphs directory. Please check permissions.\n";
     exit;
 }
