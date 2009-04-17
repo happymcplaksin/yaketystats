@@ -36,8 +36,10 @@ class Graph {
     public $args      = array("-i -P -W '<big>YaketyStats</big>' -E --rigid ");
     public $comments  = array();
     public $cmd       = array();
+    //public $defs      = array();
     public $defs      = array();
     public $debug     = '';
+    public $events    = array();
     public $json      = '';
     public $last      = '';
     public $lines     = array();
@@ -101,8 +103,9 @@ class Graph {
         $this->sizeArgs();
         $this->labelArgs();
         $this->pathArgs();
+        $this->eventArgs();
         $this->commentArgs();
-        $tmp  = array_merge($this->args,$this->defs,$this->lines,$this->comments);
+        $tmp  = array_merge($this->args,$this->defs,$this->lines,$this->events,$this->comments);
         $tmpa = join('',$tmp);
         $out  = "graphv ". $this->nameGraph();
         $out .= " ". $this->minusb . $tmpa;
@@ -197,7 +200,7 @@ class Graph {
                 $out[]  = $ol; // [11]
             }
         }
-        $this->debugLog($output,$stderr,$out,$this->args,$this->defs);
+        $this->debugLog($output,$stderr,$out,$this->args,$this->defs,$this->events);
         $this->debugWriteLog();
         //return $this->json->encode($out);
         return $out;
@@ -207,6 +210,32 @@ class Graph {
         $out[] = 'ERROR';
         $out[] = $msg;
         return $out;
+    }
+
+    public function eventArgs(){
+        global $dateformat,$webdir;
+        //$this->events = array(' VRULE:' . strtotime('yesterday 10am') . "#fFffff:'EMERGENCY LOAD TEST ". strtotime('yesterday 10am') ."\\n' ");
+        $stupid = 'sqlite:'.$webdir.'/events.db';
+        if ( file_exists($webdir.'/events.db') ){
+            try {
+                $db = new PDO($stupid);
+            }catch (PDOException $e){
+                return;
+            }
+            $s = $this->paths->start;
+            $e = $this->paths->end;
+            $sql = 'SELECT * FROM events WHERE edate > ' . $s . ' AND edate < ' . $e . ' ORDER BY edate';
+            foreach ( $db->query($sql) as $q ){
+                $this->debugLog('in here');
+                $this->events[] = ' VRULE:' . $q['edate'] . "#fFffff:'". $q['title'] .' '. $this->dateEscape($dateformat, $q['edate']) ."\\n' ";
+                if ( ! empty($q['comment']) ){
+                    $x = addcslashes($q['comment'],"\n\t:");
+                    $x = preg_replace("/['\"]/",'',$x);
+                    $this->events[] = " 'COMMENT:   " . $x ."' ";
+                    $this->events[] = " 'COMMENT: \\n' ";
+                }
+            }
+        }
     }
 
     public function fontArgs(){
@@ -661,6 +690,27 @@ function debugZeroFile($file,$n){
     return $out;
 }
 
+function deleteEvent($ids){
+    global $webdir;
+    if ( file_exists($webdir.'/events.db') ){
+        $json = new Services_JSON();
+        $ids = $json->decode($ids);
+        $user = $_SERVER['PHP_AUTH_USER'];
+        $stupid = 'sqlite:'.$webdir.'/events.db';
+        try {
+            $db = new PDO($stupid);
+        }catch (PDOException $e){
+            die( "Couldn't open your events DB\n");
+        }
+        $sql = 'DELETE FROM events WHERE id=?';
+        $sth = $db->prepare($sql);
+        foreach ($ids as $id){
+            $sth->execute(array($id));
+        }
+        return eventList();
+    }
+}
+
 function deletePlaylist($path,$divtoclear){
     global $webdir;
     $json = new Services_JSON();
@@ -718,6 +768,34 @@ function dragTime($cx,$graph,$start,$end,$xsize){
     $out   = array($graph,$start,$end);
     $out  = $json->encode($out);
     return $out;
+}
+
+function eventList(){
+    global $dateformat,$webdir;
+    $json  = new Services_JSON();
+    if ( file_exists($webdir.'/events.db') ){
+        $user = $_SERVER['PHP_AUTH_USER'];
+        $stupid = 'sqlite:'.$webdir.'/events.db';
+        try {
+            $db = new PDO($stupid);
+        }catch (PDOException $e){
+            echo "Couldn't open your events DB\n";
+        }
+        $sql = 'SELECT id,edate,title FROM events WHERE user = \'' . $user ."' ORDER BY edate";
+        //$s = '';
+        $out = array();
+        foreach ( $db->query($sql) as $q ){
+            $o = new stdClass();
+            $o->id = $q['id'];
+            $o->str = $q['title'] . ' ' . date($dateformat,$q['edate']);
+            $out[] = $o;
+            //$s .= '<input type="checkbox" id="myEvent'. $q['id'] . '">';
+            //$s .= '<label for="myEvent'. $q['id'] .'">' . $q['title'] . ' ';
+            //$s .= date($dateformat,$q['edate']) . "</label><br>\n";
+        }
+        return $json->encode($out);
+        //print $s;
+    }
 }
 
 function findMatches($s,$graphpathbreaks,$gll){
@@ -1074,6 +1152,30 @@ function recurseForMassAdd($path,$limit,$out){
     return $out;
 }
 
+function saveEvent($time,$title,$comment,$color=NULL){
+    global $webdir;
+    $time = strtotime($time);
+    //FIX add some strtotime error handling
+    //FIX check to see if the DB exists and make it if not.
+    $user = $_SERVER['PHP_AUTH_USER'];
+    $stupid = 'sqlite:'.$webdir.'/events.db';
+    try {
+        $db = new PDO($stupid);
+    }catch (PDOException $e){
+        return;
+    }
+    //sqlite> insert into events values (NULL, 1239717600, 'EMERGENCY LOAD TEST2','a 2nd comment','sam','#ffffff');
+    $sql = 'INSERT INTO events VALUES (NULL,?,?,?,?,?)';
+    $sth = $db->prepare($sql);
+    $x   = array($time,$title,$comment,$user,$color);
+    $sth->execute($x);
+    if ( $sth ){
+        return eventList();
+    }else{
+        return "EMERGENCY LOAD TEST (something bad happened)";
+    }
+}
+
 function saveUserPrefs($str){
     global $webdir;
     $user = $_SERVER['PHP_AUTH_USER'];
@@ -1274,7 +1376,7 @@ function zoomTimes($start,$end,$amt,$action,$graph){
 
 sajax_init();
 //$sajax_debug_mode = 1;
-$exports = array('clickToCenterTime','convertAllTimes','convertTime','createGraphDragOverlay','createGraphImage','deletePlaylist','dragTime','findMatches','loadPlaylist','massAdd','mergePlaylists','newPlSub','rmTmpPlaylist','savePlaylist','saveUserPrefs','selTime','showTreeChild','unTmpPlaylist','zoomTimes');
+$exports = array('clickToCenterTime','convertAllTimes','convertTime','createGraphDragOverlay','createGraphImage','deleteEvent','deletePlaylist','dragTime','findMatches','loadPlaylist','massAdd','mergePlaylists','newPlSub','rmTmpPlaylist','saveEvent','savePlaylist','saveUserPrefs','selTime','showTreeChild','unTmpPlaylist','zoomTimes');
 if ( in_array($_SERVER['PHP_AUTH_USER'],$admins) ){
     array_push($exports,'debugLogfiles','debugLoadLog','debugZeroFile');
 }
@@ -1329,6 +1431,10 @@ $version = "2.2pre";
         var user   = '<?php echo $_SERVER['PHP_AUTH_USER']?>';
         var webdir = '<?php echo $webdir?>';
         var initialPaths    = '';
+<?php
+$myEvents = eventList();
+print "        var myEvents=$myEvents;\n";
+?>
 <?php if (isset($_GET['pl']) ){ ?>
         var initialPlaylist = '<?php echo $_GET['pl'] ?>';
 <?php }else{ ?>
@@ -1833,6 +1939,73 @@ $version = "2.2pre";
             }
             Event.observe('playlistsubs','change',playlistSubChange.bindAsEventListener() );
             Event.observe('newsubname','keyup',newPlSubMon.bindAsEventListener() );
+
+            $('eventSaveButton').onclick = function(){saveEvent()};
+            $('eventsIcon').onclick = function(){Element.toggle('eventControls')};
+            $('eventAddTab').onclick = function(){genericTabber(['addEvent','delEvent'],'addEvent')};
+            $('eventDeleteTab').onclick = function(){genericTabber(['addEvent','delEvent'],'delEvent')};
+            $('eventDeleteButton').onclick = function(){ deleteEvent(); };
+            $('eventCancelButton').onclick = function(){ Element.toggle('eventControls')};
+            $('eventCancelButtonTwo').onclick = function(){ Element.toggle('eventControls')};
+            populateEventDeletion();
+        }
+
+        function populateEventDeletion(){
+            var c = $('delEventList');
+            c.innerHTML = '';
+            myEvents.each(function(e){
+                var i = document.createElement('input');
+                i.type = 'checkbox';
+                i.value = 'myEvent' + e.id;
+                c.appendChild(i);
+                var l = document.createElement('label');
+                var t = document.createTextNode(e.str);
+                l.appendChild(t);
+                c.appendChild(l);
+                var b = document.createElement('br');
+                c.appendChild(b);
+            });
+        }
+
+        function saveEvent(){
+            Element.hide('eventControls');
+            var t = $('eventTime').value;
+            var title = $('eventTitle').value;
+            var c = $('eventComment').value;
+            if ( t == '' ){
+                alert("no timey, no savey");
+                return;
+            }
+            x_saveEvent(t,title,c,saveEventCB);
+        }
+        function saveEventCB(s){
+            handleError('Pardon me for saying so, but I thought that was the event OF A LIFETIME.');
+            myEvents=s.evalJSON();
+            populateEventDeletion();
+        }
+        function deleteEvent(){
+            var ids = $$('div#delEventList input');
+            var a   = [];
+            ids.each(function(id){
+                if ( id.checked ){
+                    a.push(id.value.sub(/myEvent/,''));
+                }
+            });
+            a = Object.toJSON(a);
+            x_deleteEvent(a,deleteEventCB);
+        }
+        function deleteEventCB(s){
+            myEvents=s.evalJSON();
+            populateEventDeletion();
+        }
+        function genericTabber(a,which){
+            a.each(function(tab){
+                if ( tab == which ){
+                    Element.show(tab);
+                }else{
+                    Element.hide(tab);
+                }
+            });
         }
 
         function savePlaylist(){
@@ -2184,7 +2357,7 @@ $version = "2.2pre";
             G.closeAllGraphs(0);
         }
 
-        return{ 'navVis': navVis, 'initialPaths': initialPaths, 'init': init, 'toggleControl':toggleControl, 'savePlaylist':savePlaylist, 'loadPlaylist':loadPlaylist, 'handleError':handleError, 'newPlSub':newPlSub, 'help':help, 'hidehelp':hidehelp ,'findMatches':findMatches,'regexSavePlaylist':regexSavePlaylist, verify:verify, removeErrors:removeErrors, mergePlaylists:mergePlaylists}
+        return{ 'navVis': navVis, 'initialPaths': initialPaths, 'init': init, 'toggleControl':toggleControl, 'savePlaylist':savePlaylist, 'loadPlaylist':loadPlaylist, 'handleError':handleError, 'newPlSub':newPlSub, 'help':help, 'hidehelp':hidehelp ,'findMatches':findMatches,'regexSavePlaylist':regexSavePlaylist, verify:verify, removeErrors:removeErrors, mergePlaylists:mergePlaylists, saveEvent:saveEvent, myEvents:myEvents}
     })();
 
 
@@ -2211,6 +2384,7 @@ $version = "2.2pre";
             <div id="pickertop">
                 <img src="img/stock_unknown-24.png" id="pickerregexerhelp" class="helpbutton">
                 <img src="img/gtk-preferences.png" id="userprefsbutton" class="prefsbutton" title="Preferences">
+                <img src="img/stock_calendar.png" id="eventsIcon" title="Events" class="prefsbutton">
                 <br><span id="pickerbutton" class="clickable"><img src="img/stock_form-file-selection.png" title="Picker"></span> <span id="regexerbutton" class="clickable"><img src="img/stock_macro-stop-after-procedure.png" title="Regexer"></span>
                 <br>
                 <a href="feed.php"><img src="img/feed-icon_orange-16px.png" id="userprefsbutton" class="feedicon" title="ATOM Feed for recent playlists"></a>
@@ -2459,6 +2633,33 @@ $version = "2.2pre";
 <input type="button" value="Save" id="userpsave">
 <input type="button" value="Cancel" id="userpcancel">
 </div>
+
+<div id="eventControls" class="help" style="display: none">
+    <div id="eventTabsContainer">
+        <ul id="eventTabs">
+            <li id="eventAddTab"><span>Add</span></li>
+            <li id="eventDeleteTab"><span>Delete</span></li>
+        </ul>
+        <br class="clear">
+    </div>
+    <div id="addEvent">
+        <label for="eventTime">Event Time</label><br>
+        <input type="text" size="40" id="eventTime"><br>
+        <label for="eventTitle">Event Title</label><br>
+        <input type="text" size="40" id="eventTitle"><br>
+        <label for="eventComment">Event Comment</label><br>
+        <input type="text" size="40" id="eventComment"><br>
+        <input type="button" value="Save" id="eventSaveButton">
+        <input type="button" id="eventCancelButton" value="Cancel" class="floatright">
+    </div>
+    <div id="delEvent" style="display:none">
+        <br>
+        <div id="delEventList"></div>
+        <input type="button" id="eventDeleteButton" value="Delete!">
+        <input type="button" id="eventCancelButtonTwo" value="Cancel" class="floatright">
+    </div>
+</div>
+
 <div id="pathbreaksgraphhelpd" style="display: none" class="help smaller">
 <dl>
     <dt>Regex</dt>

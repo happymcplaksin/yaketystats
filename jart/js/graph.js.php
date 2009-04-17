@@ -204,6 +204,11 @@ print $out;
             case "userpend":
                 saveUserPrefs();
                 break;
+            case "eventTime":
+            case "eventTitle":
+            case "eventComment":
+                dsPicker.saveEvent();
+                break;
             default:
                 return;
         }
