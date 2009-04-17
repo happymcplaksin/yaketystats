@@ -2018,6 +2018,10 @@ print "        var myEvents=$myEvents;\n";
             Element.hide('eventControls');
             var t = $('eventTime').value;
             var title = $('eventTitle').value;
+            if ( title == '' ){
+                alert("Title is required.");
+                return;
+            }
             var c = $('eventComment').value;
             if ( t == '' ){
                 alert("no timey, no savey");
