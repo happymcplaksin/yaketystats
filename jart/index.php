@@ -51,6 +51,19 @@ if ( ! is_writable("graphs") ){
     exit;
 }
 
+if ( ! file_exists("$webdir/events.db") ){
+    $sql = "CREATE TABLE events ( id INTEGER PRIMARY KEY, edate INTEGER, title TEXT, comment TEXT, user TEXT, color TEXT )";
+    $stupid = 'sqlite:'.$webdir.'/events.db';
+    try {
+        $db = new PDO($stupid);
+    }catch (PDOException $e){
+        print "Couldn't create your events DB\n";
+        exit;
+    }
+    $sth = $db->prepare($sql);
+    $sth->execute();
+}
+
 error_reporting(0);
 
 class Graph {
