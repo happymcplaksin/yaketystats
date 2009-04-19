@@ -1295,7 +1295,7 @@ print $out;
         var br             = document.createElement('br');
         eventcontainer.appendChild(br);
         var label          = document.createElement('label');
-        label.for          = 'eventselectorfor-' + me;
+        label.htmlFor      = 'eventselectorfor-' + me;
         var txt            = document.createTextNode('Show:');
         label.appendChild(txt);
         eventcontainer.appendChild(label);

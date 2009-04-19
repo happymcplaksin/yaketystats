@@ -2015,18 +2015,18 @@ print "        var myEvents=$myEvents;\n";
         }
 
         function saveEvent(){
-            Element.hide('eventControls');
             var t = $('eventTime').value;
+            var c = $('eventComment').value;
             var title = $('eventTitle').value;
             if ( title == '' ){
                 alert("Title is required.");
                 return;
             }
-            var c = $('eventComment').value;
             if ( t == '' ){
                 alert("no timey, no savey");
                 return;
             }
+            Element.hide('eventControls');
             x_saveEvent(t,title,c,saveEventCB);
         }
         function saveEventCB(s){
