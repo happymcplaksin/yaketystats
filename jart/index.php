@@ -52,10 +52,10 @@ if ( ! is_writable("graphs") ){
 }
 
 if ( ! file_exists("$webdir/events.db") ){
-    $sql = "CREATE TABLE events ( id INTEGER PRIMARY KEY, edate INTEGER, title TEXT, comment TEXT, user TEXT, color TEXT )";
-    $stupid = 'sqlite:'.$webdir.'/events.db';
+    $sql = "CREATE TABLE events ( id INTEGER PRIMARY KEY, edate INTEGER, title TEXT, comment TEXT, user TEXT, color TEXT, shortname TEXT )";
+    $dbcs = 'sqlite:'.$webdir.'/events.db';
     try {
-        $db = new PDO($stupid);
+        $db = new PDO($dbcs);
     }catch (PDOException $e){
         print "Couldn't create your events DB\n";
         exit;
@@ -249,9 +249,9 @@ class Graph {
     public function eventArgs(){
         global $dateformat,$webdir;
         $user  = $_SERVER['PHP_AUTH_USER'];
-        //$this->events = array(' VRULE:' . strtotime('yesterday 10am') . "#fFffff:'EMERGENCY LOAD TEST ". strtotime('yesterday 10am') ."\\n' ");
-        $stupid = 'sqlite:'.$webdir.'/events.db';
-        if ( file_exists($webdir.'/events.db') ){
+        $dbfile = $webdir.'/events.db';
+        $dbcs = 'sqlite:'.$dbfile;
+        if ( file_exists($dbfile) ){
             switch ( $this->paths->events ){
                 case "none":
                     return;
@@ -265,7 +265,7 @@ class Graph {
                     $where = '';
             }
             try {
-                $db = new PDO($stupid);
+                $db = new PDO($dbcs);
             }catch (PDOException $e){
                 return;
             }
@@ -273,8 +273,12 @@ class Graph {
             $e = $this->paths->end;
             $sql = 'SELECT * FROM events WHERE edate > ' . $s . ' AND edate < ' . $e  . $where . ' ORDER BY edate';
             foreach ( $db->query($sql) as $q ){
-                $this->debugLog('in here');
-                $this->events[] = ' VRULE:' . $q['edate'] . "#fF00ff:'". $q['title'] .' '. $this->dateEscape($dateformat, $q['edate']) ."\\n':dashes ";
+                $sn = '';
+                if ( ! empty($q['shortname']) ){
+                    $sn = ' ['.$q['shortname'].']';
+                }
+                $this->debugLog('sn',$sn, $q);
+                $this->events[] = ' VRULE:' . $q['edate'] . "#fF00ff:'". $q['title'] .' '. $this->dateEscape($dateformat, $q['edate']) ."$sn\\n':dashes ";
                 if ( ! empty($q['comment']) ){
                     $x = addcslashes($q['comment'],"\n\t:");
                     $x = preg_replace("/['\"]/",'',$x);
@@ -553,10 +557,10 @@ class Graph {
     }
 
     public function stt($t,$l){
-        $r = strtotime($t);
+        $r = mystrtotime($t,$l);
         if ( ! $r ){
             // FIX
-            die( $this->json->encode(array('ERROR',"invalid $l time")));
+            die( $this->json->encode(array('ERROR',"Invalid $l time")));
         }
         return $r;
     }
@@ -639,13 +643,13 @@ function convertAllTimes($str){
     foreach ($arr as $v) {
         $tmp   = array();
         $tmp[] = $v[0];
-        $time  = strtotime($v[1]);
+        $time  = mystrtotime($v[1]);
         if ( ! $time ){
             $time = mktime();
         }
         $time = date($dateformat,$time);
         $tmp[] = $time;
-        $time  = strtotime($v[2]);
+        $time  = mystrtotime($v[2]);
         if ( ! $time ){
             $time = mktime();
         }
@@ -660,7 +664,7 @@ function convertAllTimes($str){
 function convertTime($id,$str){
     global $dateformat;
     $json = new Services_JSON();
-    $time = strtotime($str);
+    $time = mystrtotime($str);
     if ( $time ){
         $time = date($dateformat,$time);
     }
@@ -843,6 +847,26 @@ function eventList(){
         return $json->encode($out);
         //print $s;
     }
+}
+
+function eventLookup($shortname){
+    $json = new Services_JSON();
+    global $webdir;
+    $dbfile = $webdir.'/events.db';
+    $dbcs = 'sqlite:'.$dbfile;
+    try {
+        $db = new PDO($dbcs);
+    }catch (PDOException $e){
+        return false;
+    }
+    $shorty = $db->quote($shortname);
+    $sql    = "SELECT edate FROM events WHERE shortname like $shorty";
+    $result = $db->query($sql);
+    $o      = $result->fetch();
+    if ( empty($o) || ! $o ){
+        return false;
+    }
+    return $o['edate'] - 60;
 }
 
 function findMatches($s,$graphpathbreaks,$gll){
@@ -1118,6 +1142,21 @@ function mergePlaylists($paths,$name){
     return $json->encode(array('SUCCESS',$name));
 }
 
+function mystrtotime($str,$label="start or end"){
+    $json = new Services_JSON();
+    $str  = trim($str);
+    $o    = strtotime($str);
+    if ( $o ){
+        return $o;
+    }
+    $o = eventLookup($str);
+    if ( $o ){
+        return $o;
+    }
+    $o = $json->encode(array('ERROR',"Invalid $label time"));
+    die($o);
+}
+
 function newPlSub($name){
     global $webdir;
     $user = $_SERVER['PHP_AUTH_USER'];
@@ -1199,27 +1238,29 @@ function recurseForMassAdd($path,$limit,$out){
     return $out;
 }
 
-function saveEvent($time,$title,$comment,$color=NULL){
+function saveEvent($time,$title,$comment,$color='#ff0000',$shortname=NULL){
     global $webdir;
-    $time = strtotime($time);
-    //FIX add some strtotime error handling
-    //FIX check to see if the DB exists and make it if not.
+    $json = new Services_JSON();
+    $time = mystrtotime($time,'event');
+    if ( ! $time ){
+        return $json->encode(array('ERROR','Your time sucked.'));
+    }
     $user = $_SERVER['PHP_AUTH_USER'];
-    $stupid = 'sqlite:'.$webdir.'/events.db';
+    $dbcs = 'sqlite:'.$webdir.'/events.db';
     try {
-        $db = new PDO($stupid);
+        $db = new PDO($dbcs);
     }catch (PDOException $e){
         return;
     }
-    //sqlite> insert into events values (NULL, 1239717600, 'EMERGENCY LOAD TEST2','a 2nd comment','sam','#ffffff');
-    $sql = 'INSERT INTO events VALUES (NULL,?,?,?,?,?)';
+    //sqlite> insert into events values (NULL, 1239717600, 'EMERGENCY LOAD TEST2','a 2nd comment','sam','#ffffff','elt2');
+    $sql = 'INSERT INTO events VALUES (NULL,?,?,?,?,?,?)';
     $sth = $db->prepare($sql);
-    $x   = array($time,$title,$comment,$user,$color);
+    $x   = array($time,$title,$comment,$user,$color,$shortname);
     $sth->execute($x);
     if ( $sth ){
-        return eventList();
+        return eventList(); //already json
     }else{
-        return "EMERGENCY LOAD TEST (something bad happened)";
+        return $json->encode(array('ERROR','EMERGENCY LOAD TEST (something bad happened)'));
     }
 }
 
@@ -2018,6 +2059,7 @@ print "        var myEvents=$myEvents;\n";
             var t = $('eventTime').value;
             var c = $('eventComment').value;
             var title = $('eventTitle').value;
+            var shorty = $('eventShortName').value;
             if ( title == '' ){
                 alert("Title is required.");
                 return;
@@ -2027,12 +2069,17 @@ print "        var myEvents=$myEvents;\n";
                 return;
             }
             Element.hide('eventControls');
-            x_saveEvent(t,title,c,saveEventCB);
+            x_saveEvent(t,title,c,'#ff0000',shorty,saveEventCB);
         }
         function saveEventCB(s){
-            handleError('Pardon me for saying so, but I thought that was the event OF A LIFETIME.');
-            myEvents=s.evalJSON();
-            populateEventDeletion();
+            x = s.evalJSON();
+            if ( x[0] == 'ERROR' ){
+                handleError(x[1]);
+            }else{
+                handleError('The event OF A LIFETIME.');
+                myEvents=x;
+                populateEventDeletion();
+            }
         }
         function deleteEvent(){
             var ids = $$('div#delEventList input');
@@ -2696,6 +2743,8 @@ print "        var myEvents=$myEvents;\n";
     <div id="addEvent">
         <label for="eventTime">Event Time</label><br>
         <input type="text" size="40" id="eventTime"><br>
+        <label for="eventShortName" title="Use this label in time inputs!">Event Short Name</label><br>
+        <input type="text" size="40" id="eventShortName" title="Use this label in time inputs!"><br>
         <label for="eventTitle">Event Title</label><br>
         <input type="text" size="40" id="eventTitle"><br>
         <label for="eventComment">Event Comment</label><br>
