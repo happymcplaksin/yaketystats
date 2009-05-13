@@ -458,7 +458,10 @@ sub linux {
 	  foreach $i (keys (%s)) {
 	    if ( !ignoreit ('io', $i) ) {
 	      # Sometimes (during high load?) we get bogus data so avoid that
-	      if ( defined ($s{$i}) && $s{$i} =~ /^[.0-9]+$/ ) {
+	      if ( defined ($s{$i}) && $s{$i} =~ /^[.0-9]+$/ &&
+		   # Rarely we get numbers like 259.2.00.  What's up with that?!?
+		   # iostat bug or YS bug?  In any case it's rare so ignore it for now
+		   $s{$i} !~ /[.].*[.]/ ) {
 		push (@return,
 		      "p=/$main::g_host/io/${i}/${dev}${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$s{$i}\n");
 	      }
