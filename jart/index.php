@@ -884,7 +884,7 @@ function eventLookup($shortname){
     if ( empty($o) || ! $o ){
         return false;
     }
-    return $o['edate'] - 60;
+    return $o['edate'];
 }
 
 function findMatches($s,$graphpathbreaks,$gll){
@@ -1169,6 +1169,12 @@ function mystrtotime($str,$label="start or end"){
     }
     $o = eventLookup($str);
     if ( $o ){
+        if ( $label == 'start' ){
+            return $o - 60;
+        }
+        if ( $label == 'end' ){
+            return $o + 60;
+        }
         return $o;
     }
     $o = $json->encode(array('ERROR',"Invalid $label time"));
