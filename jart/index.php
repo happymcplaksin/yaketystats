@@ -10,6 +10,7 @@
 require("Sajax.php");
 require("JSON.php");
 require("conf.php");
+require_once('common.php');
 
 if ( ! is_file($rrdtool) ){
     print "Unable to find your rrdtool. Please update conf.php\n";
@@ -104,21 +105,21 @@ class Graph {
         }
          */
         $this->comments[] = "'COMMENT: \\n' ";
-        $this->comments[] = "'COMMENT:Start\\: ";
+        $this->comments[] = "'COMMENT:                 Start\\: ";
         $this->comments[] = $this->dateEscape($dateformat, $this->paths->start);
         $this->comments[] = "' ";
 
         $this->comments[] = "'COMMENT:\\n' ";
-        $this->comments[] = "'COMMENT:  End\\: ";
+        $this->comments[] = "'COMMENT:                   End\\: ";
         $this->comments[] = $this->dateEscape( $dateformat, $this->paths->end);
         $this->comments[] = "' ";
 
         $this->comments[] = "'COMMENT:\\n' ";
-        $this->comments[] = "'COMMENT:Time shown\\: ";
+        $this->comments[] = "'COMMENT:            Time shown\\: ";
         $this->comments[] = $this->secToEng($this->paths->end - $this->paths->start) . "' ";
 
         $this->comments[] = "'COMMENT:\\n' ";
-        $this->comments[] = "'COMMENT:Graph created\\: ";
+        $this->comments[] = "'COMMENT:         Graph created\\: ";
         $this->comments[] =  $this->dateEscape( $dateformat, time() ). "' ";
 
         $this->comments[] = "'COMMENT:\\n' ";
@@ -247,7 +248,7 @@ class Graph {
     }
 
     public function eventArgs(){
-        global $dateformat,$webdir;
+        global $colors,$dateformat,$webdir;
         $user  = $_SERVER['PHP_AUTH_USER'];
         $dbfile = $webdir.'/events.db';
         $dbcs = 'sqlite:'.$dbfile;
@@ -269,16 +270,26 @@ class Graph {
             }catch (PDOException $e){
                 return;
             }
-            $s = $this->paths->start;
-            $e = $this->paths->end;
+            $s   = $this->paths->start;
+            $e   = $this->paths->end;
             $sql = 'SELECT * FROM events WHERE edate > ' . $s . ' AND edate < ' . $e  . $where . ' ORDER BY edate';
+            $z   = 0;
             foreach ( $db->query($sql) as $q ){
                 $sn = '';
                 if ( ! empty($q['shortname']) ){
                     $sn = ' ['.$q['shortname'].']';
                 }
-                $this->debugLog('sn',$sn, $q);
-                $this->events[] = ' VRULE:' . $q['edate'] . "#fF00ff:'". $q['title'] .' '. $this->dateEscape($dateformat, $q['edate']) ."$sn\\n':dashes ";
+                //$this->debugLog('sn',$sn, $q);
+                $c = array_shift($colors);
+                if ( ! $c ){
+                    $c = '#ff0000';
+                }
+                if ( $z == 0 ){
+                    $this->events[] = " 'COMMENT: \\n' ";
+                    $this->events[] = " 'COMMENT:<b>Events</b>\\: \\n' ";
+                    $z++;
+                }
+                $this->events[] = ' VRULE:' . $q['edate'] . "$c:'". $q['title'] .' '. $this->dateEscape($dateformat, $q['edate']) ."$sn\\n':dashes ";
                 if ( ! empty($q['comment']) ){
                     $x = addcslashes($q['comment'],"\n\t:");
                     $x = preg_replace("/['\"]/",'',$x);
@@ -1472,7 +1483,6 @@ if ( in_array($_SERVER['PHP_AUTH_USER'],$admins) ){
 call_user_func_array('sajax_export',$exports);
 //sajax_export(&$exports);
 sajax_handle_client_request();
-$version = "2.2pre";
 
 ?>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
@@ -2301,6 +2311,7 @@ print "        var myEvents=$myEvents;\n";
         }
         function loadPlaylist(path){
             var op = path.replace(/.*playlists\/(.*)/,'$1');
+            document.title = op + " -- Jart <?php echo $version ?>";
             $('playlistlink').innerHTML = 'Playlist: <a href="<?php $_SERVER['PHP_SELF'] ?>?pl=' + op + '">' + op + '</a>';
             Element.show('playlistdisplay');
             x_loadPlaylist(path,loadPlaylistCB);
@@ -2587,7 +2598,7 @@ print "        var myEvents=$myEvents;\n";
 <?php } ?>
             </div>
             <div class="yui-u">
-                <span class="clickable floatright" onClick="if ( dsPicker.verify('closeallgraphs')){ G.closeAllGraphs(0);};"><img src="img/stock_delete.png" title="Close All Graphs"></span>
+                <span class="clickable floatright" onClick="if ( dsPicker.verify('closeallgraphs')){ G.closeAllGraphs(0); document.title='Jart <?php echo $version ?>'};"><img src="img/stock_delete.png" title="Close All Graphs"></span>
             </div>
             <img src="img/stock_help-chat.png" height="24" width="24" id="smiley">
         </div>
