@@ -93,6 +93,7 @@ print $out;
         this.ysize       = 'nan';
         this.xoff        = 'nan';
         this.yoff        = 'nan';
+        this.events      = 'all';
     }
 
     function init(){
@@ -203,6 +204,11 @@ print $out;
             case "userpstart":
             case "userpend":
                 saveUserPrefs();
+                break;
+            case "eventTime":
+            case "eventTitle":
+            case "eventComment":
+                dsPicker.saveEvent();
                 break;
             default:
                 return;
@@ -1024,13 +1030,22 @@ print $out;
         Event.observe(labelTabSpan,'click',function(){ tabControlDisplay('label',me)}.bindAsEventListener() );
         tabsdiv.appendChild(labelTabSpan);
 
-        //labels
+        //size
         var labelTabSpan   = document.createElement('span');
         labelTabSpan.id    = 'sizetabfor-' + me;
         labelTabSpan.className = 'controlstab';
         var labelTabTxt    = document.createTextNode('Size');
         labelTabSpan.appendChild(labelTabTxt);
         Event.observe(labelTabSpan,'click',function(){ tabControlDisplay('size',me)}.bindAsEventListener() );
+        tabsdiv.appendChild(labelTabSpan);
+
+        //Events
+        var labelTabSpan   = document.createElement('span');
+        labelTabSpan.id    = 'eventtabfor-' + me;
+        labelTabSpan.className = 'controlstab';
+        var labelTabTxt    = document.createTextNode('Events');
+        labelTabSpan.appendChild(labelTabTxt);
+        Event.observe(labelTabSpan,'click',function(){ tabControlDisplay('event',me)}.bindAsEventListener() );
         tabsdiv.appendChild(labelTabSpan);
 
         //ENDTABS
@@ -1270,6 +1285,45 @@ print $out;
         sizecontainer.appendChild(slidediv);
         div.appendChild(sizecontainer);
 
+        //Events
+        var eventcontainer  = document.createElement('div');
+        var br             = document.createElement('br');
+        eventcontainer.appendChild(br);
+        eventcontainer.style.display = 'none';
+        eventcontainer.id   = 'eventcontrolcontainerfor-' + me;
+        eventcontainer.className = 'eventcontainer';
+        var br             = document.createElement('br');
+        eventcontainer.appendChild(br);
+        var label          = document.createElement('label');
+        label.htmlFor      = 'eventselectorfor-' + me;
+        var txt            = document.createTextNode('Show:');
+        label.appendChild(txt);
+        eventcontainer.appendChild(label);
+        var sel            = document.createElement('select');
+        var option         = document.createElement('option');
+        option.value       = 'all';
+        var txt            = document.createTextNode('All Events');
+        option.appendChild(txt);
+        sel.appendChild(option);
+        var option         = document.createElement('option');
+        option.value       = 'none';
+        var txt            = document.createTextNode('No Events');
+        option.appendChild(txt);
+        sel.appendChild(option);
+        var option         = document.createElement('option');
+        option.value       = 'my';
+        var txt            = document.createTextNode('My Events');
+        option.appendChild(txt);
+        sel.appendChild(option);
+        var option         = document.createElement('option');
+        option.value       = 'other';
+        var txt            = document.createTextNode('Not My Events');
+        option.appendChild(txt);
+        sel.appendChild(option);
+        Event.observe(sel,'change',function(e){limitEvents(me,e)}.bindAsEventListener());
+        eventcontainer.appendChild(sel);
+        div.appendChild(eventcontainer);
+
         contain.appendChild(div);
 
         gsliders[me] = new Control.Slider('slidehandlefor-' + me,'slidedivfor-' + me, {sliderValue: G.graphs[me].size,range:$R(0,200),values:[0,50,100,150,200], onSlide: function(v){$('sizeindicatorfor-' + me).innerHTML = v}, onChange:function(v){G.graphs[me].size = v;createGraphImage(me,0)}});
@@ -1386,6 +1440,11 @@ print $out;
 
         return li;
     }
+    function limitEvents(me,e){
+        G.graphs[me].events = e.target.value;
+        G.cg = me;
+        createGraphImage(me,0);
+    }
     function addPredictLine(path,graph){
         setCurrentGraph(graph);
         G.graphs[graph].predicting = 1;
@@ -1438,7 +1497,7 @@ print $out;
         createGraphImage(me,0);
     }
     function tabControlDisplay(which,graph){
-        [ 'time','line','label','size' ].each(function(tab){
+        [ 'time','line','label','size','event' ].each(function(tab){
             if ( tab == which ){
                 Element.show(tab + 'controlcontainerfor-' + graph);
             }else{

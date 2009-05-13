@@ -350,5 +350,31 @@
     #playlistregexdisplay{
         width: 250px;
     }
+    #eventControls{
+        max-width: 360px;
+    }
+    #eventTabsContainer{
+        border-bottom: 1px solid black;
+    }
+    #eventTabs{
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+    #eventTabs li {
+        float: left;
+        margin: 0;
+        padding: 0 0 0 9px;
+    }
+    #eventTabs span{
+        border-left: 1px solid black;
+        border-top: 1px solid black;
+        border-right: 1px solid black;
+        padding-right: 3px;
+        padding-left: 3px;
+    }
+    #addEvent, #delEvent{
+        background-color: #ddd;
+    }
     -->
     </style>
