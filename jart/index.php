@@ -273,23 +273,30 @@ class Graph {
             $s   = $this->paths->start;
             $e   = $this->paths->end;
             $sql = 'SELECT * FROM events WHERE edate > ' . $s . ' AND edate < ' . $e  . $where . ' ORDER BY edate';
-            $z   = 0;
+            $l   = 0;
             foreach ( $db->query($sql) as $q ){
+                $sl = strlen($q['title']);
+                if ( $sl > $l ){
+                    $l = $sl;
+                }
+                $a[] = $q;
+            }
+            if ( count($a) > 0 ){
+                $this->events[] = " 'COMMENT: \\n' ";
+                $this->events[] = " 'COMMENT:<b>Events</b>\\: \\n' ";
+            }
+            foreach ( $a as $q ){
                 $sn = '';
                 if ( ! empty($q['shortname']) ){
-                    $sn = ' ['.$q['shortname'].']';
+                    $sn = ' [' . addcslashes($q['shortname'],':') . ']';
                 }
                 //$this->debugLog('sn',$sn, $q);
                 $c = array_shift($colors);
                 if ( ! $c ){
                     $c = '#ff0000';
                 }
-                if ( $z == 0 ){
-                    $this->events[] = " 'COMMENT: \\n' ";
-                    $this->events[] = " 'COMMENT:<b>Events</b>\\: \\n' ";
-                    $z++;
-                }
-                $this->events[] = ' VRULE:' . $q['edate'] . "$c:'". $q['title'] .' '. $this->dateEscape($dateformat, $q['edate']) ."$sn\\n':dashes ";
+                $es = ' VRULE:' . $q['edate'] . "$c:'". str_pad(addcslashes($q['title'],':'),$l) .' '. $this->dateEscape($dateformat, $q['edate']) ."$sn\\n':dashes ";
+                $this->events[] = $es;
                 if ( ! empty($q['comment']) ){
                     $x = addcslashes($q['comment'],"\n\t:");
                     $x = preg_replace("/['\"]/",'',$x);
