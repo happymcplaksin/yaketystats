@@ -202,6 +202,7 @@ print $out;
             case "eventComment":
             case "eventTags":
                 dsPicker.saveEvent();
+                break;
             case "mergedplaylistname":
                 dsPicker.mergePlaylists();
                 break;
