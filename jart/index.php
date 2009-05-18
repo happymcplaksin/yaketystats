@@ -2146,10 +2146,8 @@ print "        var myEvents=$myEvents;\n";
             $('eventDeleteButton').onclick = function(){ deleteEvent(); };
             $('eventCancelButton').onclick = function(){ Element.toggle('eventControls')};
             $('eventCancelButtonTwo').onclick = function(){ Element.toggle('eventControls')};
-            var x = $('existingEventTags');
-            var e = $('eventTags');
             populateEventDeletion();
-            populateEventTags(x,e);
+            populateEventTags();
         }
 
         function populateEventDeletion(){
@@ -2180,6 +2178,10 @@ print "        var myEvents=$myEvents;\n";
         }
 
         function populateEventTags(div,input){
+            if ( div === undefined ){
+                var div   = $('existingEventTags');
+                var input = $('eventTags');
+            }
             div.innerHTML = '';
             var z = eventTags;
             if ( div.id != 'existingEventTags' ){
@@ -2237,7 +2239,6 @@ print "        var myEvents=$myEvents;\n";
             var x = $('eventTags').value.split(',');
             var changed = 0;
             x.each(function(tag){
-                // eventTags is an array of objects, which is why this doesn't work.
                 if ( ! eventTags.include(tag) ){
                     eventTags.push(tag);
                     changed = 1;
@@ -2266,9 +2267,13 @@ print "        var myEvents=$myEvents;\n";
                 myEvents = x.eventlist;
                 eventTags = x.eventtags;
                 populateEventDeletion();
-                var x = $('existingEventTags');
-                var e = $('eventTags');
-                populateEventTags(x,e);
+                populateEventTags();
+                $$('div.eventcontainer').each(function(div){
+                    me = div.id.sub(/eventcontrolcontainerfor-/,'');
+                    var zz = $('eventselectorfor-' + me);
+                    var aa = $('eventtagsfor-' + me );
+                    populateEventTags(aa,zz);
+                });
             }
         }
         function deleteEvent(){
@@ -2287,9 +2292,13 @@ print "        var myEvents=$myEvents;\n";
             myEvents = x.eventlist;
             eventTags = x.eventtags;
             populateEventDeletion();
-            var x = $('existingEventTags');
-            var e = $('eventTags');
-            populateEventTags(x,e);
+            populateEventTags();
+            $$('div.eventcontainer').each(function(div){
+                me = div.id.sub(/eventcontrolcontainerfor-/,'');
+                var zz = $('eventselectorfor-' + me);
+                var aa = $('eventtagsfor-' + me );
+                populateEventTags(aa,zz);
+            });
         }
         function genericTabber(a,which){
             a.each(function(tab){
