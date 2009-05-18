@@ -2144,6 +2144,7 @@ print "        var myEvents=$myEvents;\n";
             $('eventAddTab').onclick = function(){genericTabber(['addEvent','delEvent'],'addEvent')};
             $('eventDeleteTab').onclick = function(){genericTabber(['addEvent','delEvent'],'delEvent')};
             $('eventDeleteButton').onclick = function(){ deleteEvent(); };
+            $('eventClearButton').onclick = function(){ x=['eventTime','eventTitle','eventShortName','eventComment','eventTags']; x.each(function(e){$(e).value=''});};
             $('eventCancelButton').onclick = function(){ Element.toggle('eventControls')};
             $('eventCancelButtonTwo').onclick = function(){ Element.toggle('eventControls')};
             populateEventDeletion();
@@ -2948,22 +2949,23 @@ print "        var myEvents=$myEvents;\n";
     </div>
     <div id="addEvent">
         <label for="eventTime">Event Time</label><br>
-        <input type="text" class="eventInputs" id="eventTime"><br>
+        <input type="text" class="eventInputs" id="eventTime" value=""><span class="red">*</span><br>
         <label for="eventTitle">Event Title</label><br>
-        <input type="text" class="eventInputs" id="eventTitle"><br>
+        <input type="text" class="eventInputs" id="eventTitle" value=""><span class="red">*</span><br>
         <span>Color:</span><br>
         <input type="text" style="display:none" id="eventColor">
         <input type="text" style="display:none" id="eventColoropacity">
         <label for="eventColor" class="colorexample" id="eventColorExample"></label><br>
         <label for="eventShortName" title="Use this label in time inputs!">Event Short Name</label><br>
-        <input type="text" class="eventInputs" id="eventShortName" title="Use this label in time inputs!"><br>
+        <input type="text" class="eventInputs" id="eventShortName" value="" title="Use this label in time inputs!"><span class="red">*</span><br>
         <label for="eventComment">Event Comment</label><br>
-        <input type="text" class="eventInputs" id="eventComment"><br>
+        <input type="text" class="eventInputs" id="eventComment" value=""><br>
         <label for="eventTags">Event Tags</label><br>
-        <input type="text" class="eventInputs" id="eventTags"><br>
+        <input type="text" class="eventInputs" id="eventTags" value=""><br>
         <div id="existingEventTags"></div>
         <input type="button" value="Save" id="eventSaveButton">
         <input type="button" id="eventCancelButton" value="Cancel" class="floatright">
+        <input type="button" id="eventClearButton" value="Clear" class="floatright">
     </div>
     <div id="delEvent" style="display:none">
         <br>
