@@ -2149,6 +2149,14 @@ print "        var myEvents=$myEvents;\n";
             $('eventCancelButtonTwo').onclick = function(){ Element.toggle('eventControls')};
             populateEventDeletion();
             populateEventTags();
+            var s = myEvents.size();
+            var c = G.getColor(s);
+            var ec = $('eventColor');
+            ec.value = c.sub(/#/,'');
+            var eo = $('eventColoropacity');
+            eo.value = 'ff';
+            var ece = $('eventColorExample');
+            new Control.ColorPicker( ec, { 'swatch':ece, 'opacityField':eo });
         }
 
         function populateEventDeletion(){
@@ -2160,7 +2168,6 @@ print "        var myEvents=$myEvents;\n";
             eo.value = 'ff';
             var ece = $('eventColorExample');
             ece.style.backgroundColor = c;
-            new Control.ColorPicker( ec, { 'swatch':ece, 'opacityField':eo });
 
             var c = $('delEventList');
             c.innerHTML = '';
@@ -2248,12 +2255,12 @@ print "        var myEvents=$myEvents;\n";
             if ( changed == 1 ){
                 populateEventTags();
             }
-            if ( title == '' ){
-                alert("Title is required.");
-                return;
-            }
             if ( time == '' ){
                 alert("no timey, no savey");
+                return;
+            }
+            if ( title == '' ){
+                alert("Title is required.");
                 return;
             }
             if ( shorty == '' ){
