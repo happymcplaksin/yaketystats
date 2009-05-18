@@ -52,6 +52,7 @@ if ( ! is_writable("graphs") ){
     exit;
 }
 
+/*
 if ( ! file_exists("$webdir/events.db") ){
     $sql = "CREATE TABLE events ( id INTEGER PRIMARY KEY, edate INTEGER, title TEXT, comment TEXT, user TEXT, color TEXT, shortname TEXT )";
     $dbcs = 'sqlite:'.$webdir.'/events.db';
@@ -64,6 +65,7 @@ if ( ! file_exists("$webdir/events.db") ){
     $sth = $db->prepare($sql);
     $sth->execute();
 }
+ */
 
 error_reporting(0);
 
@@ -115,7 +117,7 @@ class Graph {
         $this->comments[] = "' ";
 
         $this->comments[] = "'COMMENT:\\n' ";
-        $this->comments[] = "'COMMENT:            Time shown\\: ";
+        $this->comments[] = "'COMMENT:      Aprox Time shown\\: ";
         $this->comments[] = $this->secToEng($this->paths->end - $this->paths->start) . "' ";
 
         $this->comments[] = "'COMMENT:\\n' ";
@@ -248,38 +250,55 @@ class Graph {
     }
 
     public function eventArgs(){
-        global $colors,$dateformat,$webdir;
-        $user  = $_SERVER['PHP_AUTH_USER'];
+        global $dateformat,$webdir;
+        $user   = $_SERVER['PHP_AUTH_USER'];
         $dbfile = $webdir.'/events.db';
-        $dbcs = 'sqlite:'.$dbfile;
+        $dbcs   = 'sqlite:'.$dbfile;
+        $join   = '';
+        $a      = array();
         if ( file_exists($dbfile) ){
-            switch ( $this->paths->events ){
-                case "none":
-                    return;
-                case "my":
-                    $where = " AND user='$user'";
-                    break;
-                case "other":
-                    $where = " AND user!='$user'";
-                    break;
-                default:
-                    $where = '';
-            }
             try {
                 $db = new PDO($dbcs);
             }catch (PDOException $e){
                 return;
             }
+            switch ( $this->paths->events ){
+                case 'none':
+                case '':
+                    return;
+                case "all":
+                    $where = '';
+                    break;
+                case "my":
+                    $where = " AND user='$user'";
+                    break;
+                default:
+                    $in    = split(',',$this->paths->events);
+                    foreach ($in as $i){
+                        $x[] = '"'.$i.'"';
+                    }
+                    $in    = join(',',$x);
+                    $join  = ' JOIN t2e ON events.id = t2e.eventid join tags ON tags.id = t2e.tagid ';
+                    $where = ' AND tags.tag in ('.$in.') ';
+            }
             $s   = $this->paths->start;
             $e   = $this->paths->end;
-            $sql = 'SELECT * FROM events WHERE edate > ' . $s . ' AND edate < ' . $e  . $where . ' ORDER BY edate';
+            $sql = 'SELECT events.id,edate,title,comment,color,shortname FROM events ';
+            $sql.= $join . ' WHERE edate > ' . $s . ' AND edate < ' . $e  . $where . ' ORDER BY edate';
+            $this->debugLog('sql',$sql);
             $l   = 0;
+            $stupid = array();
             foreach ( $db->query($sql) as $q ){
-                $sl = strlen($q['title']);
-                if ( $sl > $l ){
-                    $l = $sl;
+                if ( in_array($q['id'],$stupid) ){
+                    continue;
+                }else{
+                    $stupid[] = $q['id'];
+                    $sn = strlen($q['title']);
+                    if ( $sn > $l ){
+                        $l = $sn;
+                    }
+                    $a[] = $q;
                 }
-                $a[] = $q;
             }
             if ( count($a) > 0 ){
                 $this->events[] = " 'COMMENT: \\n' ";
@@ -288,19 +307,20 @@ class Graph {
             foreach ( $a as $q ){
                 $sn = '';
                 if ( ! empty($q['shortname']) ){
-                    $sn = ' [' . addcslashes($q['shortname'],':') . ']';
+                    $sn = ' <small>[' . addcslashes($q['shortname'],':') . ']</small>';
                 }
                 //$this->debugLog('sn',$sn, $q);
-                $c = array_shift($colors);
+                $c = $q['color'];
                 if ( ! $c ){
                     $c = '#ff0000';
                 }
-                $es = ' VRULE:' . $q['edate'] . "$c:'". str_pad(addcslashes($q['title'],':'),$l) .' '. $this->dateEscape($dateformat, $q['edate']) ."$sn\\n':dashes ";
+                $es = ' VRULE:' . $q['edate'] . "$c:'". str_pad(addcslashes($q['title'],':'),$l) ." $sn\\n':dashes ";
                 $this->events[] = $es;
+                $this->events[] = " 'COMMENT:  " . $this->dateEscape($dateformat, $q['edate']) ." \\n' ";
                 if ( ! empty($q['comment']) ){
                     $x = addcslashes($q['comment'],"\n\t:");
                     $x = preg_replace("/['\"]/",'',$x);
-                    $this->events[] = " 'COMMENT:   " . $x ."' ";
+                    $this->events[] = " 'COMMENT:  " . $x ."' ";
                     $this->events[] = " 'COMMENT: \\n' ";
                 }
             }
@@ -532,6 +552,9 @@ class Graph {
     }
 
     public function secToEng($d_sec){
+$odsec = $d_sec;
+        $d['years'] = floor($d_sec/31536000);
+        $d_sec     -= $d['years'] * 31536000;
         $d['weeks'] = floor($d_sec/604800);
         $d_sec     -= $d['weeks'] * 604800;
         $d['days']  = floor($d_sec/86400);
@@ -776,7 +799,22 @@ function deleteEvent($ids){
         foreach ($ids as $id){
             $sth->execute(array($id));
         }
-        return eventList();
+        $sql = 'DELETE FROM t2e WHERE eventid=?';
+        $sth = $db->prepare($sql);
+        foreach ($ids as $id){
+            $sth->execute(array($id));
+        }
+        $sql = 'SELECT tags.id FROM tags LEFT OUTER JOIN t2e ON t2e.tagid = tags.id WHERE eventid IS NULL';
+        $res = $db->query($sql);
+        $orphaned = join( ',' , $res->fetchAll(PDO::FETCH_COLUMN, 0));
+        if ( ! empty($orphaned) ){
+            $dql = 'DELETE FROM tags WHERE id IN ('. $orphaned .')';
+            $db->query($dql);
+        }
+
+        $eventlist = eventList();
+        $eventtags = eventTagList();
+        return '{ "eventlist":'.$eventlist.', "eventtags":'.$eventtags.'}';
     }
 }
 
@@ -885,6 +923,26 @@ function eventLookup($shortname){
         return false;
     }
     return $o['edate'];
+}
+
+function eventTaglist(){
+    global $webdir;
+    $json  = new Services_JSON();
+    if ( file_exists($webdir.'/events.db') ){
+        $stupid = 'sqlite:'.$webdir.'/events.db';
+        try {
+            $db = new PDO($stupid);
+        }catch (PDOException $e){
+            echo "Couldn't open your events DB\n";
+        }
+        $sql = 'SELECT * FROM tags ORDER BY tag';
+        //$s = '';
+        $out = array();
+        foreach ( $db->query($sql) as $q ){
+            $out[] = $q['tag'];
+        }
+        return $json->encode($out);
+    }
 }
 
 function findMatches($s,$graphpathbreaks,$gll){
@@ -1262,7 +1320,7 @@ function recurseForMassAdd($path,$limit,$out){
     return $out;
 }
 
-function saveEvent($time,$title,$comment,$color='#ff0000',$shortname=NULL){
+function saveEvent($time,$title,$comment,$color,$shortname='',$tags){
     global $webdir;
     $json = new Services_JSON();
     $time = mystrtotime($time,'event');
@@ -1276,16 +1334,45 @@ function saveEvent($time,$title,$comment,$color='#ff0000',$shortname=NULL){
     }catch (PDOException $e){
         return;
     }
+    // save the event
     //sqlite> insert into events values (NULL, 1239717600, 'EMERGENCY LOAD TEST2','a 2nd comment','sam','#ffffff','elt2');
     $sql = 'INSERT INTO events VALUES (NULL,?,?,?,?,?,?)';
     $sth = $db->prepare($sql);
     $x   = array($time,$title,$comment,$user,$color,$shortname);
-    $sth->execute($x);
-    if ( $sth ){
-        return eventList(); //already json
-    }else{
-        return $json->encode(array('ERROR','EMERGENCY LOAD TEST (something bad happened)'));
+    $ret = $sth->execute($x);
+    if ( !$ret ){
+        return $json->encode(array('ERROR','EMERGENCY LOAD TEST (something bad happened... possibly a duplicate shortname?)'));
     }
+    $eventid = $db->lastInsertId();
+    // maybe save each tag
+    $tags = split(',',$tags);
+    foreach ($tags as $tag){
+        $tag = trim($tag);
+        $sql = 'INSERT INTO tags VALUES (NULL,?)';
+        $sth = $db->prepare($sql);
+        $x   = array($tag);
+        $ret = $sth->execute($x);
+        if ( $ret ){
+            $ids[] = $db->lastInsertId();
+        }else{
+            $sql = 'SELECT id FROM tags WHERE tag = ?';
+            $sth = $db->prepare($sql);
+            $ret = $sth->execute($x);
+            if ( $ret ){
+                $zz = $sth->fetch();
+                $ids[] = $zz[0];
+            }
+        }
+    }
+    $sql = 'INSERT INTO t2e VALUES(?,?)';
+    foreach ($ids as $id){
+        $sth = $db->prepare($sql);
+        $x = array($id,$eventid);
+        $ret = $sth->execute($x);
+    }
+    $eventlist = eventList();
+    $eventtags = eventTagList();
+    return '{ "eventlist":'.$eventlist.', "eventtags":'.$eventtags.'}';
 }
 
 function saveUserPrefs($str){
@@ -1529,6 +1616,7 @@ sajax_handle_client_request();
     var debuglog = 0;
     var saveplct = 0;
     var alls     = 0;
+    var eventTags=<?php print eventTaglist(); ?>;
 
     function debugLogTog(){
         if ( $F('debuglog') == 'on' ){
@@ -2058,10 +2146,23 @@ print "        var myEvents=$myEvents;\n";
             $('eventDeleteButton').onclick = function(){ deleteEvent(); };
             $('eventCancelButton').onclick = function(){ Element.toggle('eventControls')};
             $('eventCancelButtonTwo').onclick = function(){ Element.toggle('eventControls')};
+            var x = $('existingEventTags');
+            var e = $('eventTags');
             populateEventDeletion();
+            populateEventTags(x,e);
         }
 
         function populateEventDeletion(){
+            var s = eventTags.size();
+            var c = G.getColor(s);
+            var ec = $('eventColor');
+            ec.value = c.sub(/#/,'');
+            var eo = $('eventColoropacity');
+            eo.value = 'ff';
+            var ece = $('eventColorExample');
+            ece.style.backgroundColor = c;
+            new Control.ColorPicker( ec, { 'swatch':ece, 'opacityField':eo });
+
             var c = $('delEventList');
             c.innerHTML = '';
             myEvents.each(function(e){
@@ -2078,21 +2179,83 @@ print "        var myEvents=$myEvents;\n";
             });
         }
 
+        function populateEventTags(div,input){
+            div.innerHTML = '';
+            var z = eventTags;
+            if ( div.id != 'existingEventTags' ){
+                z = ['all','none','my'].concat(eventTags);
+            }
+            var x = z.size();
+            var y = 0;
+            z.each(function(tag){
+                y++;
+                var span = document.createElement('span');
+                span.className = 'eventTagWords';
+                var txt  = document.createTextNode(tag);
+                span.appendChild(txt);
+                div.appendChild(span);
+                if ( y < x ){
+                    var txt  = document.createTextNode(', ');
+                    div.appendChild(txt);
+                }
+            Event.observe(span,'click',function(){toggleEventTag(tag,input)});
+            });
+        }
+        function toggleEventTag(tag,ele){
+            var solos = ['all','none','my']
+            if ( ele.value == '' || ele.value == 'all' || solos.include(tag) ){
+                ele.value = tag;
+            }else{
+                // look to see if it's already there and deal w/ special cases
+                var x = ele.value.split(',');
+                if ( x.include(tag) ){
+                    var v = 0;
+                }else{
+                    ele.value = ele.value + ',' + tag;
+                    var v = 1;
+                    var x = ele.value.split(',');
+                }
+                var y = x.reject(function(e){
+                    if ( v == 0 ){
+                        return ( e == tag || solos.include(e) )
+                    }else{
+                        return ( solos.include(e) )
+                    }
+                });
+                ele.value = y.sort();
+            }
+            ele.fire('dingus:change');
+            ele.focus();
+        }
         function saveEvent(){
-            var t = $('eventTime').value;
-            var c = $('eventComment').value;
+            var time = $('eventTime').value;
+            var comment = $('eventComment').value;
             var title = $('eventTitle').value;
             var shorty = $('eventShortName').value;
+            var tags = $('eventTags').value;
+            var color = $('eventColor').value;
+            var x = $('eventTags').value.split(',');
+            var changed = 0;
+            x.each(function(tag){
+                // eventTags is an array of objects, which is why this doesn't work.
+                if ( ! eventTags.include(tag) ){
+                    eventTags.push(tag);
+                    changed = 1;
+                }
+            });
+            if ( changed == 1 ){
+                populateEventTags();
+            }
             if ( title == '' ){
                 alert("Title is required.");
                 return;
             }
-            if ( t == '' ){
+            if ( time == '' ){
                 alert("no timey, no savey");
                 return;
             }
             Element.hide('eventControls');
-            x_saveEvent(t,title,c,'#ff0000',shorty,saveEventCB);
+            x_saveEvent(time,title,comment,'#'+ color,shorty,tags,saveEventCB);
         }
         function saveEventCB(s){
             x = s.evalJSON();
@@ -2100,8 +2263,12 @@ print "        var myEvents=$myEvents;\n";
                 handleError(x[1]);
             }else{
                 handleError('The event OF A LIFETIME.');
-                myEvents=x;
+                myEvents = x.eventlist;
+                eventTags = x.eventtags;
                 populateEventDeletion();
+                var x = $('existingEventTags');
+                var e = $('eventTags');
+                populateEventTags(x,e);
             }
         }
         function deleteEvent(){
@@ -2116,8 +2283,13 @@ print "        var myEvents=$myEvents;\n";
             x_deleteEvent(a,deleteEventCB);
         }
         function deleteEventCB(s){
-            myEvents=s.evalJSON();
+            x = s.evalJSON();
+            myEvents = x.eventlist;
+            eventTags = x.eventtags;
             populateEventDeletion();
+            var x = $('existingEventTags');
+            var e = $('eventTags');
+            populateEventTags(x,e);
         }
         function genericTabber(a,which){
             a.each(function(tab){
@@ -2479,7 +2651,7 @@ print "        var myEvents=$myEvents;\n";
             G.closeAllGraphs(0);
         }
 
-        return{ 'navVis': navVis, 'initialPaths': initialPaths, 'init': init, 'toggleControl':toggleControl, 'savePlaylist':savePlaylist, 'loadPlaylist':loadPlaylist, 'handleError':handleError, 'newPlSub':newPlSub, 'help':help, 'hidehelp':hidehelp ,'findMatches':findMatches,'regexSavePlaylist':regexSavePlaylist, verify:verify, removeErrors:removeErrors, mergePlaylists:mergePlaylists, saveEvent:saveEvent, myEvents:myEvents}
+        return{ 'navVis': navVis, 'initialPaths': initialPaths, 'init': init, 'toggleControl':toggleControl, 'savePlaylist':savePlaylist, 'loadPlaylist':loadPlaylist, 'handleError':handleError, 'newPlSub':newPlSub, 'help':help, 'hidehelp':hidehelp ,'findMatches':findMatches,'regexSavePlaylist':regexSavePlaylist, verify:verify, removeErrors:removeErrors, mergePlaylists:mergePlaylists, saveEvent:saveEvent, myEvents:myEvents, populateEventTags:populateEventTags}
     })();
 
 
@@ -2757,6 +2929,7 @@ print "        var myEvents=$myEvents;\n";
 </div>
 
 <div id="eventControls" class="help" style="display: none">
+    <h1>Event-o-matic</h1>
     <div id="eventTabsContainer">
         <ul id="eventTabs">
             <li id="eventAddTab"><span>Add</span></li>
@@ -2766,13 +2939,20 @@ print "        var myEvents=$myEvents;\n";
     </div>
     <div id="addEvent">
         <label for="eventTime">Event Time</label><br>
-        <input type="text" size="40" id="eventTime"><br>
-        <label for="eventShortName" title="Use this label in time inputs!">Event Short Name</label><br>
-        <input type="text" size="40" id="eventShortName" title="Use this label in time inputs!"><br>
+        <input type="text" class="eventInputs" id="eventTime"><br>
         <label for="eventTitle">Event Title</label><br>
-        <input type="text" size="40" id="eventTitle"><br>
+        <input type="text" class="eventInputs" id="eventTitle"><br>
+        <span>Color:</span><br>
+        <input type="text" style="display:none" id="eventColor">
+        <input type="text" style="display:none" id="eventColoropacity">
+        <label for="eventColor" class="colorexample" id="eventColorExample"></label><br>
+        <label for="eventShortName" title="Use this label in time inputs!">Event Short Name</label><br>
+        <input type="text" class="eventInputs" id="eventShortName" title="Use this label in time inputs!"><br>
         <label for="eventComment">Event Comment</label><br>
-        <input type="text" size="40" id="eventComment"><br>
+        <input type="text" class="eventInputs" id="eventComment"><br>
+        <label for="eventTags">Event Tags</label><br>
+        <input type="text" class="eventInputs" id="eventTags"><br>
+        <div id="existingEventTags"></div>
         <input type="button" value="Save" id="eventSaveButton">
         <input type="button" id="eventCancelButton" value="Cancel" class="floatright">
     </div>

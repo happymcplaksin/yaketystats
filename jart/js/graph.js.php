@@ -410,8 +410,12 @@ print $out;
         G.graphs[mygraph].canvas = color.replace(/#/,'');
         createGraphImage(mygraph,0);
     }
-    function getColor(){
-        var nextcolor = G.graphs[G.cg].nextcolor;
+    function getColor(noglobal){
+        if ( noglobal === undefined ){
+            var nextcolor = G.graphs[G.cg].nextcolor;
+        }else{
+            var nextcolor = noglobal;
+        }
         if ( nextcolor < 100 ){
             var mycolor   = colors[nextcolor];
         }else if ( nextcolor < 355 ){
@@ -442,10 +446,12 @@ print $out;
                 pi = '0' + pi;
             }
             var mycolor = '#' + '00' + '00' + pi;
-        }else if ( nextcolor < 1120 ){
+        }else if ( nextcolor > 1120 ){
             var mycolor = '#dddddd';
         }
-        G.graphs[G.cg].nextcolor++;
+        if ( noglobal === undefined ){
+            G.graphs[G.cg].nextcolor++;
+        }
         return mycolor;
     }
     function closeGraph(me){
@@ -1306,29 +1312,23 @@ print $out;
         var txt            = document.createTextNode('Show:');
         label.appendChild(txt);
         eventcontainer.appendChild(label);
-        var sel            = document.createElement('select');
-        var option         = document.createElement('option');
-        option.value       = 'all';
-        var txt            = document.createTextNode('All Events');
-        option.appendChild(txt);
-        sel.appendChild(option);
-        var option         = document.createElement('option');
-        option.value       = 'none';
-        var txt            = document.createTextNode('No Events');
-        option.appendChild(txt);
-        sel.appendChild(option);
-        var option         = document.createElement('option');
-        option.value       = 'my';
-        var txt            = document.createTextNode('My Events');
-        option.appendChild(txt);
-        sel.appendChild(option);
-        var option         = document.createElement('option');
-        option.value       = 'other';
-        var txt            = document.createTextNode('Not My Events');
-        option.appendChild(txt);
-        sel.appendChild(option);
-        Event.observe(sel,'change',function(e){limitEvents(me,e)}.bindAsEventListener());
-        eventcontainer.appendChild(sel);
+        var inp            = document.createElement('input');
+        inp.id             = 'eventselectorfor-' + me;
+        inp.type           = 'text';
+        if ( G.graphs[me].events === undefined ){
+            inp.value          = '';
+        }else{
+            inp.value          = G.graphs[me].events;
+        }
+        inp.size           = '30';
+        Event.observe(inp,'change',function(e){limitEvents(me,e)}.bindAsEventListener());
+        Event.observe(inp,'dingus:change',function(e){limitEvents(me,e)}.bindAsEventListener());
+        eventcontainer.appendChild(inp);
+        var etags          = document.createElement('div');
+        etags.id           = 'eventtagsfor-' + me;
+        etags.className    = 'graphEventTags';
+        eventcontainer.appendChild(etags);
+        dsPicker.populateEventTags(etags,inp);
         div.appendChild(eventcontainer);
 
         contain.appendChild(div);
@@ -2057,6 +2057,6 @@ print $out;
     }
     var colors = <?php $json = new Services_JSON(); echo $json->encode($colors) ?>;
     return {
-        'init': init, 'drawGraph': drawGraph, 'addRrdToGraph': addRrdToGraph, 'cg': cg, 'graphs': graphs, 'selColor': selColor, 'selOpacity': selOpacity, 'addGraph': addGraph, 'defaultpathlimit': defaultpathlimit, 'closeAllGraphs': closeAllGraphs, 'drawAllGraphs': drawAllGraphs, 'setAllGraphTimes':setAllGraphTimes, 'autoRefreshReal':autoRefreshReal, 'createAllGraphImages':createAllGraphImages, 'createGraphImage':createGraphImage, 'autoRefreshSetup':autoRefreshSetup, setAllGraphSizes:setAllGraphSizes, 'tool':tool, zoompct:zoompct, resetSizeForAll:resetSizeForAll, 'confirmcloseallgraphs':confirmcloseallgraphs, 'confirmdeleteplaylist':confirmdeleteplaylist, 'defaultstarttime':defaultstarttime, 'defaultendtime':defaultendtime, 'defaultsize':defaultsize, 'defaultCanvasColor':defaultCanvasColor, 'confirmoverwriteplaylist':confirmoverwriteplaylist, showMergeCheckboxes:showMergeCheckboxes
+        'init': init, 'drawGraph': drawGraph, 'addRrdToGraph': addRrdToGraph, 'cg': cg, 'graphs': graphs, 'selColor': selColor, 'selOpacity': selOpacity, 'addGraph': addGraph, 'defaultpathlimit': defaultpathlimit, 'closeAllGraphs': closeAllGraphs, 'drawAllGraphs': drawAllGraphs, 'setAllGraphTimes':setAllGraphTimes, 'autoRefreshReal':autoRefreshReal, 'createAllGraphImages':createAllGraphImages, 'createGraphImage':createGraphImage, 'autoRefreshSetup':autoRefreshSetup, setAllGraphSizes:setAllGraphSizes, 'tool':tool, zoompct:zoompct, resetSizeForAll:resetSizeForAll, 'confirmcloseallgraphs':confirmcloseallgraphs, 'confirmdeleteplaylist':confirmdeleteplaylist, 'defaultstarttime':defaultstarttime, 'defaultendtime':defaultendtime, 'defaultsize':defaultsize, 'defaultCanvasColor':defaultCanvasColor, 'confirmoverwriteplaylist':confirmoverwriteplaylist, showMergeCheckboxes:showMergeCheckboxes, getColor:getColor
     }
 })();
