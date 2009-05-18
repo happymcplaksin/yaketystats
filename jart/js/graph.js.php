@@ -196,6 +196,12 @@ print $out;
             case "allgraphend":
                 G.setAllGraphTimes(0,0);
                 break;
+            case "eventTime":
+            case "eventTitle":
+            case "eventShortName":
+            case "eventComment":
+            case "eventTags":
+                dsPicker.saveEvent();
             case "mergedplaylistname":
                 dsPicker.mergePlaylists();
                 break;
