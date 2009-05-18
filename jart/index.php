@@ -2153,7 +2153,7 @@ print "        var myEvents=$myEvents;\n";
         }
 
         function populateEventDeletion(){
-            var s = eventTags.size();
+            var s = myEvents.size();
             var c = G.getColor(s);
             var ec = $('eventColor');
             ec.value = c.sub(/#/,'');
