@@ -2256,6 +2256,10 @@ print "        var myEvents=$myEvents;\n";
                 alert("no timey, no savey");
                 return;
             }
+            if ( shorty == '' ){
+                alert("You have to have a short-name, sorry.");
+                return;
+            }
             Element.hide('eventControls');
             x_saveEvent(time,title,comment,'#'+ color,shorty,tags,saveEventCB);
         }
