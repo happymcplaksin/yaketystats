@@ -52,9 +52,10 @@ if ( ! is_writable("graphs") ){
     exit;
 }
 
-/*
 if ( ! file_exists("$webdir/events.db") ){
-    $sql = "CREATE TABLE events ( id INTEGER PRIMARY KEY, edate INTEGER, title TEXT, comment TEXT, user TEXT, color TEXT, shortname TEXT )";
+    $sql = "CREATE TABLE events ( id INTEGER PRIMARY KEY, edate INTEGER, title TEXT, comment TEXT, user TEXT, color TEXT , shortname TEXT UNIQUE);";
+    $sql2 = "CREATE TABLE t2e ( tagid INTEGER, eventid INTEGER);";
+    $sql3 = "CREATE TABLE tags ( id INTEGER PRIMARY KEY, tag TEXT NOT NULL UNIQUE );";
     $dbcs = 'sqlite:'.$webdir.'/events.db';
     try {
         $db = new PDO($dbcs);
@@ -64,8 +65,11 @@ if ( ! file_exists("$webdir/events.db") ){
     }
     $sth = $db->prepare($sql);
     $sth->execute();
+    $sth = $db->prepare($sql2);
+    $sth->execute();
+    $sth = $db->prepare($sql3);
+    $sth->execute();
 }
- */
 
 error_reporting(0);
 
@@ -273,7 +277,7 @@ class Graph {
                     $where = " AND user='$user'";
                     break;
                 default:
-                    $in    = split(',',$this->paths->events);
+                    $in    = split(' ',$this->paths->events);
                     foreach ($in as $i){
                         $x[] = '"'.$i.'"';
                     }
@@ -1345,7 +1349,7 @@ function saveEvent($time,$title,$comment,$color,$shortname='',$tags){
     }
     $eventid = $db->lastInsertId();
     // maybe save each tag
-    $tags = split(',',$tags);
+    $tags = split(' ',$tags);
     foreach ($tags as $tag){
         $tag = trim($tag);
         $sql = 'INSERT INTO tags VALUES (NULL,?)';
@@ -2217,13 +2221,13 @@ print "        var myEvents=$myEvents;\n";
                 ele.value = tag;
             }else{
                 // look to see if it's already there and deal w/ special cases
-                var x = ele.value.split(',');
+                var x = ele.value.split(' ');
                 if ( x.include(tag) ){
                     var v = 0;
                 }else{
-                    ele.value = ele.value + ',' + tag;
+                    ele.value = ele.value + ' ' + tag;
                     var v = 1;
-                    var x = ele.value.split(',');
+                    var x = ele.value.split(' ');
                 }
                 var y = x.reject(function(e){
                     if ( v == 0 ){
@@ -2232,7 +2236,7 @@ print "        var myEvents=$myEvents;\n";
                         return ( solos.include(e) )
                     }
                 });
-                ele.value = y.sort();
+                ele.value = y.sort().join(' ');
             }
             ele.fire('dingus:change');
             ele.focus();
@@ -2244,9 +2248,9 @@ print "        var myEvents=$myEvents;\n";
             var shorty = $('eventShortName').value;
             var tags = $('eventTags').value;
             var color = $('eventColor').value;
-            var x = $('eventTags').value.split(',');
+            var x = $('eventTags').value;
             var changed = 0;
-            x.each(function(tag){
+            x.split(' ').each(function(tag){
                 if ( ! eventTags.include(tag) ){
                     eventTags.push(tag);
                     changed = 1;
