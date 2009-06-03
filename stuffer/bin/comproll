@@ -32,6 +32,10 @@ do
     if [ "$files" != "" ]
     then
       tar cf $file $files && gzip $file && rm -f $files
+      if [[ $? != 0 ]]
+      then
+	echo "Problem with $hostdir"
+      fi
     fi
   fi
 done
