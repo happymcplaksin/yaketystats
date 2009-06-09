@@ -110,7 +110,6 @@ sub doit {
   @stats = qw(ifSpeed ifInOctets ifInUcastPkts ifInNUcastPkts ifInDiscards ifInErrors ifOutOctets ifOutUcastPkts ifOutNUcastPkts ifOutDiscards ifOutErrors);
 
   foreach $host (@{ $econfig{'hosts'} }) {
-    print "host = $host\n";
     ($session, $error) = Net::SNMP->session (
 					     -hostname => $host,
 					     -version => '2c',
