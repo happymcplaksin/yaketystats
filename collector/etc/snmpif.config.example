@@ -1,0 +1,4 @@
+@{ $econfig{'hosts'} } = qw (
+			      'switch1.example.com'
+			      'switch2.example.com'
+			   );
