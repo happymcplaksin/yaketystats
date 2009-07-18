@@ -254,7 +254,7 @@ class Graph {
     }
 
     public function eventArgs(){
-        global $dateformat,$webdir;
+        global $dateformat,$webdir,$colors;
         $user   = $_SERVER['PHP_AUTH_USER'];
         $dbfile = $webdir.'/events.db';
         $dbcs   = 'sqlite:'.$dbfile;
@@ -314,7 +314,8 @@ class Graph {
                     $sn = ' <small>[' . addcslashes($q['shortname'],':') . ']</small>';
                 }
                 //$this->debugLog('sn',$sn, $q);
-                $c = $q['color'];
+                //$c = $q['color'];
+                $c = array_shift($colors);
                 if ( ! $c ){
                     $c = '#ff0000';
                 }
@@ -1324,7 +1325,7 @@ function recurseForMassAdd($path,$limit,$out){
     return $out;
 }
 
-function saveEvent($time,$title,$comment,$color,$shortname='',$tags){
+function saveEvent($time,$title,$comment,$color='',$shortname='',$tags){
     global $webdir;
     $json = new Services_JSON();
     $time = mystrtotime($time,'event');
@@ -1352,6 +1353,9 @@ function saveEvent($time,$title,$comment,$color,$shortname='',$tags){
     $tags = split(' ',$tags);
     foreach ($tags as $tag){
         $tag = trim($tag);
+        if ( empty($tag) ){
+            continue;
+        }
         $sql = 'INSERT INTO tags VALUES (NULL,?)';
         $sth = $db->prepare($sql);
         $x   = array($tag);
@@ -2155,23 +2159,23 @@ print "        var myEvents=$myEvents;\n";
             populateEventTags();
             var s = myEvents.size();
             var c = G.getColor(s);
-            var ec = $('eventColor');
-            ec.value = c.sub(/#/,'');
-            var eo = $('eventColoropacity');
-            eo.value = 'ff';
-            var ece = $('eventColorExample');
-            new Control.ColorPicker( ec, { 'swatch':ece, 'opacityField':eo });
+            //var ec = $('eventColor');
+            //ec.value = c.sub(/#/,'');
+            //var eo = $('eventColoropacity');
+            //eo.value = 'ff';
+            //var ece = $('eventColorExample');
+            //new Control.ColorPicker( ec, { 'swatch':ece, 'opacityField':eo });
         }
 
         function populateEventDeletion(){
             var s = myEvents.size();
             var c = G.getColor(s);
-            var ec = $('eventColor');
-            ec.value = c.sub(/#/,'');
-            var eo = $('eventColoropacity');
-            eo.value = 'ff';
-            var ece = $('eventColorExample');
-            ece.style.backgroundColor = c;
+            //var ec = $('eventColor');
+            //ec.value = c.sub(/#/,'');
+            //var eo = $('eventColoropacity');
+            //eo.value = 'ff';
+            //var ece = $('eventColorExample');
+            //ece.style.backgroundColor = c;
 
             var c = $('delEventList');
             c.innerHTML = '';
@@ -2247,7 +2251,8 @@ print "        var myEvents=$myEvents;\n";
             var title = $('eventTitle').value;
             var shorty = $('eventShortName').value;
             var tags = $('eventTags').value;
-            var color = $('eventColor').value;
+            //var color = $('eventColor').value;
+            var color = '';
             var x = $('eventTags').value;
             var changed = 0;
             x.split(' ').each(function(tag){
@@ -2967,10 +2972,10 @@ print "        var myEvents=$myEvents;\n";
         <input type="text" class="eventInputs" id="eventTime" value=""><span class="red">*</span><br>
         <label for="eventTitle">Event Title</label><br>
         <input type="text" class="eventInputs" id="eventTitle" value=""><span class="red">*</span><br>
-        <span>Color:</span><br>
+        <span   style="display:none">Color:</span><br   style="display:none">
         <input type="text" style="display:none" id="eventColor">
-        <input type="text" style="display:none" id="eventColoropacity">
-        <label for="eventColor" class="colorexample" id="eventColorExample"></label><br>
+        <input type="text" style="display:none" id="eventColoropacity"   style="display:none">
+        <label for="eventColor" class="colorexample" id="eventColorExample"   style="display:none"></label><br   style="display:none">
         <label for="eventShortName" title="Use this label in time inputs!">Event Short Name</label><br>
         <input type="text" class="eventInputs" id="eventShortName" value="" title="Use this label in time inputs!"><span class="red">*</span><br>
         <label for="eventComment">Event Comment</label><br>
