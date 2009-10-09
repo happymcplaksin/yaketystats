@@ -45,7 +45,7 @@ $main::g_host = get_hostname ();
 $g_collector = 'esx';
 default_plugin_opts ();
 
-my (@data, $line);
+my (@data, $line, @return);
 
 # PUT YOUR LOCAL VARIABLES HERE!
 our %econfig;
@@ -579,7 +579,7 @@ if ( !@ARGV || (! defined ($ARGV[1]) && $ARGV[1] eq "calledfromcollect") ) {
 }
 
 sub doit {
-  my ($status, @data, $time, @return);
+  my ($status, @data, $time);
   my (%esx_hosts, $view, $esx_view, $vm_view, $perfmgr_view, %vms, %esx,
       $host, @metrics);
 
@@ -669,7 +669,7 @@ sub perfq {
         $value *= $perf{$id}{'mult'};
       }
       my $path = $perf{$id}{'path'};
-      print "p=/${host}/esx/perfmgr/${path}${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=${value}\n";
+      push (@return, "p=/${host}/esx/perfmgr/${path}${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=${value}\n");
     }
   }
 }
