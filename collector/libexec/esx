@@ -631,7 +631,7 @@ sub doit {
     push (@return, "p=/${host}/esx/memory/usage${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=" . $view->summary->quickStats->overallMemoryUsage * $megabyte. "\n");
   }
   foreach $view (@$vm_view) {
-    $host = $view->summary->guest->hostName;
+    $host = $view->summary->config->name;
     perfq ($perfmgr_view, $view, $host, $time, @metrics);
     push (@return, "p=/${host}/esx/memory/host${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=" . $view->summary->quickStats->hostMemoryUsage * $megabyte . "\n");
     push (@return, "p=/${host}/esx/memory/guest${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=" . $view->summary->quickStats->guestMemoryUsage * $megabyte . "\n");
