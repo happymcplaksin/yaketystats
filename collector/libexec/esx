@@ -665,11 +665,13 @@ sub perfq {
       my $id = $val->id->counterId;
       my $value = $val->value;
       $value =~ s/,.*//;
-      if ( defined ($perf{$id}{'mult'}) ) {
-        $value *= $perf{$id}{'mult'};
+      if ( $value >= 0 ) {
+        if ( defined ($perf{$id}{'mult'}) ) {
+          $value *= $perf{$id}{'mult'};
+        }
+        my $path = $perf{$id}{'path'};
+        push (@return, "p=/${host}/esx/perfmgr/${path}${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=${value}\n");
       }
-      my $path = $perf{$id}{'path'};
-      push (@return, "p=/${host}/esx/perfmgr/${path}${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=${value}\n");
     }
   }
 }
