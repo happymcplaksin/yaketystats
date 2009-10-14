@@ -646,7 +646,7 @@ sub doit {
 
   # Set up metrics to be collected from perfmgr later by perfq
   foreach my $i (keys (%perf)) {
-    push (@metrics, PerfMetricId->new (counterId => $i, instance => ''));
+    push (@metrics, PerfMetricId->new (counterId => $i, instance => '*'));
   }
   @metrics = [@metrics];
 
