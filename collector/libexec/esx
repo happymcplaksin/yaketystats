@@ -581,7 +581,7 @@ if ( !@ARGV || (! defined ($ARGV[1]) && $ARGV[1] eq "calledfromcollect") ) {
 sub doit {
   my ($status, @data, $time);
   my (%esx_hosts, $view, $esx_view, $vm_view, $perfmgr_view, %vms, %esx,
-      $host, @metrics);
+      $host, @metrics, %ds_stats, $ds, $dc_view);
 
   eval_file ("$ENV{HOME}/etc/esx.config");
 
@@ -595,6 +595,34 @@ sub doit {
   Util::connect();
   $esx_view = Vim::find_entity_views(view_type => 'HostSystem');
   $vm_view = Vim::find_entity_views(view_type => 'VirtualMachine');
+
+  # Disk size and free
+  $dc_view = Vim::find_entity_views(view_type => 'Datacenter');
+  my (@a);
+  foreach my $dc (@$dc_view) {
+    if(defined $dc->datastore) {
+      @a = (@a, @{$dc->datastore});
+    }
+  }
+  my $datastores = Vim::get_views(mo_ref_array => \@a);
+  #print "HAPPY\n\n";
+  #print Data::Dumper->Dump ( [\$datastores], ['*datastores'] );
+  #exit;
+  my ($name, $size, $free);
+  foreach $ds (@$datastores) {
+    $name = $ds->summary->name;
+    $size = $ds->summary->capacity;
+    $free = $ds->summary->freeSpace;
+    # Use a hash in case of dupes
+    $ds_stats{$name}{'size'} = $size;
+    $ds_stats{$name}{'free'} = $free;
+  }
+  foreach $ds (sort (keys (%ds_stats))) {
+    push (@return, "p=/vc.adm.usg.edu/esx/disk/size/$ds${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$ds_stats{$ds}{size}\n");
+    push (@return, "p=/vc.adm.usg.edu/esx/disk/free/$ds${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$ds_stats{$ds}{free}\n");
+  }
+
+  # Perfmgr stats
   $perfmgr_view = Vim::get_view(mo_ref => Vim::get_service_content()->perfManager);
 
   ##  # Hi this is helpful (if it worked!) for creating the crazy $perf hash.
