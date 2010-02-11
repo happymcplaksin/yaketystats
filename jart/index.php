@@ -398,7 +398,7 @@ class Graph {
                 $this->debugLog('display was not set for ',$v);
                 $v->display = 1;
             }
-            $color = escapeshellcmd(substr(trim($v->color),1));
+            $ocolor = $color = escapeshellcmd(substr(trim($v->color),1));
             $drawt = escapeshellcmd(trim($v->drawtype));
             if ( $drawt{0} == '-' ){
                 $drawt = substr($drawt, 1);
@@ -410,6 +410,12 @@ class Graph {
             if ( $drawt == 'STACK' ){
                 $drawt = 'AREA';
                 $stack = ':STACK';
+            }
+            if ( $drawt == 'GRAD' ){
+                $color .= '#EB9000:-150';
+                //$color .= gradientArea($v->canvas,$ocolor,'yabbahasmmeme',true) . ':-111';
+                #$color .= ':-111';
+                //$stack = ':STACK';
             }
             if ( preg_match('/[:][:]/',$v->path) ){
                 $path = preg_replace('/(.*)[:][:].*/','$1',$v->path);
@@ -1008,8 +1014,8 @@ function findMatches($s,$graphpathbreaks,$gll){
     return $ob;
 }
 
-function gradientArea($canvas,$color,$def){
-    $steps  = 20;
+function gradientArea($canvas,$color,$def,$happyhack=false){
+    $steps  = 10;
     $oc     = $canvas;
     $canvas = hexrgb($canvas);
     $oco    = $color;
@@ -1032,6 +1038,9 @@ function gradientArea($canvas,$color,$def){
         $nc   = '#' . sprintf('%02x%02x%02x',$nr,$ng,$nb);
         $str .= " CDEF:shade${def}s$j=$def,0.$n,* AREA:shade${def}s$j$nc ";
         $j++;
+    }
+    if ( $happyhack ){
+        return $nc;
     }
     return $str;
 }

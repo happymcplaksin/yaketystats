@@ -1362,7 +1362,7 @@ print $out;
         Event.observe(select,'change',function(e){changeLineDrawType(me,e)}.bindAsEventListener());
         select.className = 'linetype';
 
-        [ 'LINE1','LINE2','LINE3','AREA','STACK',
+        [ 'LINE1','LINE2','LINE3','GRAD','AREA','STACK',
           '-LINE1','-LINE2','-LINE3', '-AREA', '-STACK' ].each(function(drawt){
             var option = document.createElement('option');
             if ( thisDrawType == drawt ){
