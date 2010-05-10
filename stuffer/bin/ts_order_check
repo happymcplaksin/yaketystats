@@ -1,0 +1,21 @@
+#!/usr/bin/env ruby
+
+require 'pp'
+
+last_ts=0
+
+$stdin.each do |file|
+    file.strip!
+    line_num = 1
+    IO.readlines(file).each do |line|
+        ts = line.split(//)[3]
+        ts = ts.sub('ts=','').to_i
+        if ts < last_ts
+            print "Gack!  Timestamp on line #{line_num} of #{file} (#{ts}) is less than expected (#{last_ts}).\n"
+            exit
+        end
+        last_ts = ts
+        line_num += 1
+    end
+    print "Done with #{file} (#{last_ts}).\n"
+end
