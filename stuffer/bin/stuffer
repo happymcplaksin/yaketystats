@@ -179,7 +179,14 @@ sub readlog {
     # mode version makes it easy to put the client-end fix in one spot
     # instead of a hundred so I'm too lazy to fix all of the existing
     # non-daemonized plugins!
-    $value = sprintf("%f",$value);
+    #
+    # Bonus!  Floating point is only supported with GAUGE:
+    # http://thread.gmane.org/gmane.linux.debian.devel.bugs.general/607210/focus=659998
+    if ( $type eq "GAUGE" ) {
+        $value = sprintf("%f",$value);
+    } else {
+        $value = sprintf("%d",$value);
+    }
 
     # If there was trouble bubble, move on
     if ( ! defined ($path) ) {
