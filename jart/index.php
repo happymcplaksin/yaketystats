@@ -1598,10 +1598,10 @@ sajax_handle_client_request();
 <head>
     <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
     <title>Jart <?php echo $version; ?></title>
-    <link rel="stylesheet" type="text/css" href="css/reset-min.css">
-    <link rel="stylesheet" type="text/css" href="css/fonts-min.css">
-    <link rel="stylesheet" type="text/css" href="css/grids-min.css">
-    <link rel="stylesheet" type="text/css" href="colorPicker.css">
+    <link rel="stylesheet" type="text/css" href="css/reset-min.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="css/fonts-min.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="css/grids-min.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="colorPicker.css" media="screen">
     <script type="text/javascript" src="js.php"></script>
 <?php 
 /*
@@ -2698,6 +2698,8 @@ print "        var myEvents=$myEvents;\n";
 </script>
 
 <?php include('css/yakety.css'); ?>
+
+    <link rel="stylesheet" type="text/css" href="css/print.css" media="print">
 
 </head>
 <body>
