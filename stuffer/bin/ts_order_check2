@@ -1,0 +1,24 @@
+#!/usr/bin/env ruby
+
+require 'pp'
+
+last_ts=0
+last_rrd = 'bogus firstness'
+$stdin.each do |line|
+    if line.match(/MEGA/)
+        rrd = line.split(/\s+/)[9]
+        if last_rrd != rrd
+            print "Done with #{last_rrd}\n"
+            last_ts=0
+            last_rrd = rrd
+        end
+    end
+    if line.match(/:/)
+        ts = line.split(/:/)[0].to_i
+        if ts < last_ts
+            print "Gack!  #{rrd}: Timestamp (#{ts}) is less than expected (#{last_ts}).\n"
+            exit
+        end
+        last_ts = ts
+    end
+end
