@@ -1112,16 +1112,19 @@ function lineargradientArea($canvas,$color,$def){
 
 function loadPlaylist($path){
     global $webdir;
-    $path .= '.pspl';
     $json = new Services_JSON();
-    if ( ! preg_match('/^\//', $path) ){
-        $path = $webdir.'/playlists/'.$path;
-    }
     if ( preg_match('`\.\.`', $path) || ! preg_match('/\/playlists\//', $path) ){
         return $json->encode(array('ERROR',"What's the big idea?! $path"));
     }
-    if ( is_readable($path) ){
-        $c    = file_get_contents($path);
+    $path .= '.psp';
+    if ( ! preg_match('/^\//', $path) ){
+        $path = $webdir.'/playlists/'.$path;
+    }
+    if ( is_readable($path."l") ){
+        $c    = file_get_contents($path."l");
+    }elseif ( is_executable($path."x") ){
+        $r    = $path."x";
+        $c    = `$r`;
     }else{
         return $json->encode(array('ERROR',"Unable to read $path"));
     }
@@ -1758,7 +1761,7 @@ print "        var myEvents=$myEvents;\n";
                         i++;
                         var span = document.createElement('span');
                         span.className = 'clickable';
-                        var txt  = document.createTextNode( path.replace(/.*\/([^/]*)(?:.rrd|.pspl)/,'$1') );
+                        var txt  = document.createTextNode( path.replace(/.*\/([^/]*)(?:[.]rrd|[.]psp.)/,'$1') );
                         span.appendChild(txt);
                         Element.setStyle(span, { paddingLeft:'15px' } );
                         div.appendChild(span);
@@ -1773,7 +1776,7 @@ print "        var myEvents=$myEvents;\n";
 
         function nameAttachPlaylist(path,div){
             var opath = path;
-            var path  = path.replace(/.pspl$/,'');
+            var path  = path.replace(/[.]psp.$/,'');
             var id    = path.replace(/[/.]/g,'');
             var ex    = $(id);
             if ( ex !== null ){
