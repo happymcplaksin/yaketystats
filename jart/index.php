@@ -1113,7 +1113,7 @@ function lineargradientArea($canvas,$color,$def){
 function loadPlaylist($path){
     global $webdir;
     $json = new Services_JSON();
-    if ( preg_match('`\.\.`', $path) || ! preg_match('/\/playlists\//', $path) ){
+    if ( preg_match('`\.\.`', $path) ){
         return $json->encode(array('ERROR',"What's the big idea?! $path"));
     }
     $path .= '.psp';
