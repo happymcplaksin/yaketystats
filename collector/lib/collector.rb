@@ -43,7 +43,6 @@ class Controller
                 if FileTest.exists?(file)
                     begin
                         if key == 'in'
-                            pp "got here! #{name}"
                             load file
                             # Horrible.  # a='Array'; b=Object.const_get(a); x=Class.new(b); y=x.new
                                 @plugins <<  Object.const_get(name.capitalize).new(conf[:options])
@@ -65,20 +64,27 @@ class Controller
         @plugins.each do |plugin|
             DaemonKit::Cron.scheduler.every("#{plugin.interval}s") do
                 plugin.go
+                if plugin.respond_to? 'stats'
+                    puts plugin.stats
+                end
+                if plugin.respond_to? 'monitoring'
+                    puts plugin.monitoring
+                end
             end
         end
     end
 end
 
 class Plugout
-    attr_reader :interval
+    attr_reader :interval,:stats
     def initialize(hash)
-        @name = hash[:name]
+        @name     = hash[:name]
         @interval = hash[:options][:interval]
         raise YS::NoInterval unless @interval
-        @argv = hash[:options][:argv]
+        @argv     = hash[:options][:argv]
+        @stats    = ''
     end
     def go
-        puts %x{#{@name} #{@argv.join(' ')}}
+        @stats = %x{#{@name} #{@argv.join(' ')}}
     end
 end
