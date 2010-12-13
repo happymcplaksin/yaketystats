@@ -1,5 +1,0 @@
-# Stats
-# Let stderr go to stats user
-* * * * *   /usr/local/yaketystats/bin/collect
-0 0 * * *   /usr/local/yaketystats/bin/roll_messages
-# End stats

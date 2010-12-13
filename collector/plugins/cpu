@@ -1,0 +1,31 @@
+class Cpu
+    include YS::Plugin
+    attr_reader :interval
+    def initialize(options)
+        @interval = 60
+        @labels = %w{user nice system idle iowait irq softirq}
+        @interval = options[:interval] if options[:interval]
+    end
+    def go
+        times = []
+        2.times do
+            times << IO.readlines("/proc/stat")[0].split[1..-2].map{|s| s.to_i}
+            sleep 3
+        end
+        first = times[0]
+        last  = times[1]
+        @data  = first.zip(last).map{|a| a[1] - a[0]}
+        @total = @data.inject{|a,b| a += b }.to_f
+    end
+    def stats
+        out = ''
+        @labels.each_index do |i|
+            percent = 0
+            unless @data[i] == 0
+                percent = (@data[i].to_f / @total) * 100.0
+            end
+            out << gauge( :p => "cpu/#{@labels[i]}", :v => percent )
+        end
+        out
+    end
+end

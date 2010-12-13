@@ -1,0 +1,85 @@
+#!/usr/bin/env ruby
+
+$: << File.expand_path(File.join(File.dirname(__FILE__), '../lib'))
+
+require 'ys/plugin'
+require 'pp'
+require 'benchmark'
+
+$YSDEBUGGER=true
+
+loadee = ARGV.shift
+
+puts "Loading: #{loadee}"
+time = Benchmark.measure do
+    load loadee
+end
+puts "  User,   System,   Total,   Real"
+puts time
+
+options = {}
+ARGV.each do |pair|
+    key,value = pair.split('=')
+    next unless key and value
+    options[key.to_sym] = value
+end
+
+# you can hand it plugin.rb or plugin or /path/to/plugin[.rb]
+cn = File.basename(loadee)
+re = /.rb$/
+if re.match(cn)
+    cn = cn.sub(re,'')
+end
+cn = cn.capitalize
+
+# make a YS#constantize
+
+const = Object.const_get(cn)
+
+unless const
+    puts "Can't find your object... same name as the file?"
+    exit 2
+end
+
+# make a method to hash-ize ARGV for more complex plugins?
+
+puts "Creating new #{cn} object"
+runner = 0
+time = Benchmark.measure do
+    runner = const.new(options)
+end
+puts time
+
+puts "Testing..."
+unless runner.respond_to?('interval')
+    # Does this make sense? Will we ever have non-stats/monitoring-only plugins?
+    puts "\tYour class doesn't have an interval method. I quit."
+    exit 2
+end
+unless runner.respond_to?('go')
+    puts "\tYour class doesn't have a go method. I quit."
+    exit 2
+end
+puts "Ok!"
+
+puts "Running your code."
+time = Benchmark.measure do
+    runner.go
+end
+puts time
+
+if runner.respond_to?('stats')
+    puts "Here's your stats:\n"
+    stats = runner.stats
+    puts stats
+    if runner.valid?(stats)
+        puts "\nThey seem to be valid."
+    else
+        puts "\nINVALID"
+    end
+end
+if runner.respond_to?('monitor')
+    puts "Here's your monitoring output:\n"
+    monitor = runner.monitor
+    puts monitor
+end

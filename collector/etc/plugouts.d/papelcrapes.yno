@@ -1,0 +1,6 @@
+---
+:name: papelcrapes
+:options:
+  :interval: 5
+  :argv:
+  - papelcrapes
