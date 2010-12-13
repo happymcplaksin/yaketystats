@@ -11,6 +11,8 @@ class Controller
         @plugins     = []
         @mydir       = File.expand_path(File.join(File.dirname(__FILE__), '..'))
         @plugconfdirs= [File.join(@mydir,'etc/plugins.d'), File.join(@mydir,'etc/plugouts.d')]
+        @stats_file  = '/var/yaketystats/new'
+        @size_limit  = 500000
         open_pipe
         load_plugins
         init_plugins
@@ -65,7 +67,7 @@ class Controller
             DaemonKit::Cron.scheduler.every("#{plugin.interval}s") do
                 plugin.go
                 if plugin.respond_to? 'stats'
-                    puts plugin.stats
+                    stats_write plugin.stats
                 end
                 if plugin.respond_to? 'monitoring'
                     puts plugin.monitoring
@@ -73,6 +75,22 @@ class Controller
             end
         end
     end
+
+    def stats_write(s)
+        File.open(@stats_file,'a'){|f| f.write(s)}
+        embiggen
+    end
+
+    def embiggen
+        if File.size(@stats_file) >= @size_limit
+            step_aside
+        end
+    end
+
+    def step_aside
+        File.rename(@stats_file,Time.now.to_s)
+    end
+
 end
 
 class Plugout
