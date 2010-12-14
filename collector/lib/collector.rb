@@ -11,7 +11,8 @@ class Controller
         @plugins     = []
         @mydir       = File.expand_path(File.join(File.dirname(__FILE__), '..'))
         @plugconfdirs= [File.join(@mydir,'etc/plugins.d'), File.join(@mydir,'etc/plugouts.d')]
-        @stats_file  = '/var/yaketystats/new'
+        @stats_dir   = '/var/yaketystats/new'
+        @stats_file  = "#{@stats_dir}/new"
         @size_limit  = 500000
         open_pipe
         load_plugins
@@ -27,6 +28,9 @@ class Controller
     def unload_plugins
     end
 
+    def upload_stats
+    end
+
     def open_pipe
         @pipefile = File.join(@mydir,'run/bucket')
         unless FileTest.exists?(@pipefile)
@@ -34,11 +38,13 @@ class Controller
         end
     end
 
+    def read_pipe
+    end
+
     def load_plugins
         @plugconfdirs.each do |pcdir|
-            Dir.chdir(pcdir)
             key = pcdir.sub(/.*g(.+)s.d/,'\1')
-            Dir.glob('*.y').each do |f|
+            Dir.glob("#{pcdir}/*.y").each do |f|
                 conf = YAML.load_file(f)
                 name = conf[:name]
                 file = "#{@mydir}/plug#{key}s/#{conf[:name]}"
@@ -70,6 +76,11 @@ class Controller
                     stats_write plugin.stats
                 end
                 if plugin.respond_to? 'monitoring'
+                    # if bad
+                    # look up myself
+                    # stop existing schedule
+                    # start 60s schedule 4x REPEAT.x
+                    # go back to normal
                     puts plugin.monitoring
                 end
             end
@@ -88,7 +99,7 @@ class Controller
     end
 
     def step_aside
-        File.rename(@stats_file,Time.now.to_s)
+        File.rename(@stats_file, File.join(@stats_dir,Time.now.to_i.to_s) )
     end
 
 end
