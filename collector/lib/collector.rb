@@ -32,8 +32,10 @@ class Controller
     end
 
     def open_pipe
-        @pipefile = File.join(@mydir,'run/bucket')
+        rundir = File.join(@mydir,'run')
+        @pipefile = File.join(rundir,'bucket')
         unless FileTest.exists?(@pipefile)
+            FileUtils.mkdir_p(rundir) unless FileTest.exists?(rundir)
             system "mkfifo #{@pipefile}"
         end
     end
