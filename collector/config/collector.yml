@@ -1,0 +1,4 @@
+---
+stats_server: http://stats.bor.usg.edu
+store_path: store.php
+stats_dir: /var/yaketystats/new

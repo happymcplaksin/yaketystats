@@ -12,3 +12,4 @@ gem 'daemon-kit'
 # For more information on bundler, please visit http://gembundler.com
 gem 'rufus-scheduler', '>= 2.0.3'
 gem 'SyslogLogger'
+gem 'curb'

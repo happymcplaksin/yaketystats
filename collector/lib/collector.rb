@@ -1,50 +1,96 @@
-# Your starting point for daemon specific classes. This directory is
-# already included in your load path, so no need to specify it.
-
 require 'ys'
 require 'pp'
 require 'ys/plugin'
 require 'yaml'
 
-class Controller
+class Collector
+    include YS::Base
     def initialize
         @plugins     = []
+        @config      = DaemonKit::Config.load('collector')
         @mydir       = File.expand_path(File.join(File.dirname(__FILE__), '..'))
+        @pipefile    = File.join(@mydir,'run/bucket')
+        @pipe        = nil
         @plugconfdirs= [File.join(@mydir,'etc/plugins.d'), File.join(@mydir,'etc/plugouts.d')]
-        @stats_dir   = '/var/yaketystats/new'
+        @stats_dir   = @config.stats_dir
+        @stats_server= @config.stats_server
+        @store_path  = @config.store_path
         @stats_file  = "#{@stats_dir}/new"
+        @http_agent  = Curl::Easy.new
+        @http_agent.headers["User-Agent"] = 'YaketyStats 3.0 Collector'
         @size_limit  = 500000
         open_pipe
         load_plugins
-        init_plugins
+        schedule_plugins
+        init_services
     end
 
     def reload
-        unload_plugins
+        unschedule_plugins
         load_plugins
-        init_plugins
+        schedule_plugins
     end
 
-    def unload_plugins
+    def unschedule_plugins
+        DaemonKit::Cron.scheduler.find_by_tag('user').map{|job| job.unschedule}
     end
 
     def upload_stats
-    end
-
-    def open_pipe
-        @pipefile = File.join(@mydir,'run/bucket')
-        unless FileTest.exists?(@pipefile)
-            system "mkfifo #{@pipefile}"
+        log.debug "Looking for maint file: #{@stats_server}/maintenance" if $YSDEBUG
+        # return if maint file
+        @http_agent.multipart_form_post = false
+        @http_agent.url="#{@stats_server}/maintenance"
+        @http_agent.perform
+        return unless @http_agent.response_code == 404
+        log.debug "Stepping aside stats file" if $YSDEBUG
+        step_aside
+        # look for stats files that aren't 'new'
+        files = Dir.glob("#{@stats_dir}/[0-9]*")
+        log.debug "Found these stats files: [#{files.join(',')}]" if $YSDEBUG
+        files.sort!
+        @http_agent.multipart_form_post = true
+        @http_agent.url = "#{@stats_server}/#{@store_path}"
+        okre = /OK/
+        files.each do |upme|
+            log.debug "Posting #{upme}" if $YSDEBUG
+            @http_agent.verbose = true if $YSDEBUG
+            @http_agent.http_post( Curl::PostField.content('dataversion','1.3'),Curl::PostField.content('host', fqdn),Curl::PostField.file('datafile',upme))
+            if okre.match @http_agent.body_str
+                File.unlink upme
+            else
+                p @http_agent.body_str if $YSDEBUG
+                log.fatal "Unable to upload. #{@http_agent.response_code}"
+                break
+            end
         end
     end
 
+    def open_pipe
+        unless FileTest.exists?(@pipefile)
+            system "mkfifo #{@pipefile}"
+        end
+        log.debug "About to open the pipe." if $YSDEBUG
+        @pipe = open @pipefile, File::RDONLY|File::NONBLOCK unless @pipe
+    end
+
     def read_pipe
+        begin
+            log.debug "About to read the pipe." if $YSDEBUG
+            stats_write @pipe.read
+        rescue Errno::EAGAIN
+            log.debug "Nothin in the pipe." if $YSDEBUG
+        end
+    end
+
+    def log
+        DaemonKit.logger
     end
 
     def load_plugins
         @plugconfdirs.each do |pcdir|
             key = pcdir.sub(/.*g(.+)s.d/,'\1')
             Dir.glob("#{pcdir}/*.y").each do |f|
+                log.debug "reading #{f}." if $YSDEBUG
                 conf = YAML.load_file(f)
                 name = conf[:name]
                 file = "#{@mydir}/plug#{key}s/#{conf[:name]}"
@@ -53,37 +99,42 @@ class Controller
                         if key == 'in'
                             load file
                             # Horrible.  # a='Array'; b=Object.const_get(a); x=Class.new(b); y=x.new
-                                @plugins <<  Object.const_get(name.capitalize).new(conf[:options])
+                            @plugins <<  Object.const_get(name.capitalize).new(conf[:options])
                         elsif key == 'out'
                             conf[:name] = "#{@mydir}/plugouts/#{conf[:name]}"
                             @plugins << Plugout.new(conf)
                         end
                     rescue YS::NoInterval
-                        DaemonKit.logger.warning "Plug#{key} #{conf[:name]} has no interval. Refusing to load."
+                        log.error "Plug#{key} #{conf[:name]} has no interval. Refusing to load."
                     end
                 else
-                    DaemonKit.logger.warning "Config file #{f} refers to #{file} but no such file exists."
+                    log.error "Config file #{f} refers to #{file} but no such file exists."
                 end
             end
         end
     end
 
-    def init_plugins
+    def schedule_plugins
         @plugins.each do |plugin|
-            DaemonKit::Cron.scheduler.every("#{plugin.interval}s") do
+            # interval vs schedule?
+            DaemonKit::Cron.scheduler.every("#{plugin.interval}s", :tags => 'user') do
                 plugin.go
                 if plugin.respond_to? 'stats'
                     stats_write plugin.stats
                 end
                 if plugin.respond_to? 'monitoring'
-                    # if bad
-                    # look up myself
-                    # stop existing schedule
-                    # start 60s schedule 4x REPEAT.x
-                    # go back to normal
                     puts plugin.monitoring
                 end
             end
+        end
+    end
+
+    def init_services
+        DaemonKit::Cron.scheduler.every('10s', :tags => 'service') do
+            read_pipe
+        end
+        DaemonKit::Cron.scheduler.every('5m', :tags => 'service') do
+            upload_stats
         end
     end
 
@@ -93,13 +144,13 @@ class Controller
     end
 
     def embiggen
-        if File.size(@stats_file) >= @size_limit
+        if FileTest.exists?(@stats_file) && File.size(@stats_file) >= @size_limit
             step_aside
         end
     end
 
     def step_aside
-        File.rename(@stats_file, File.join(@stats_dir,Time.now.to_i.to_s) )
+        File.rename(@stats_file, File.join(@stats_dir,Time.now.to_i.to_s) ) if FileTest.exists?(@stats_file)
     end
 
 end

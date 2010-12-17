@@ -23,15 +23,17 @@ end
 #
 # * Load puppet-friendly config files config.d style ><
 # * Load plugin files
-# * Handle plugin output including validation
 # * Initialize plugin instances
-# * Open named pipe and read from it on a schedule
-# * Do uploads on a schedule
-# * Do uploads right now! signal
 # * Write plugin/pipe output
 # * Handle writing w/o locking and file switching
+# * Open named pipe and read from it on a schedule
+# * Do uploads on a schedule
+
 # * Handle HUP / reload config
 # ** means unschedule all and create new schedules for all
+# * Handle plugin output including validation
+# * Do uploads right now! signal
+# * Handle plug{in,out}s.d/array.y
 
 # Plugin improvements
 #
@@ -42,7 +44,7 @@ end
 # * Do most gathering in #go and hand off structures to #stats and #monitor
 # * Do monitoring stuff
 
-Controller.new
+Collector.new
 
 
 # Some samples to get you going:

@@ -3,6 +3,7 @@ GEM
   specs:
     SyslogLogger (1.4.0)
       hoe (>= 1.2.0)
+    curb (0.7.8)
     daemon-kit (0.1.8.1)
       eventmachine (>= 0.12.10)
     eventmachine (0.12.10)
@@ -22,5 +23,6 @@ PLATFORMS
 
 DEPENDENCIES
   SyslogLogger
+  curb
   daemon-kit
   rufus-scheduler (>= 2.0.3)
