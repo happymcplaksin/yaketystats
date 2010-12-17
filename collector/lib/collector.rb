@@ -67,6 +67,7 @@ class Collector
 
     def open_pipe
         unless FileTest.exists?(@pipefile)
+            FileUtils.mkdir_p(rundir) unless FileTest.exists?(rundir)
             system "mkfifo #{@pipefile}"
         end
         log.debug "About to open the pipe." if $YSDEBUG
