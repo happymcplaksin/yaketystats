@@ -55,10 +55,13 @@ class Collector
         http_agent.url = "#{@stats_server}/#{@store_path}"
         okre = /OK/
         files.each do |upme|
+            if File.zero? upme
+                File.unlink upme
+                next
+            end
             log.debug "Posting #{upme}" if $YSDEBUG
             http_agent.verbose = true if $YSDEBUG
-            http_agent.http_post( 
-                                 Curl::PostField.content('dataversion','1.3'),
+            http_agent.http_post(Curl::PostField.content('dataversion','1.3'),
                                  Curl::PostField.content('host', fqdn),
                                  Curl::PostField.file('datafile',upme))
             if okre.match http_agent.body_str
