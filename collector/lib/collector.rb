@@ -6,6 +6,7 @@ require 'yaml'
 class Collector
     include YS::Base
     def initialize
+        $YSDEBUG = true
         @plugins     = []
         @config      = DaemonKit::Config.load('collector')
         @mydir       = File.expand_path(File.join(File.dirname(__FILE__), '..'))
@@ -16,13 +17,11 @@ class Collector
         @stats_server= @config.stats_server
         @store_path  = @config.store_path
         @stats_file  = "#{@stats_dir}/new"
-        @http_agent  = Curl::Easy.new
-        @http_agent.headers["User-Agent"] = 'YaketyStats 3.0 Collector'
         @size_limit  = 500000
         open_pipe
         load_plugins
         schedule_plugins
-        init_services
+        schedule_services
     end
 
     def reload
@@ -36,30 +35,37 @@ class Collector
     end
 
     def upload_stats
+        http_agent  = Curl::Easy.new
+        http_agent.headers["User-Agent"] = 'YaketyStats 3.0 Collector'
         log.debug "Looking for maint file: #{@stats_server}/maintenance" if $YSDEBUG
         # return if maint file
-        @http_agent.multipart_form_post = false
-        @http_agent.url="#{@stats_server}/maintenance"
-        @http_agent.perform
-        return unless @http_agent.response_code == 404
+        http_agent.multipart_form_post = false
+        http_agent.url="#{@stats_server}/maintenance"
+        http_agent.perform
+        return unless http_agent.response_code == 404
         log.debug "Stepping aside stats file" if $YSDEBUG
         step_aside
         # look for stats files that aren't 'new'
         files = Dir.glob("#{@stats_dir}/[0-9]*")
         log.debug "Found these stats files: [#{files.join(',')}]" if $YSDEBUG
         files.sort!
-        @http_agent.multipart_form_post = true
-        @http_agent.url = "#{@stats_server}/#{@store_path}"
+        http_agent  = Curl::Easy.new
+        http_agent.headers["User-Agent"] = 'YaketyStats 3.0 Collector'
+        http_agent.multipart_form_post = true
+        http_agent.url = "#{@stats_server}/#{@store_path}"
         okre = /OK/
         files.each do |upme|
             log.debug "Posting #{upme}" if $YSDEBUG
-            @http_agent.verbose = true if $YSDEBUG
-            @http_agent.http_post( Curl::PostField.content('dataversion','1.3'),Curl::PostField.content('host', fqdn),Curl::PostField.file('datafile',upme))
-            if okre.match @http_agent.body_str
+            http_agent.verbose = true if $YSDEBUG
+            http_agent.http_post( 
+                                 Curl::PostField.content('dataversion','1.3'),
+                                 Curl::PostField.content('host', fqdn),
+                                 Curl::PostField.file('datafile',upme))
+            if okre.match http_agent.body_str
                 File.unlink upme
             else
-                p @http_agent.body_str if $YSDEBUG
-                log.fatal "Unable to upload. #{@http_agent.response_code}"
+                p http_agent.body_str if $YSDEBUG
+                log.fatal "Unable to upload. #{http_agent.response_code}"
                 break
             end
         end
@@ -130,7 +136,7 @@ class Collector
         end
     end
 
-    def init_services
+    def schedule_services
         DaemonKit::Cron.scheduler.every('10s', :tags => 'service') do
             read_pipe
         end
