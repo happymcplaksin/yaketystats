@@ -39,7 +39,6 @@ class Collector
         http_agent.headers["User-Agent"] = 'YaketyStats 3.0 Collector'
         log.debug "Looking for maint file: #{@stats_server}/maintenance" if $YSDEBUG
         # return if maint file
-        http_agent.multipart_form_post = false
         http_agent.url="#{@stats_server}/maintenance"
         http_agent.perform
         return unless http_agent.response_code == 404
