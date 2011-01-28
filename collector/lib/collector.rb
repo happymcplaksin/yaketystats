@@ -6,7 +6,7 @@ require 'yaml'
 class Collector
     include YS::Base
     def initialize
-        $YSDEBUG = true
+        #$YSDEBUG = true
         @plugins     = []
         @config      = DaemonKit::Config.load('collector')
         @mydir       = File.expand_path(File.join(File.dirname(__FILE__), '..'))
@@ -34,21 +34,31 @@ class Collector
         DaemonKit::Cron.scheduler.find_by_tag('user').map{|job| job.unschedule}
     end
 
-    def upload_stats
-        http_agent  = Curl::Easy.new
+    def maintenance?
+        puts ObjectSpace.statistics
+        http_agent  = ::Curl::Easy.new
         http_agent.headers["User-Agent"] = 'YaketyStats 3.0 Collector'
         log.debug "Looking for maint file: #{@stats_server}/maintenance" if $YSDEBUG
+        http_agent.close
         # return if maint file
         http_agent.url="#{@stats_server}/maintenance"
         http_agent.perform
-        return unless http_agent.response_code == 404
+        r = http_agent.response_code != 404
+        http_agent.close
+        r
+    end
+
+    def upload_stats
+        return if maintenance?
+        puts ObjectSpace.statistics
         log.debug "Stepping aside stats file" if $YSDEBUG
         step_aside
         # look for stats files that aren't 'new'
         files = Dir.glob("#{@stats_dir}/[0-9]*")
         log.debug "Found these stats files: [#{files.join(',')}]" if $YSDEBUG
         files.sort!
-        http_agent  = Curl::Easy.new
+
+        http_agent  = ::Curl::Easy.new
         http_agent.headers["User-Agent"] = 'YaketyStats 3.0 Collector'
         http_agent.multipart_form_post = true
         http_agent.url = "#{@stats_server}/#{@store_path}"
@@ -60,9 +70,9 @@ class Collector
             end
             log.debug "Posting #{upme}" if $YSDEBUG
             http_agent.verbose = true if $YSDEBUG
-            http_agent.http_post(Curl::PostField.content('dataversion','1.3'),
-                                 Curl::PostField.content('host', fqdn),
-                                 Curl::PostField.file('datafile',upme))
+            http_agent.http_post(::Curl::PostField.content('dataversion','1.3'),
+                                 ::Curl::PostField.content('host', fqdn),
+                                 ::Curl::PostField.file('datafile',upme))
             if okre.match http_agent.body_str
                 File.unlink upme
             else
@@ -71,6 +81,7 @@ class Collector
                 break
             end
         end
+        http_agent.close
     end
 
     def open_pipe
@@ -142,7 +153,7 @@ class Collector
         DaemonKit::Cron.scheduler.every('10s', :tags => 'service') do
             read_pipe
         end
-        DaemonKit::Cron.scheduler.every('5m', :tags => 'service') do
+        DaemonKit::Cron.scheduler.every('310s', :tags => 'service') do
             upload_stats
         end
     end

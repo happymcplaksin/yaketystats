@@ -1,4 +1,7 @@
 # Don't change this file!
+if GC.respond_to?(:copy_on_write_friendly=)
+        GC.copy_on_write_friendly = true
+end
 # Configure your daemon in config/environment.rb
 
 DAEMON_ROOT = "#{File.expand_path(File.dirname(__FILE__))}/.." unless defined?( DAEMON_ROOT )
