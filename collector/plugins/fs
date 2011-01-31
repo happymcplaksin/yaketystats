@@ -2,13 +2,13 @@ require 'etc'
 require 'rubygems'
 require 'sys/filesystem'
 
-class Disk
+class Fs
     include YS::Plugin
     include Sys
 
     attr_reader :interval
     def initialize(options)
-        @ignore = /bcv/i
+        @ignore = /bcv|mnt/i
         @interval = 60
         @mountpoints = []
         @map = []
@@ -23,6 +23,7 @@ class Disk
     end
 
     def go
+        @map = []
         get_mountpoints
         @mountpoints.each do |mp|
             h    = {}

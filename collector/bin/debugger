@@ -2,6 +2,8 @@
 
 $: << File.expand_path(File.join(File.dirname(__FILE__), '../lib'))
 
+$stdout.sync = true
+
 require 'ys/plugin'
 require 'pp'
 require 'benchmark'
