@@ -25,7 +25,8 @@ module YS
         DST.each do |type|
             define_method type.to_sym do |options|
                 #syslog unless options[:path] and options[:value]
-                h = { :fqdn => fqdn, :ts => Time.now.to_i, :t => type.to_s.upcase, :i => instance_variable_get('@interval') }
+                leak = Time.now.to_i
+                h = { :fqdn => fqdn, :ts => leak, :t => type.to_s.upcase, :i => instance_variable_get('@interval') }
                 h = h.merge options
                 fqdn = h.delete(:fqdn)
                 h[:p] = "/#{fqdn}/BNW/#{h[:p]}"

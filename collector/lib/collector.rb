@@ -6,7 +6,7 @@ require 'yaml'
 class Collector
     include YS::Base
     def initialize
-        #$YSDEBUG = true
+        $YSDEBUG = true
         @plugins     = []
         @config      = DaemonKit::Config.load('collector')
         @mydir       = File.expand_path(File.join(File.dirname(__FILE__), '..'))
@@ -39,11 +39,11 @@ class Collector
         http_agent  = ::Curl::Easy.new
         http_agent.headers["User-Agent"] = 'YaketyStats 3.0 Collector'
         log.debug "Looking for maint file: #{@stats_server}/maintenance" if $YSDEBUG
-        http_agent.close
         # return if maint file
         http_agent.url="#{@stats_server}/maintenance"
         http_agent.perform
-        r = http_agent.response_code != 404
+        log.debug "Response for maint file was [#{http_agent.response_code}]" if $YSDEBUG
+        r = ! http_agent.response_code.nil? && http_agent.response_code != 404
         http_agent.close
         r
     end
@@ -138,8 +138,10 @@ class Collector
         @plugins.each do |plugin|
             # interval vs schedule?
             DaemonKit::Cron.scheduler.every("#{plugin.interval}s", :tags => 'user') do
+                log.debug "Aboot to run go for #{plugin.class}" if $YSDEBUG
                 plugin.go
                 if plugin.respond_to? 'stats'
+                    log.debug "Aboot to run stats for #{plugin.class}" if $YSDEBUG
                     stats_write plugin.stats
                 end
                 if plugin.respond_to? 'monitoring'
@@ -170,7 +172,8 @@ class Collector
     end
 
     def step_aside
-        File.rename(@stats_file, File.join(@stats_dir,Time.now.to_i.to_s) ) if FileTest.exists?(@stats_file)
+        leak = Time.now.to_i.to_s
+        File.rename(@stats_file, File.join(@stats_dir,leak) ) if FileTest.exists?(@stats_file)
     end
 
 end

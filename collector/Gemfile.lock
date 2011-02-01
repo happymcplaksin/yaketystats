@@ -11,11 +11,18 @@ GEM
       rake (>= 0.8.7)
       rubyforge (>= 2.0.4)
     json_pure (1.4.6)
+    memprof (0.3.7)
+      rest-client (>= 1.4.2)
+      term-ansicolor
+    mime-types (1.16)
     rake (0.8.7)
+    rest-client (1.6.1)
+      mime-types (>= 1.16)
     rubyforge (2.0.4)
       json_pure (>= 1.1.7)
     rufus-scheduler (2.0.7)
       tzinfo
+    term-ansicolor (1.0.5)
     tzinfo (0.3.23)
 
 PLATFORMS
@@ -25,4 +32,5 @@ DEPENDENCIES
   SyslogLogger
   curb
   daemon-kit
+  memprof
   rufus-scheduler (>= 2.0.3)

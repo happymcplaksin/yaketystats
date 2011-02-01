@@ -16,9 +16,9 @@ class Cpu
         last  = times[1]
         @data  = first.zip(last).map{|a| a[1] - a[0]}
         @total = @data.inject{|a,b| a += b }.to_f
-        puts stats
-        sleep 60
-        go
+        #puts stats
+        #sleep 60
+        #go
     end
     def stats
         out = ''

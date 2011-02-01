@@ -3,6 +3,7 @@
 # Stub executable for collector
 #
 
+require `gem which memprof/signal`.chomp
 require File.expand_path('../../config/environment',  __FILE__)
 
 DaemonKit::Application.exec( DAEMON_ROOT + '/libexec/collector-daemon.rb' )
