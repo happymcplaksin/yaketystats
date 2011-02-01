@@ -19,6 +19,7 @@ class Collector
         @store_path  = @config.store_path
         @stats_file  = "#{@stats_dir}/new"
         @size_limit  = 500000
+        FileUtils.mkdir_p(@stats_dir) unless FileTest.exists?(@stats_dir)
         open_pipe
         load_plugins
         schedule_plugins
