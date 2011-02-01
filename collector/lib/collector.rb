@@ -10,7 +10,8 @@ class Collector
         @plugins     = []
         @config      = DaemonKit::Config.load('collector')
         @mydir       = File.expand_path(File.join(File.dirname(__FILE__), '..'))
-        @pipefile    = File.join(@mydir,'run/bucket')
+        @rundir      = File.join(@mydir,'run')
+        @pipefile    = File.join(@rundir,'bucket')
         @pipe        = nil
         @plugconfdirs= [File.join(@mydir,'etc/plugins.d'), File.join(@mydir,'etc/plugouts.d')]
         @stats_dir   = @config.stats_dir
@@ -86,7 +87,7 @@ class Collector
 
     def open_pipe
         unless FileTest.exists?(@pipefile)
-            FileUtils.mkdir_p(rundir) unless FileTest.exists?(rundir)
+            FileUtils.mkdir_p(@rundir) unless FileTest.exists?(@rundir)
             system "mkfifo #{@pipefile}"
         end
         log.debug "About to open the pipe." if $YSDEBUG
