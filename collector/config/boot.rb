@@ -89,14 +89,20 @@ module YsDaemon
                 Collector.new
             end
             def stop
-                puts "stop called"
-                if ! File.file?(Pidfile.name)
-                    puts "Pid file not found. Is the daemon started?"
-                    exit 1
-                end
                 pid = Pidfile.read
-                FileUtils.rm(Pidfile.name)
-                Process.kill("TERM", pid)
+                if pid.nil?
+                    if ! File.file?(Pidfile.name)
+                        puts "Pid file not found. Is the daemon started?"
+                        exit 1
+                    end
+                else
+                    FileUtils.rm(Pidfile.name)
+                end
+                if Process.pid == pid
+                    exit
+                else
+                    Process.kill("TERM", pid)
+                end
             end
         end
     end
