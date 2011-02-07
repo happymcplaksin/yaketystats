@@ -12,6 +12,7 @@ class Collector
         @config      = YsDaemon::Config.load('collector')
 @mydir       = File.expand_path(File.join(File.dirname(__FILE__), '..')) # Fix, switch to DAEMON_ROOT
         @pipefile    = File.join(@mydir,'run/bucket')
+        @rundir      = File.join(@mydir,'run')
         @pipe        = nil
         @plugconfdirs= [File.join(@mydir,'etc/plugins.d'), File.join(@mydir,'etc/plugouts.d')]
         @stats_dir   = @config["stats_dir"]
@@ -21,6 +22,7 @@ class Collector
         @size_limit  = 500000
         @scheduler   = Rufus::Scheduler.start_new
         @logger      = YsDaemon::Log.new
+        FileUtils.mkdir_p(@stats_dir) unless FileTest.exists?(@stats_dir)
         open_pipe
         load_plugins
         schedule_plugins
