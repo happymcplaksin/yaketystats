@@ -1,27 +1,37 @@
+$:.unshift '/var/lib/gems/1.8/gems/rufus-scheduler-2.0.8/lib'
+$:.unshift '.'
+# check perms&existance on the YS dirs
+# check for existance of /var/yaketystats/fqdn
+
 require 'ys'
 require 'pp'
+require 'rufus/scheduler'
 require 'ys/plugin'
 require 'yaml'
 
 class Collector
     include YS::Base
     def initialize
-        $YSDEBUG = true
+        #$YSDEBUG = true
         @plugins     = []
-        @config      = DaemonKit::Config.load('collector')
+        @config      = YAML.load_file('../config/collector.yml')
         @mydir       = File.expand_path(File.join(File.dirname(__FILE__), '..'))
         @pipefile    = File.join(@mydir,'run/bucket')
         @pipe        = nil
         @plugconfdirs= [File.join(@mydir,'etc/plugins.d'), File.join(@mydir,'etc/plugouts.d')]
-        @stats_dir   = @config.stats_dir
-        @stats_server= @config.stats_server
-        @store_path  = @config.store_path
+        @stats_dir   = @config["stats_dir"]
+        @stats_server= @config["stats_server"]
+        @store_path  = @config["store_path"]
         @stats_file  = "#{@stats_dir}/new"
         @size_limit  = 500000
+        @scheduler   = Rufus::Scheduler.start_new
         open_pipe
         load_plugins
         schedule_plugins
         schedule_services
+        loop do
+            sleep 10
+        end
     end
 
     def reload
@@ -31,11 +41,11 @@ class Collector
     end
 
     def unschedule_plugins
-        DaemonKit::Cron.scheduler.find_by_tag('user').map{|job| job.unschedule}
+        @scheduler.find_by_tag('user').map{|job| job.unschedule}
     end
 
     def maintenance?
-        puts ObjectSpace.statistics
+        #puts ObjectSpace.statistics
         http_agent  = ::Curl::Easy.new
         http_agent.headers["User-Agent"] = 'YaketyStats 3.0 Collector'
         log.debug "Looking for maint file: #{@stats_server}/maintenance" if $YSDEBUG
@@ -50,7 +60,7 @@ class Collector
 
     def upload_stats
         return if maintenance?
-        puts ObjectSpace.statistics
+        #puts ObjectSpace.statistics
         log.debug "Stepping aside stats file" if $YSDEBUG
         step_aside
         # look for stats files that aren't 'new'
@@ -86,7 +96,7 @@ class Collector
 
     def open_pipe
         unless FileTest.exists?(@pipefile)
-            FileUtils.mkdir_p(rundir) unless FileTest.exists?(rundir)
+            FileUtils.mkdir_p(@mydir) unless FileTest.exists?(@mydir)
             system "mkfifo #{@pipefile}"
         end
         log.debug "About to open the pipe." if $YSDEBUG
@@ -103,7 +113,7 @@ class Collector
     end
 
     def log
-        DaemonKit.logger
+        return ''
     end
 
     def load_plugins
@@ -137,7 +147,7 @@ class Collector
     def schedule_plugins
         @plugins.each do |plugin|
             # interval vs schedule?
-            DaemonKit::Cron.scheduler.every("#{plugin.interval}s", :tags => 'user') do
+            @scheduler.every("#{plugin.interval}s", :tags => 'user') do
                 log.debug "Aboot to run go for #{plugin.class}" if $YSDEBUG
                 plugin.go
                 if plugin.respond_to? 'stats'
@@ -152,12 +162,12 @@ class Collector
     end
 
     def schedule_services
-        DaemonKit::Cron.scheduler.every('10s', :tags => 'service') do
+        @scheduler.every('10s', :tags => 'service') do
             read_pipe
         end
-        DaemonKit::Cron.scheduler.every('310s', :tags => 'service') do
-            upload_stats
-        end
+        #@scheduler.every('310s', :tags => 'service') do
+            #upload_stats
+        #end
     end
 
     def stats_write(s)
@@ -191,3 +201,5 @@ class Plugout
         @stats = %x{#{@name} #{@argv.join(' ')}}
     end
 end
+
+Collector.new
