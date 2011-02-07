@@ -1,21 +1,16 @@
-$:.unshift '/var/lib/gems/1.8/gems/rufus-scheduler-2.0.8/lib'
-$:.unshift '.'
+$:.unshift '/usr/local/ys/ruby/lib/ruby/gems/1.9.1/gems/rufus-scheduler-2.0.8/lib'
 # check perms&existance on the YS dirs
 # check for existance of /var/yaketystats/fqdn
 
-require 'ys'
-require 'pp'
 require 'rufus/scheduler'
 require 'ys/plugin'
-require 'yaml'
 
 class Collector
     include YS::Base
     def initialize
-        #$YSDEBUG = true
         @plugins     = []
-        @config      = YAML.load_file('../config/collector.yml')
-        @mydir       = File.expand_path(File.join(File.dirname(__FILE__), '..'))
+        @config      = YsDaemon::Config.load('collector')
+@mydir       = File.expand_path(File.join(File.dirname(__FILE__), '..')) # Fix, switch to DAEMON_ROOT
         @pipefile    = File.join(@mydir,'run/bucket')
         @pipe        = nil
         @plugconfdirs= [File.join(@mydir,'etc/plugins.d'), File.join(@mydir,'etc/plugouts.d')]
@@ -25,6 +20,7 @@ class Collector
         @stats_file  = "#{@stats_dir}/new"
         @size_limit  = 500000
         @scheduler   = Rufus::Scheduler.start_new
+        @logger      = YsDaemon::Log.new
         open_pipe
         load_plugins
         schedule_plugins
@@ -113,7 +109,7 @@ class Collector
     end
 
     def log
-        return ''
+        @logger
     end
 
     def load_plugins
@@ -201,5 +197,3 @@ class Plugout
         @stats = %x{#{@name} #{@argv.join(' ')}}
     end
 end
-
-Collector.new

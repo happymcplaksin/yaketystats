@@ -1,73 +1,105 @@
-# Don't change this file!
-if GC.respond_to?(:copy_on_write_friendly=)
-        GC.copy_on_write_friendly = true
-end
-# Configure your daemon in config/environment.rb
-
 DAEMON_ROOT = "#{File.expand_path(File.dirname(__FILE__))}/.." unless defined?( DAEMON_ROOT )
 
-# Use Bundler (preferred)
-begin
-  require File.expand_path('../../.bundle/environment', __FILE__)
-rescue LoadError
-  require 'rubygems'
-  require 'bundler'
-  Bundler.setup
+$:.unshift '.'
+$:.unshift File.join(DAEMON_ROOT,'lib')
+require 'yaml'
+require 'pp'
+require 'fileutils'
+require 'ys'
+require 'syslog_logger'
+require 'collector'
+
+$YSDEBUG = true
+
+# simplified version of DaemonKit. Lots of code stolen from it. <3 u!
+module YsDaemon
+    class << self
+        def boot!
+            Log.new.debug("YS Collector booting at #{Time.now}!") if $YSDEBUG
+            Controller.start
+        end
+    end
+    class Log
+        def initialize
+            @logger = SyslogLogger.new('collector')
+        end
+        def severities
+            {
+              :debug => Logger::DEBUG,
+              :info => Logger::INFO,
+              :warn => Logger::WARN,
+              :error => Logger::ERROR,
+              :fatal => Logger::FATAL,
+              :unknown => Logger::UNKNOWN
+            }
+        end
+        def debug(msg=nil)
+            add(:debug,msg)
+        end
+        def error(msg=nil)
+            add(:error,msg)
+        end
+        def info(msg=nil)
+            add(:info,msg)
+        end
+        def warn(msg=nil)
+            add(:warn,msg)
+        end
+        def add(sev,msg)
+            pp sev
+            pp msg
+            @logger.add(severities[ sev ]) { msg }
+        end
+    end
+    module Pidfile
+        class << self
+            def name
+                File.join(DAEMON_ROOT,"run/collector.pid") # bah, fix this
+            end
+            def write
+                File.open(Pidfile.name, 'w') {|f| f << "#{Process.pid}\n"}
+            end
+            def read
+                IO.read(Pidfile.name).to_i rescue nil
+            end
+        end
+    end
+    module Config
+        class << self
+            def load(file)
+                file += '.yml' unless file =~ /\.yml$/
+                path  = File.join( DAEMON_ROOT, 'config', file )
+                raise ArgumentError, "Can't find #{path}" unless File.exists?( path )
+                return YAML.load_file( path )
+            end
+        end
+    end
+    module Controller
+        class << self
+            def check_user
+                # force to run as stats?
+                # or at least complain when root?
+            end
+            def start
+                #Process.daemon
+                pp Process.pid
+                Pidfile.write
+                trap("TERM") {Controller.stop; exit}
+                trap("INT") {Controller.stop; exit}
+                Collector.new
+            end
+            def stop
+                puts "stop called"
+                if ! File.file?(Pidfile.name)
+                    puts "Pid file not found. Is the daemon started?"
+                    exit 1
+                end
+                pid = Pidfile.read
+                FileUtils.rm(Pidfile.name)
+                Process.kill("TERM", pid)
+            end
+        end
+    end
 end
 
-module DaemonKit
-  class << self
-    def boot!
-      unless booted?
-        pick_boot.run
-      end
-    end
-
-    def booted?
-      defined? DaemonKit::Initializer
-    end
-
-    def pick_boot
-      (vendor_kit? ? VendorBoot : GemBoot).new
-    end
-
-    def vendor_kit?
-      File.exists?( "#{DAEMON_ROOT}/vendor/daemon-kit" )
-    end
-  end
-
-  class Boot
-    def run
-      load_initializer
-      DaemonKit::Initializer.run
-    end
-  end
-
-  class VendorBoot < Boot
-    def load_initializer
-      require "#{DAEMON_ROOT}/vendor/daemon-kit/lib/daemon_kit/initializer"
-    end
-  end
-
-  class GemBoot < Boot
-    def load_initializer
-      begin
-        require 'rubygems' unless defined?( ::Gem )
-        gem 'daemon-kit'
-        require 'daemon_kit/initializer'
-      rescue ::Gem::LoadError => e
-        msg = <<EOF
-
-You are missing the daemon-kit gem. Please install the following gem:
-
-sudo gem install daemon-kit
-
-EOF
-        $stderr.puts msg
-        exit 1
-      end
-    end
-  end
-end
-
-DaemonKit.boot!
+YsDaemon.boot!
