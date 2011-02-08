@@ -6,14 +6,13 @@ class Cpu
         @labels = %w{user nice system idle iowait irq softirq}
         @interval = options[:interval] if options[:interval]
     end
+    def sample
+        IO.readlines("/proc/stat")[0].split[1..-2].map{|s| s.to_i}
+    end
     def go
-        times = []
-        2.times do
-            times << IO.readlines("/proc/stat")[0].split[1..-2].map{|s| s.to_i}
-            sleep 3
-        end
-        first = times[0]
-        last  = times[1]
+        first = sample
+        sleep 3
+        last  = sample
         @data  = first.zip(last).map{|a| a[1] - a[0]}
         @total = @data.inject{|a,b| a += b }.to_f
     end

@@ -33,6 +33,7 @@ class Collector
     end
 
     def reload
+        log.info "Reload requested."
         unschedule_plugins
         load_plugins
         schedule_plugins
