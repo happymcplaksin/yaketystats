@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 
-$: << File.expand_path(File.join(File.dirname(__FILE__), '../lib'))
+TOP = File.join(File.dirname(__FILE__),'..')
+$: << File.expand_path(File.join(TOP, 'lib'))
 
 $stdout.sync = true
 
@@ -11,6 +12,18 @@ require 'benchmark'
 $YSDEBUGGER=true
 
 loadee = ARGV.shift
+
+# write a usage
+
+# look for it in the plugins dir if it doesn't look like you've specified
+# a long path
+unless /\//.match(loadee)
+    maybe = File.join(TOP,"plugins/#{loadee}")
+    pp maybe
+    if FileTest.exists?(maybe)
+        loadee = maybe
+    end
+end
 
 puts "Loading: #{loadee}"
 time = Benchmark.measure do
