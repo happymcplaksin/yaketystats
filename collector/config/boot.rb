@@ -9,7 +9,7 @@ require 'ys'
 require 'syslog_logger'
 require 'collector'
 
-#$YSDEBUG = true
+$YSDEBUG = true
 
 # simplified version of DaemonKit. Lots of code stolen from it. <3 u!
 module YsDaemon
@@ -46,8 +46,8 @@ module YsDaemon
             add(:warn,msg)
         end
         def add(sev,msg)
-            pp sev
-            pp msg
+            pp sev if $YSDEBUG
+            pp msg if $YSDEBUG
             @logger.add(severities[ sev ]) { msg }
         end
     end
@@ -81,7 +81,7 @@ module YsDaemon
                 # or at least complain when root?
             end
             def start
-                Process.daemon
+                #Process.daemon
                 Pidfile.write
                 trap("TERM") {Controller.stop; exit}
                 trap("INT") {Controller.stop; exit}

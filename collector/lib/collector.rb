@@ -4,9 +4,11 @@ $:.unshift '/usr/local/ys/ruby/lib/ruby/gems/1.9.1/gems/rufus-scheduler-2.0.8/li
 
 require 'rufus/scheduler'
 require 'ys/plugin'
+require 'collector/http'
 
 class Collector
     include YS::Base
+    include Pusher
     def initialize
         @plugins     = []
         @config      = YsDaemon::Config.load('collector')
@@ -41,56 +43,6 @@ class Collector
 
     def unschedule_plugins
         @scheduler.find_by_tag('user').map{|job| job.unschedule}
-    end
-
-    def maintenance?
-        #puts ObjectSpace.statistics
-        http_agent  = ::Curl::Easy.new
-        http_agent.headers["User-Agent"] = 'YaketyStats 3.0 Collector'
-        log.debug "Looking for maint file: #{@stats_server}/maintenance" if $YSDEBUG
-        # return if maint file
-        http_agent.url="#{@stats_server}/maintenance"
-        http_agent.perform
-        log.debug "Response for maint file was [#{http_agent.response_code}]" if $YSDEBUG
-        r = ! http_agent.response_code.nil? && http_agent.response_code != 404
-        http_agent.close
-        r
-    end
-
-    def upload_stats
-        return if maintenance?
-        #puts ObjectSpace.statistics
-        log.debug "Stepping aside stats file" if $YSDEBUG
-        step_aside
-        # look for stats files that aren't 'new'
-        files = Dir.glob("#{@stats_dir}/[0-9]*")
-        log.debug "Found these stats files: [#{files.join(',')}]" if $YSDEBUG
-        files.sort!
-
-        http_agent  = ::Curl::Easy.new
-        http_agent.headers["User-Agent"] = 'YaketyStats 3.0 Collector'
-        http_agent.multipart_form_post = true
-        http_agent.url = "#{@stats_server}/#{@store_path}"
-        okre = /OK/
-        files.each do |upme|
-            if File.zero? upme
-                File.unlink upme
-                next
-            end
-            log.debug "Posting #{upme}" if $YSDEBUG
-            http_agent.verbose = true if $YSDEBUG
-            http_agent.http_post(::Curl::PostField.content('dataversion','1.3'),
-                                 ::Curl::PostField.content('host', fqdn),
-                                 ::Curl::PostField.file('datafile',upme))
-            if okre.match http_agent.body_str
-                File.unlink upme
-            else
-                p http_agent.body_str if $YSDEBUG
-                log.fatal "Unable to upload. #{http_agent.response_code}"
-                break
-            end
-        end
-        http_agent.close
     end
 
     def open_pipe
@@ -164,9 +116,9 @@ class Collector
         @scheduler.every('10s', :tags => 'service') do
             read_pipe
         end
-        #@scheduler.every('310s', :tags => 'service') do
-            #upload_stats
-        #end
+        @scheduler.every('310s', :tags => 'service') do
+            upload_stats
+        end
     end
 
     def stats_write(s)
