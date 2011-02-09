@@ -1,0 +1,33 @@
+Now that we've switched to 1.9
+
+bring back syslog
+bring back http posting
+
+# Controller class needs to
+#
+# * Load puppet-friendly config files config.d style ><
+# * Load plugin files
+# * Initialize plugin instances
+# * Write plugin/pipe output
+# * Handle writing w/o locking and file switching
+# * Open named pipe and read from it on a schedule
+# * Do uploads on a schedule
+
+# * Handle HUP / reload config
+# ** means unschedule all and create new schedules for all
+# * Handle plugin output including validation
+# * Do uploads right now! signal
+# * Handle plug{in,out}s.d/array.y
+
+# Plugin improvements
+#
+# * Auto-add the first part of the path to be plugin.class.to_s.downcase OR:
+# * You may want to override the path for a given plugin
+# * Handle instances with naming an labels etc The monitoring-side of above
+# * You may want to override the interval for an instance of a plugin
+# * Do most gathering in #go and hand off structures to #stats and #monitor
+# * Do monitoring stuff
+# ** have an NRPE encoder in the YS libs
+
+# libs
+# * pidfile reader
