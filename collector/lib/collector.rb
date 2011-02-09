@@ -70,12 +70,13 @@ class Collector
 
     def load_plugins
         @plugconfdirs.each do |pcdir|
-            key = pcdir.sub(/.*g(.+)s.d/,'\1')
+            key = pcdir.sub(/.*g(.+)s.d/,'\1') # in or out
             Dir.glob("#{pcdir}/*.y").each do |f|
                 log.debug "reading #{f}." if $YSDEBUG
                 conf = YAML.load_file(f)
                 name = conf[:name]
                 file = "#{@mydir}/plug#{key}s/#{conf[:name]}"
+                file += '.rb' if key == 'in'
                 if FileTest.exists?(file)
                     begin
                         if key == 'in'

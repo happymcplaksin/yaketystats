@@ -13,8 +13,14 @@ $YSDEBUGGER=true
 
 loadee = ARGV.shift
 
+if loadee.nil?
+    puts "someday a usage... your plugin as $1!"
+    exit 2
+end
+
 # write a usage
 
+loadee += '.rb' unless /[.]rb$/.match(loadee)
 # look for it in the plugins dir if it doesn't look like you've specified
 # a long path
 unless /\//.match(loadee)
