@@ -1,7 +1,6 @@
 class Loadavg
     include YS::Plugin
 
-    attr_reader :interval
     def initialize(options)
         @options = options
         self.interval = 60
