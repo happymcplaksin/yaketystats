@@ -30,6 +30,7 @@ class Io
         @data = Hash[*@data.flatten]
     end
     def stats
+        raise YS::NoData unless @data
         out = ''
         @data.each_pair do |thing,value|
             out << counter({:p => thing, :v => value})

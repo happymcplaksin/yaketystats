@@ -6,10 +6,10 @@ class Fs
     include YS::Plugin
     include Sys
 
-    attr_reader :interval
     def initialize(options)
-        @ignore = /bcv|mnt/i
-        @interval = 60
+        @options = options
+        @ignore = /bcv|mnt/i #FIX
+        self.interval = 60
         @mountpoints = []
         @map = []
     end

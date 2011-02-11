@@ -3,11 +3,11 @@ require 'linux/proctable'
 class Ramperproc
     include YS::Plugin
     include Sys
-    attr_reader :interval
+
     def initialize(options)
-        @interval = 60
+        @options = options
+        self.interval = 60
         @procname = options[:procname]
-        @interval = options[:interval] if options[:interval]
     end
     def go
         @data = ProcTable.ps

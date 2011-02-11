@@ -3,10 +3,12 @@ class Loadavg
 
     attr_reader :interval
     def initialize(options)
-        @interval = 60
+        @options = options
+        self.interval = 60
     end
 
     def stats
+        raise YS::NoData unless @data
         out = ''
         @data.each do |key,value|
             out << gauge( :p => "load/#{key}", :v => value )

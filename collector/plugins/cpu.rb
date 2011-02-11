@@ -1,10 +1,9 @@
 class Cpu
     include YS::Plugin
-    attr_reader :interval
     def initialize(options)
-        @interval = 60
+        @options = options
+        self.interval = 60
         @labels = %w{user nice system idle iowait irq softirq}
-        @interval = options[:interval] if options[:interval]
     end
     def sample
         IO.readlines("/proc/stat").grep(/^cpu/)
@@ -40,6 +39,7 @@ class Cpu
         end
     end
     def stats
+        raise YS::NoData unless @data
         out = ''
         @data.each_key do |cpu|
             @labels.each_index do |i|
