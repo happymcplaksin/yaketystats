@@ -1,4 +1,5 @@
 module YS
+    BCVRE = Regexp.new('bcv',Regexp::IGNORECASE) # FIX! Add the stuff nagios ignores
     class NoData < StandardError; end
     class NoInterval < StandardError; end
     module Base
@@ -10,6 +11,24 @@ module YS
         # Return contents of /var/yaketystats/fqdn
         def fqdn()
             @fqdn ||= IO.read('/var/yaketystats/fqdn').strip
+        end
+
+        # Sees if the thing you've passed it matches BCVRE or
+        # anything in @options[:ignore]
+        def ignore?(name)
+            return true if YS::BCVRE.match(name)
+            return false unless @options[:ignore]
+            [@options[:ignore]].flatten.map{|s| Regexp.new(s)}.any?{|r| r.match(name)}
+        end
+
+        # returns the interval at which the plugin should run
+        def interval
+            @options[:interval]
+        end
+        # Sets a default for the interval at which the plugin should run
+        # Config file can override in the options hash.
+        def interval=(i)
+            @options[:interval] = i unless @options[:interval]
         end
 
         # Call 'out' with a hash like so
@@ -26,7 +45,7 @@ module YS
             define_method type.to_sym do |options|
                 #syslog unless options[:path] and options[:value]
                 leak = Time.now.to_i
-                h = { :fqdn => fqdn, :ts => leak, :t => type.to_s.upcase, :i => instance_variable_get('@interval') }
+                h = { :fqdn => fqdn, :ts => leak, :t => type.to_s.upcase, :i => interval }
                 h = h.merge options
                 fqdn = h.delete(:fqdn)
                 h[:p] = "/#{fqdn}/BNW/#{h[:p]}"

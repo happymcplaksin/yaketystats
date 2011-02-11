@@ -10,6 +10,7 @@ require 'pp'
 require 'benchmark'
 
 $YSDEBUGGER=true
+ecode = 0
 
 loadee = ARGV.shift
 
@@ -97,6 +98,7 @@ if runner.respond_to?('stats')
         puts "\nThey seem to be valid."
     else
         puts "\nINVALID"
+        ecode = 1
     end
 end
 if runner.respond_to?('monitor')
@@ -104,3 +106,4 @@ if runner.respond_to?('monitor')
     monitor = runner.monitor
     puts monitor
 end
+exit ecode
