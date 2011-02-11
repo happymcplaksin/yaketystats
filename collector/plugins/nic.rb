@@ -3,7 +3,6 @@ class Nic
 
     IGNORE = %w{lo0 sit0}
 
-    attr_reader :stats
     def initialize(options)
         @options = options
         self.interval = 60
@@ -34,5 +33,9 @@ class Nic
                 @stats << derive(:p => stat, :v => value)
             end
         end
+    end
+    def stats
+        raise YS::NoData unless @stats
+        @stats
     end
 end
