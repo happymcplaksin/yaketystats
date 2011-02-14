@@ -8,12 +8,14 @@ class Nic
         self.interval = 60
         @enabled = %w{rx_bytes rx_errors tx_bytes tx_errors}
         @enabled << 'multicast' if options[:enable_multicast]
+        @ignore = @options[:ignore] if options[:ignore]
     end
     def up?(dir)
-        IO.read(File.join(dir,'operstate')).strip == 'up'
+        sysread(File.join(dir,'operstate')) == 'up'
     end
     def go
         no  = %w{. .. sit0 lo0}
+        no += @ignore if @ignore
         top = '/sys/class/net/'
         @stats = ''
         data   = {}
@@ -23,7 +25,7 @@ class Nic
             newtop = File.join(newtop,'statistics')
             @enabled.each do |file|
                 name = File.join('net',nic,file)
-                data[name] = IO.read(File.join(newtop,file)).strip.to_i
+                data[name] = sysread(File.join(newtop,file)).to_i
             end
         end
         data.map do |stat,value|

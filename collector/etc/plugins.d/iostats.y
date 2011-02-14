@@ -1,3 +1,3 @@
 ---
-:name: io
+:name: iostats
 :options: {}

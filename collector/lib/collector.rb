@@ -101,11 +101,15 @@ class Collector
         @plugins.each do |plugin|
             # interval vs schedule?
             @scheduler.every("#{plugin.interval}s", :tags => 'user') do
-                log.debug "Aboot to run go for #{plugin.class}" if $YSDEBUG
+                log.debug "#{plugin.class} GO" if $YSDEBUG
+                # need to have plugin.running? or something so we don't pile up.
                 plugin.go
+                log.debug "post-go for #{plugin.class}" if $YSDEBUG
                 if plugin.respond_to? 'stats'
-                    log.debug "Aboot to run stats for #{plugin.class}" if $YSDEBUG
+                    log.debug "#{plugin.class} STATS" if $YSDEBUG
                     stats_write plugin.stats
+                else
+                    log.debug "#{plugin.class} has no #stats" if $YSDEBUG
                 end
                 if plugin.respond_to? 'monitoring'
                     puts plugin.monitoring

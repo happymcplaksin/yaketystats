@@ -13,6 +13,18 @@ module YS
             @fqdn ||= IO.read('/var/yaketystats/fqdn').strip
         end
 
+        # #sysread because everything is hard. http://tickets.opscode.com/browse/OHAI-196
+        # This code was initially written to supprot RHEL5, so upgrading to a newer kernel
+        # that fixes this problem isn't possible. Instead, we work around.
+        # Completely arbitrary 2k max length. Patch it if that's problematic.
+        # returns a String#strip 'ed
+        def sysread(file)
+            f = File.new(file)
+            o = f.read_nonblock(2048)
+            f.close
+            o.strip
+        end
+
         # Sees if the thing you've passed it matches BCVRE or
         # anything in @options[:ignore]
         def ignore?(name)

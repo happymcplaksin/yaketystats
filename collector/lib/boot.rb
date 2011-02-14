@@ -46,8 +46,7 @@ module YsDaemon
             add(:warn,msg)
         end
         def add(sev,msg)
-            pp sev if $YSDEBUG
-            pp msg if $YSDEBUG
+            puts "#{sev} #{msg}" if $YSDEBUG
             @logger.add(severities[ sev ]) { msg }
         end
     end
