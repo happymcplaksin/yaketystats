@@ -1,4 +1,4 @@
-#!/home/sam/ruby-ee/bin/ruby
+#!/usr/bin/env ruby
 
 require 'benchmark'
 

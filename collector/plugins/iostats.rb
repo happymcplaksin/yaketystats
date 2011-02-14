@@ -5,8 +5,9 @@ class Iostats
     def initialize(options)
         @options = options
         self.interval = 60
-        @fields = %w{ios/read ios/read_merges bytes/read ms/read_wait ios/write io/write_merges
+        @fields = %w{ios/read ios/read_merges bytes/read ms/read_wait ios/write ios/write_merges
                      bytes/write ms/write_wait ios/in_flight ms/total_io_wait ms/total_wait_for_all}
+        @ignore = options[:ignore]
     end
 
     def sample(file)
@@ -19,14 +20,14 @@ class Iostats
             next if ignore?(@map[sys])
             ldata = @fields.zip(sample("#{sys}/stat"))
             # turn sectors into bytes and add labels
-            ldata = ldata.map do|a|
+            ldata.each do|a|
+                next if /_merges$/.match(a[0])
                 if /^byte/.match(a[0])
-                    ["io/#{@map[sys]}/#{a[0]}",a[1].*(512)]
+                    @data << ["io/#{@map[sys]}/#{a[0]}",a[1].*(512)]
                 else
-                    ["io/#{@map[sys]}/#{a[0]}",a[1]]
+                    @data << ["io/#{@map[sys]}/#{a[0]}",a[1]]
                 end
             end
-            @data << ldata
         end
         @data = Hash[*@data.flatten]
     end
