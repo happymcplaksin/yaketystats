@@ -43,6 +43,18 @@ module YS
             @options[:interval] = i unless @options[:interval]
         end
 
+        def lock
+            @lock = true
+        end
+
+        def locked?
+            @lock
+        end
+
+        def unlock
+            @lock = false
+        end
+
         # Call 'out' with a hash like so
         # x={:p => 'machines/count', :t => 'TYPE', :i => 300, :ts => 123456, :v => 566}
         # YS.out x

@@ -21,11 +21,11 @@ class Iostats
             ldata = @fields.zip(sample("#{sys}/stat"))
             # turn sectors into bytes and add labels
             ldata.each do|a|
-                next if /_merges$/.match(a[0])
+                next if /_merges$|_flight$/.match(a[0])
                 if /^byte/.match(a[0])
-                    @data << ["io/#{@map[sys]}/#{a[0]}",a[1].*(512)]
+                    @data << ["io/#{a[0]}/#{@map[sys]}",a[1].*(512)]
                 else
-                    @data << ["io/#{@map[sys]}/#{a[0]}",a[1]]
+                    @data << ["io/#{a[0]}/#{@map[sys]}",a[1]]
                 end
             end
         end

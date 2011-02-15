@@ -102,17 +102,26 @@ class Collector
             # interval vs schedule?
             @scheduler.every("#{plugin.interval}s", :tags => 'user') do
                 log.debug "#{plugin.class} GO" if $YSDEBUG
-                # need to have plugin.running? or something so we don't pile up.
-                plugin.go
-                log.debug "post-go for #{plugin.class}" if $YSDEBUG
-                if plugin.respond_to? 'stats'
-                    log.debug "#{plugin.class} STATS" if $YSDEBUG
-                    stats_write plugin.stats
+                unless plugin.locked?
+                    plugin.lock
+                    plugin.go
+                    plugin.unlock
+                    log.debug "post-go for #{plugin.class}" if $YSDEBUG
+                    if plugin.respond_to? 'stats'
+                        log.debug "#{plugin.class} STATS" if $YSDEBUG
+                        plugin.lock
+                        stats_write plugin.stats
+                        plugin.unlock
+                    else
+                        log.debug "#{plugin.class} has no #stats" if $YSDEBUG
+                    end
+                    if plugin.respond_to? 'monitor'
+                        plugin.lock
+                        puts plugin.monitoring
+                        plugin.unlock
+                    end
                 else
-                    log.debug "#{plugin.class} has no #stats" if $YSDEBUG
-                end
-                if plugin.respond_to? 'monitoring'
-                    puts plugin.monitoring
+                    log.warn "#{plugin.class} locked during subsequent attempt to run."
                 end
             end
         end
