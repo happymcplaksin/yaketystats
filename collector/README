@@ -1,0 +1,40 @@
+Ruby collector for YS.
+
+The bad news: you need ruby 1.9.2 and this patch set:
+https://github.com/ruby/ruby/commit/1c9f703a4705b75a31308682828a57330422c706
+The files from that patch set are included in the ext/ directory.
+
+If you want to write your own ruby-based plugins, here's what you
+need to know:
+
+etc/plugins.d/PLUGIN-NAME.y
+    The config file for your plugin. See the existing ones for
+    examples.
+
+plugins.d/PLUGIN-NAME.rb
+    The actual plugin code. This file should contain a class that is
+    named the same thing as the file (minus the .rb of course.) This
+    class should include YS::Plugin and should have at least three
+    methods:
+        #initialize(options)
+            Collector will initialize your plugin with the options
+            hash from the .y yaml file. Even if your plugin has no
+            options, please follow the convention.
+
+            This function should also call 'self.interval=' and set
+            the interval to something sane.
+
+        #go
+            This function does the bulk of the work required to
+            get data. No use is made of its returned value.
+
+        #stats
+            This function returns a string containing all of the
+            stats returned by this plugin. Ideally it does little or
+            no processing beyond formatting this string.
+
+        #monitor
+            Future-use up/down/nagios style monitoring.
+
+External scripts can either send their stats strings into run/bucket,
+or be run via the 'plugout' method.
