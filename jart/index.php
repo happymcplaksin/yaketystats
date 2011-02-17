@@ -3027,7 +3027,9 @@ print "        var myEvents=$myEvents;\n";
     <dt><img src="img/stock_form-file-selection.png" title="Picker"></dt>
     <dd>Selects the Picker controls. These controls allow interactive building of graphs and playlists.</dd>
     <dt><img src="img/stock_macro-stop-after-procedure.png" title="Regexer"></dt>
-    <dd>Selects the Regexer. The Regexers allows you to build a playlist of graphs via regular expression. Knowledge of the regular expressions and the RRD layout is required for this option.</dd>
+    <dd>Selects the Regexer. The Regexer allows you to build a playlist of graphs via regular expression. Knowledge of the regular expressions and the RRD layout is required for this option.</dd>
+    <dt><img src="img/stock_calendar.png" title="Events"></dt>
+    <dd>Opens the Event-o-matic which allows you to create events that show up on ALL graphs.</dd>
     <dt><img src="img/gtk-preferences.png" title="Preferences"></dt>
     <dd>Opens a dialog where various preferences can be set and saved.</dd>
     <dt><img src="img/stock_file-with-objects.png" title="New Graph"></dt>
