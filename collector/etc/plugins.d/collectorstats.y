@@ -1,0 +1,3 @@
+---
+:name: collectorstats
+:options: {}

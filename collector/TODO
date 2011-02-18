@@ -27,8 +27,9 @@ bring back http posting
 # * You may want to override the interval for an instance of a plugin
 # * Do most gathering in #go and hand off structures to #stats and #monitor
 # * Do monitoring stuff
-# ** have an NRPE encoder in the YS libs
-# * I don't like having to attr_reader :interval all of the time.
 
 # libs
 # * pidfile reader
+# * fix Proctable to handle being passed 'self' to avoid lookups
+# * Pick a place for "external" files to go and have some utility methods
+# * utility method for mount table => either dm-devices or minor-nodes

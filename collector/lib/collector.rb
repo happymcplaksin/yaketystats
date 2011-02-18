@@ -3,7 +3,7 @@ $:.unshift '/usr/local/ys/ruby/lib/ruby/gems/1.9.1/gems/rufus-scheduler-2.0.8/li
 # check for existance of /var/yaketystats/fqdn
 
 require 'rufus/scheduler'
-require 'ys/plugin'
+require 'ys'
 require 'collector/http'
 
 class Collector
@@ -117,7 +117,7 @@ class Collector
                     end
                     if plugin.respond_to? 'monitor'
                         plugin.lock
-                        puts plugin.monitoring
+                        puts plugin.monitor
                         plugin.unlock
                     end
                 else

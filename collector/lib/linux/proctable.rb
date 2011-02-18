@@ -5,7 +5,7 @@ module Sys
    class ProcTable
 
       class Error < StandardError; end
-      
+
       # There is no constructor
       private_class_method :new
 
@@ -106,7 +106,7 @@ module Sys
             next unless file.to_i == pid if pid
 
             struct = ProcTableStruct.new
-            
+
             # Get /proc/<pid>/cmdline information. Strip out embedded nulls.
             begin
                data = IO.read("/proc/#{file}/cmdline").tr("\000", ' ').strip
@@ -220,7 +220,7 @@ module Sys
 
             # If cmdline is empty use comm instead
             struct.cmdline = struct.comm if struct.cmdline.empty?
-            
+
             struct.freeze # This is read-only data
 
             if block_given?

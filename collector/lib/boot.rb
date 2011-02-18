@@ -5,7 +5,6 @@ $:.unshift File.join(DAEMON_ROOT,'lib')
 require 'yaml'
 require 'pp'
 require 'fileutils'
-require 'ys'
 require 'syslog_logger'
 require 'collector'
 

@@ -5,7 +5,7 @@ $: << File.expand_path(File.join(TOP, 'lib'))
 
 $stdout.sync = true
 
-require 'ys/plugin'
+require 'ys'
 require 'pp'
 require 'benchmark'
 

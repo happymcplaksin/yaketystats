@@ -1,49 +1,80 @@
 require 'etc'
-require 'rubygems'
-require 'sys/filesystem'
 
 class Fs
     include YS::Plugin
-    include Sys
+    include YS::Nrpe
 
     def initialize(options)
         @options = options
         @ignore = /bcv|mnt/i #FIX
         self.interval = 60
-        @mountpoints = []
-        @map = []
+        @timeout = 10
+        @mountmap = {}
     end
 
     def get_mountpoints
         re = /\/dev\//
         IO.readlines('/etc/mtab').each do |l|
             bd,mp = l.split
-            @mountpoints << mp if re.match(bd)
+            @mountmap[mp] = { "owner" => Etc.getpwuid(File.stat(mp).uid).name } if re.match(bd)
+        end
+    end
+
+    def sad_fork(fses)
+        srun("df -lP #{fses.join(' ')}",@timeout).split("\n")[1..-1]
+    end
+
+    def parse_df(a)
+        labels = %w{size used available percent}
+        a.each do |line|
+            t = line.split
+            @mountmap[t[-1]].merge!(Hash[*labels.zip(t[1..-2]).flatten])
         end
     end
 
     def go
-        @map = []
         get_mountpoints
-        @mountpoints.each do |mp|
-            h    = {}
-            fss  = Filesystem.stat(mp)
-            pp fss
-            #free = fss.block_size * fss.blocks_available
-            free = fss.block_size * fss.blocks_free
-            size = fss.fragment_size * fss.blocks
-            pp mp
-            pp size
-            pp free
-            h[:sizem]  = size.to_mb
-            h[:pfree] = ((free.to_f / size.to_f) * 100).to_i
-            h[:pused] = 100 - h[:pfree]
-            h[:usedm] = size.-(free).to_mb
-            h[:mp] = mp
-            h[:owner ] = Etc.getpwuid(File::Stat.new(mp).uid).name
-            @map << h
+        df = sad_fork(@mountmap.keys)
+        parse_df(df)
+    end
+
+    def stats
+        out = ''
+        @mountmap.each_key do |fs|
+            %w{size used}.each do |thing|
+                out << gauge( :p => "disk/#{thing}/#{mungefs(fs)}", :v => @mountmap[fs][thing] )
+            end
         end
-        pp @map
+        out
+    end
+
+    def mungefs(fs)
+        fs = fs.sub(/\//,'-').sub(/^-/,'')
+        fs = 'root' if fs.empty?
+        fs
+    end
+
+    def sizing
+        out = []
+        @mountmap.each_key do |fs|
+            next if @ignore.match(fs)
+            out << "#{fs} #{@mountmap[fs]['percent'].sub(/%/,'')}"
+        end
+        out.join("\n") + "\n"
+    end
+
+    def ownership
+        out = []
+        @mountmap.each_key do |fs|
+            out << "#{fs}:#{@mountmap[fs]['owner']}"
+        end
+        out.join(' ')
+    end
+
+    def monitor2be
+        #pp @mountmap
+        print decode( encode(sizing) )
+        print decode( encode(ownership) )
     end
 end
 
