@@ -29,9 +29,7 @@ class Collector
         load_plugins
         schedule_plugins
         schedule_services
-        loop do
-            sleep 10
-        end
+        @scheduler.join
     end
 
     def reload

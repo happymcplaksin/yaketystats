@@ -19,8 +19,8 @@ class Collectorstats
         out = ''
         if @ramdata
             # Oh hai. Everyone knows the page size is 4096, dummo.
-            out << gauge(:p => "collector/rss/#{@procname}", :v => @ramdata.rss.*(4096))
-            out << gauge(:p => "collector/vsz/#{@procname}", :v => @ramdata.vsize)
+            out << gauge(:p => "collector/memory/rss", :v => @ramdata.rss.*(4096))
+            out << gauge(:p => "collector/memory/vsz", :v => @ramdata.vsize)
         else
             raise YS::NoData
         end
