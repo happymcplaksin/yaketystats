@@ -1,5 +1,4 @@
 require 'linux/proctable'
-require 'ys/schedstat'
 
 class Collectorstats
     include YS::Plugin
@@ -12,22 +11,18 @@ class Collectorstats
         @procname = options[:procname]
     end
     def go
-        @ramdata = ProcTable.ps(Process.pid)
-        @cpudata = schedstat('self')
+        @data = ProcTable.ps(Process.pid)
     end
     def stats
         out = ''
-        if @ramdata
+        if @data
             # Oh hai. Everyone knows the page size is 4096, dummo.
-            out << gauge(:p => "collector/memory/rss", :v => @ramdata.rss.*(4096))
-            out << gauge(:p => "collector/memory/vsz", :v => @ramdata.vsize)
+            out << gauge(:p => "collector/memory/rss", :v => @data.rss.*(4096))
+            out << gauge(:p => "collector/memory/vsz", :v => @data.vsize)
+            out << counter(:p => "collector/cpu/user", :v => @data.utime.(100))
+            out << counter(:p => "collector/cpu/sys",  :v => @data.stime.(100))
         else
             raise YS::NoData
-        end
-        if @cpudata
-            @cpudata.each_pair do |key,value|
-                out << counter(:p => "collector/cpu/#{key}", :v => value)
-            end
         end
         out
     end
