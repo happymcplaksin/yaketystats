@@ -2,7 +2,6 @@ require 'linux/proctable'
 
 class Collectorstats
     include YS::Plugin
-    include YS::Schedstat
     include Sys
 
     def initialize(options)
