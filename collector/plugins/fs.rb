@@ -43,7 +43,7 @@ class Fs
         @mountmap.each_key do |fs|
             next if @ignore.match(fs)
             %w{size used}.each do |thing|
-                out << gauge( :p => "disk/#{thing}/#{mungefs(fs)}", :v => @mountmap[fs][thing] )
+                out << gauge( :p => "disk/#{thing}/#{mungefs(fs)}", :v => @mountmap[fs][thing].*(1024) )
             end
         end
         out
