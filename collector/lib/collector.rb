@@ -161,6 +161,7 @@ class Plugout
         @argv     = hash[:options][:argv]
         @stats    = ''
     end
+    # fix this to use saferun
     def go
         @stats = %x{#{@name} #{@argv.join(' ')}}
     end
