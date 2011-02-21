@@ -15,6 +15,7 @@ module YsDaemon
     class << self
         def boot!
             Log.new.debug("YS Collector booting at #{Time.now}!") if $YSDEBUG
+            Controller.check_env
             Controller.start
         end
     end
@@ -74,6 +75,13 @@ module YsDaemon
     end
     module Controller
         class << self
+            def check_env
+                rundir = File.join(DAEMON_ROOT,"run")
+                # fix... also test that it's a dir and if it exists and isn't a dir, kill it, etc
+                unless FileTest.exists?(rundir)
+                    Dir.mkdir(rundir)
+                end
+            end
             def check_user
                 # force to run as stats?
                 # or at least complain when root?
