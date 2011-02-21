@@ -1,8 +1,5 @@
 Now that we've switched to 1.9
 
-bring back syslog
-bring back http posting
-
 # Controller class needs to
 #
 # * Load puppet-friendly config files config.d style ><

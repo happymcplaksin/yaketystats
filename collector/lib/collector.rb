@@ -1,3 +1,4 @@
+# Why? rubygems adds 40M rss in our experience.
 $:.unshift '/usr/local/ys/ruby/lib/ruby/gems/1.9.1/gems/rufus-scheduler-2.0.8/lib'
 # check perms&existance on the YS dirs
 # check for existance of /var/yaketystats/fqdn
@@ -12,11 +13,10 @@ class Collector
     def initialize
         @plugins     = []
         @config      = YsDaemon::Config.load('collector')
-@mydir       = File.expand_path(File.join(File.dirname(__FILE__), '..')) # Fix, switch to DAEMON_ROOT
-        @pipefile    = File.join(@mydir,'run/bucket')
-        @rundir      = File.join(@mydir,'run')
+        @pipefile    = File.join(DAEMON_ROOT,'run/bucket')
+        @rundir      = File.join(DAEMON_ROOT,'run')
         @pipe        = nil
-        @plugconfdirs= [File.join(@mydir,'etc/plugins.d'), File.join(@mydir,'etc/plugouts.d')]
+        @plugconfdirs= [File.join(DAEMON_ROOT,'etc/plugins.d'), File.join(DAEMON_ROOT,'etc/plugouts.d')]
         @stats_dir   = @config["stats_dir"]
         @stats_server= @config["stats_server"]
         @store_path  = @config["store_path"]
@@ -46,7 +46,7 @@ class Collector
 
     def open_pipe
         unless FileTest.exists?(@pipefile)
-            FileUtils.mkdir_p(@mydir) unless FileTest.exists?(@mydir)
+            FileUtils.mkdir_p(DAEMON_ROOT) unless FileTest.exists?(DAEMON_ROOT)
             system "mkfifo #{@pipefile}"
         end
         log.debug "About to open the pipe." if $YSDEBUG
@@ -73,7 +73,7 @@ class Collector
                 log.debug "reading #{f}." if $YSDEBUG
                 conf = YAML.load_file(f)
                 name = conf[:name]
-                file = "#{@mydir}/plug#{key}s/#{conf[:name]}"
+                file = "#{DAEMON_ROOT}/plug#{key}s/#{conf[:name]}"
                 file += '.rb' if key == 'in'
                 if FileTest.exists?(file)
                     begin
@@ -82,7 +82,7 @@ class Collector
                             # Horrible.  # a='Array'; b=Object.const_get(a); x=Class.new(b); y=x.new
                             @plugins <<  Object.const_get(name.capitalize).new(conf[:options])
                         elsif key == 'out'
-                            conf[:name] = "#{@mydir}/plugouts/#{conf[:name]}"
+                            conf[:name] = "#{DAEMON_ROOT}/plugouts/#{conf[:name]}"
                             @plugins << Plugout.new(conf)
                         end
                     rescue YS::NoInterval

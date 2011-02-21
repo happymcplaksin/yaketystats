@@ -1,4 +1,4 @@
-DAEMON_ROOT = "#{File.expand_path(File.dirname(__FILE__))}/.." unless defined?( DAEMON_ROOT )
+DAEMON_ROOT = "#{File.expand_path(File.join(File.dirname(__FILE__),'..'))}" unless defined?( DAEMON_ROOT )
 
 $:.unshift '.'
 $:.unshift File.join(DAEMON_ROOT,'lib')
