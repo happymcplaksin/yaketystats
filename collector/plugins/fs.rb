@@ -50,7 +50,7 @@ class Fs
     end
 
     def mungefs(fs)
-        fs = fs.sub(/\//,'-').sub(/^-/,'')
+        fs = fs.sub(/\//,'-').sub(/^-/,'').sub(/\//,'-')
         fs = 'root' if fs.empty?
         fs
     end
