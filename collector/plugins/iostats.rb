@@ -6,7 +6,7 @@ class Iostats
         @options = options
         self.interval = 60
         @fields = %w{ios/read ios/read_merges bytes/read ms/read_wait ios/write ios/write_merges
-                     bytes/write ms/write_wait ios/in_flight ms/total_io_wait ms/total_wait_for_all}
+                     bytes/write ms/write_wait ios/in_flight ms/total_time_active ms/total_wait_for_all}
         @ignore = options[:ignore]
     end
 
@@ -21,7 +21,7 @@ class Iostats
             ldata = @fields.zip(sample("#{sys}/stat"))
             # turn sectors into bytes and add labels
             ldata.each do|a|
-                next if /_merges$|_flight$/.match(a[0])
+                next if /_merges$|_flight$|for_all$/.match(a[0])
                 if /^byte/.match(a[0])
                     @data << ["io/#{a[0]}/#{@map[sys]}",a[1].*(512)]
                 else
