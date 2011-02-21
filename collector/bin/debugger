@@ -1,4 +1,4 @@
-#!/usr/local/ys/bin/ruby
+#!/usr/local/ys/ruby/bin/ruby
 
 TOP = File.join(File.dirname(__FILE__),'..')
 $: << File.expand_path(File.join(TOP, 'lib'))
