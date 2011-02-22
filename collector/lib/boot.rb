@@ -67,7 +67,7 @@ module YsDaemon
         class << self
             def load(file)
                 file += '.yml' unless file =~ /\.yml$/
-                path  = File.join( DAEMON_ROOT, 'config', file )
+                path  = File.join( DAEMON_ROOT, 'etc', file )
                 raise ArgumentError, "Can't find #{path}" unless File.exists?( path )
                 return YAML.load_file( path )
             end
