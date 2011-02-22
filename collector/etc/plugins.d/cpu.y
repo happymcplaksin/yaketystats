@@ -1,3 +1,4 @@
 ---
 :name: cpu
-:options: {}
+:options:
+    :verbose : true

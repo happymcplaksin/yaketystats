@@ -1,5 +1,12 @@
 class Cpu
     include YS::Plugin
+
+    # CPU stats for YS
+    #
+    # options:
+    #
+    # * :verbose => true
+    # ** Turns on full stats for all cpus. W/o it, you get combined.
     def initialize(options)
         @options = options
         self.interval = 60
@@ -20,6 +27,9 @@ class Cpu
             # if there is only /^cpu / and /^cpu0/ then
             # you only want the combined stat.
             if sample.size == 2
+                break
+            end
+            unless @options[:verbose]
                 break
             end
         end
