@@ -81,6 +81,15 @@ module YsDaemon
                 unless FileTest.exists?(rundir)
                     Dir.mkdir(rundir)
                 end
+                if FileTest.exists?(Pidfile.name)
+                    x = "/proc/#{Pidfile.read}/cmdline"
+                    if FileTest.exists?(x)
+                        if /collector/.match(IO.read(x))
+                            puts "Already running on pid: #{Pidfile.read} ?"
+                            exit 4
+                        end
+                    end
+                end
             end
             def check_user
                 # force to run as stats?
