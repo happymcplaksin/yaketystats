@@ -1,3 +1,5 @@
+Awooooga!  Awoooga!  The ruby_collector branch (which you're looking at) is changing the requirements.  So far only collector is different.  See https://github.com/riddley/yaketystats/tree/ruby_collector/collector
+
 YaketyStats (aka YS) gathers statistics about your *nix systems. YS is easy to install, configure and maintain.
 
 YS also has an AJAX-powered web interface for graphing data in RRD files--including Google Maps-like dragging.
