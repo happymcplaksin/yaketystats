@@ -1,6 +1,0 @@
-PKG=yaketystats-SORC
-NAME=yaketystats - SORC
-ARCH=sparc
-VERSION=VERSION-RELEASE
-CATEGORY=utility
-CLASSES=none

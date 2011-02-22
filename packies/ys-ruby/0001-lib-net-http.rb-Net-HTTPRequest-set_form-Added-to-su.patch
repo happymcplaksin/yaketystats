@@ -1,0 +1,335 @@
+From 1c9f703a4705b75a31308682828a57330422c706 Mon Sep 17 00:00:00 2001
+From: naruse <naruse@b2dd03c8-39d4-4d8f-98ff-823fe69b080e>
+Date: Mon, 13 Dec 2010 01:04:37 +0000
+Subject: [PATCH] * lib/net/http.rb (Net::HTTPRequest#set_form): Added to support
+   both application/x-www-form-urlencoded and multipart/form-data.
+   There is a similar API, Net::HTTPRequest#set_form_data, but
+   to keep its compatibility this is newly added. [ruby-dev:42729]
+
+git-svn-id: svn+ssh://ci.ruby-lang.org/ruby/trunk@30188 b2dd03c8-39d4-4d8f-98ff-823fe69b080e
+---
+ lib/net/http.rb            |  137 +++++++++++++++++++++++++++++++++++++++++++-
+ lib/net/protocol.rb        |    2 +
+ test/net/http/test_http.rb |   96 +++++++++++++++++++++++++++++++
+ 4 files changed, 241 insertions(+), 1 deletions(-)
+
+diff --git a/lib/net/http.rb b/lib/net/http.rb
+index 3f16ff8..6a86dba 100644
+--- a/lib/net/http.rb
++++ b/lib/net/http.rb
+@@ -22,6 +22,7 @@
+ require 'net/protocol'
+ autoload :OpenSSL, 'openssl'
+ require 'uri'
++autoload :SecureRandom, 'securerandom'
+ 
+ module Net   #:nodoc:
+ 
+@@ -1708,7 +1709,8 @@ module Net   #:nodoc:
+     alias content_type= set_content_type
+ 
+     # Set header fields and a body from HTML form data.
+-    # +params+ should be a Hash containing HTML form data.
++    # +params+ should be an Array of Arrays or
++    # a Hash containing HTML form data.
+     # Optional argument +sep+ means data record separator.
+     #
+     # Values are URL encoded as necessary and the content-type is set to
+@@ -1728,6 +1730,48 @@ module Net   #:nodoc:
+ 
+     alias form_data= set_form_data
+ 
++    # Set a HTML form data set.
++    # +params+ is the form data set; it is an Array of Arrays or a Hash
++    # +enctype is the type to encode the form data set.
++    # It is application/x-www-form-urlencoded or multipart/form-data.
++    # +formpot+ is an optional hash to specify the detail.
++    #
++    # boundary:: the boundary of the multipart message
++    # charset::  the charset of the message. All names and the values of
++    #            non-file fields are encoded as the charset.
++    #
++    # Each item of params is an array and contains following items:
++    # +name+::  the name of the field
++    # +value+:: the value of the field, it should be a String or a File
++    # +opt+::   an optional hash to specify additional information
++    #
++    # Each item is a file field or a normal field.
++    # If +value+ is a File object or the +opt+ have a filename key,
++    # the item is treated as a file field.
++    #
++    # If Transfer-Encoding is set as chunked, this send the request in
++    # chunked encoding. Because chunked encoding is HTTP/1.1 feature,
++    # you must confirm the server to support HTTP/1.1 before sending it.
++    #
++    # Example:
++    #    http.set_form([["q", "ruby"], ["lang", "en"]])
++    #
++    # See also RFC 2388, RFC 2616, HTML 4.01, and HTML5
++    #
++    def set_form(params, enctype='application/x-www-form-urlencoded', formopt={})
++      @body_data = params
++      @body = nil
++      @body_stream = nil
++      @form_option = formopt
++      case enctype
++      when /\Aapplication\/x-www-form-urlencoded\z/i,
++        /\Amultipart\/form-data\z/i
++        self.content_type = enctype
++      else
++        raise ArgumentError, "invalid enctype: #{enctype}"
++      end
++    end
++
+     # Set the Authorization: header for "Basic" authorization.
+     def basic_auth(account, password)
+       @header['authorization'] = [basic_encode(account, password)]
+@@ -1785,6 +1829,7 @@ module Net   #:nodoc:
+       self['User-Agent'] ||= 'Ruby'
+       @body = nil
+       @body_stream = nil
++      @body_data = nil
+     end
+ 
+     attr_reader :method
+@@ -1812,6 +1857,7 @@ module Net   #:nodoc:
+     def body=(str)
+       @body = str
+       @body_stream = nil
++      @body_data = nil
+       str
+     end
+ 
+@@ -1820,6 +1866,7 @@ module Net   #:nodoc:
+     def body_stream=(input)
+       @body = nil
+       @body_stream = input
++      @body_data = nil
+       input
+     end
+ 
+@@ -1837,6 +1884,8 @@ module Net   #:nodoc:
+         send_request_with_body sock, ver, path, @body
+       elsif @body_stream
+         send_request_with_body_stream sock, ver, path, @body_stream
++      elsif @body_data
++        send_request_with_body_data sock, ver, path, @body_data
+       else
+         write_header sock, ver, path
+       end
+@@ -1871,6 +1920,92 @@ module Net   #:nodoc:
+       end
+     end
+ 
++    def send_request_with_body_data(sock, ver, path, params)
++      if /\Amultipart\/form-data\z/i !~ self.content_type
++        self.content_type = 'application/x-www-form-urlencoded'
++        return send_request_with_body(sock, ver, path, URI.encode_www_form(params))
++      end
++
++      opt = @form_option.dup
++      opt[:boundary] ||= SecureRandom.urlsafe_base64(40)
++      self.set_content_type(self.content_type, boundary: opt[:boundary])
++      if chunked?
++        write_header sock, ver, path
++        encode_multipart_form_data(sock, params, opt)
++      else
++        require 'tempfile'
++        file = Tempfile.new('multipart')
++        encode_multipart_form_data(file, params, opt)
++        file.rewind
++        self.content_length = file.size
++        write_header sock, ver, path
++        IO.copy_stream(file, sock)
++      end
++    end
++
++    def encode_multipart_form_data(out, params, opt)
++      charset = opt[:charset]
++      boundary = opt[:boundary]
++      boundary ||= SecureRandom.urlsafe_base64(40)
++      chunked_p = chunked?
++
++      buf = ''
++      params.each do |key, value, h={}|
++        key = quote_string(key, charset)
++        filename =
++          h.key?(:filename) ? h[:filename] :
++          value.respond_to?(:to_path) ? File.basename(value.to_path) :
++          nil
++
++        buf << "--#{boundary}\r\n"
++        if filename
++          filename = quote_string(filename, charset)
++          type = h[:content_type] || 'application/octet-stream'
++          buf << "Content-Disposition: form-data; " \
++            "name=\"#{key}\"; filename=\"#{filename}\"\r\n" \
++            "Content-Type: #{type}\r\n\r\n"
++          if !out.respond_to?(:write) || !value.respond_to?(:read)
++            # if +out+ is not an IO or +value+ is not an IO
++            buf << (value.respond_to?(:read) ? value.read : value)
++          elsif value.respond_to?(:size) && chunked_p
++            # if +out+ is an IO and +value+ is a File, use IO.copy_stream
++            flush_buffer(out, buf, chunked_p)
++            out << "%x\r\n" % value.size if chunked_p
++            IO.copy_stream(value, out)
++            out << "\r\n" if chunked_p
++          else
++            # +out+ is an IO, and +value+ is not a File but an IO
++            flush_buffer(out, buf, chunked_p)
++            1 while flush_buffer(out, value.read(4096), chunked_p)
++          end
++        else
++          # non-file field:
++          #   HTML5 says, "The parts of the generated multipart/form-data
++          #   resource that correspond to non-file fields must not have a
++          #   Content-Type header specified."
++          buf << "Content-Disposition: form-data; name=\"#{key}\"\r\n\r\n"
++          buf << (value.respond_to?(:read) ? value.read : value)
++        end
++        buf << "\r\n"
++      end
++      buf << "--#{boundary}--\r\n"
++      flush_buffer(out, buf, chunked_p)
++      out << "0\r\n\r\n" if chunked_p
++    end
++
++    def quote_string(str, charset)
++      str = str.encode(charset, fallback:->(c){'&#%d;'%c.encode("UTF-8").ord}) if charset
++      str = str.gsub(/[\\"]/, '\\\\\&')
++    end
++
++    def flush_buffer(out, buf, chunked_p)
++      return unless buf
++      out << "%x\r\n"%buf.bytesize if chunked_p
++      out << buf
++      out << "\r\n" if chunked_p
++      buf.clear
++    end
++
+     def supply_default_content_type
+       return if content_type()
+       warn 'net/http: warning: Content-Type did not set; using application/x-www-form-urlencoded' if $VERBOSE
+diff --git a/lib/net/protocol.rb b/lib/net/protocol.rb
+index 2a6cfb4..a3ffa71 100644
+--- a/lib/net/protocol.rb
++++ b/lib/net/protocol.rb
+@@ -168,6 +168,8 @@ module Net # :nodoc:
+       }
+     end
+ 
++    alias << write
++
+     def writeline(str)
+       writing {
+         write0 str + "\r\n"
+diff --git a/test/net/http/test_http.rb b/test/net/http/test_http.rb
+index 586cce5..a2ce962 100644
+--- a/test/net/http/test_http.rb
++++ b/test/net/http/test_http.rb
+@@ -293,6 +293,102 @@ module TestNetHTTP_version_1_2_methods
+     assert_equal data.size, res.body.size
+     assert_equal data, res.body
+   end
++
++  def test_set_form
++    require 'tempfile'
++    file = Tempfile.new('ruby-test')
++    file << "\u{30c7}\u{30fc}\u{30bf}"
++    data = [
++      ['name', 'Gonbei Nanashi'],
++      ['name', "\u{540d}\u{7121}\u{3057}\u{306e}\u{6a29}\u{5175}\u{885b}"],
++      ['s"i\o', StringIO.new("\u{3042 3044 4e9c 925b}")],
++      ["file", file, filename: "ruby-test"]
++    ]
++    expected = <<"__EOM__".gsub(/\n/, "\r\n")
++--<boundary>
++Content-Disposition: form-data; name="name"
++
++Gonbei Nanashi
++--<boundary>
++Content-Disposition: form-data; name="name"
++
++\xE5\x90\x8D\xE7\x84\xA1\xE3\x81\x97\xE3\x81\xAE\xE6\xA8\xA9\xE5\x85\xB5\xE8\xA1\x9B
++--<boundary>
++Content-Disposition: form-data; name="s\\"i\\\\o"
++
++\xE3\x81\x82\xE3\x81\x84\xE4\xBA\x9C\xE9\x89\x9B
++--<boundary>
++Content-Disposition: form-data; name="file"; filename="ruby-test"
++Content-Type: application/octet-stream
++
++\xE3\x83\x87\xE3\x83\xBC\xE3\x82\xBF
++--<boundary>--
++__EOM__
++    start {|http|
++      _test_set_form_urlencoded(http, data.reject{|k,v|!v.is_a?(String)})
++      _test_set_form_multipart(http, false, data, expected)
++      _test_set_form_multipart(http, true, data, expected)
++    }
++  end
++
++  def _test_set_form_urlencoded(http, data)
++    req = Net::HTTP::Post.new('/')
++    req.set_form(data)
++    res = http.request req
++    assert_equal "name=Gonbei+Nanashi&name=%E5%90%8D%E7%84%A1%E3%81%97%E3%81%AE%E6%A8%A9%E5%85%B5%E8%A1%9B", res.body
++  end
++
++  def _test_set_form_multipart(http, chunked_p, data, expected)
++    data.each{|k,v|v.rewind rescue nil}
++    req = Net::HTTP::Post.new('/')
++    req.set_form(data, 'multipart/form-data')
++    req['Transfer-Encoding'] = 'chunked' if chunked_p
++    res = http.request req
++    body = res.body
++    assert_match(/\A--(?<boundary>\S+)/, body)
++    /\A--(?<boundary>\S+)/ =~ body
++    expected = expected.gsub(/<boundary>/, boundary)
++    assert_equal(expected, body)
++  end
++
++  def test_set_form_with_file
++    require 'tempfile'
++    file = Tempfile.new('ruby-test')
++    file << $test_net_http_data
++    filename = File.basename(file.to_path)
++    data = [['file', file]]
++    expected = <<"__EOM__".gsub(/\n/, "\r\n")
++--<boundary>
++Content-Disposition: form-data; name="file"; filename="<filename>"
++Content-Type: application/octet-stream
++
++<data>
++--<boundary>--
++__EOM__
++    expected.sub!(/<filename>/, filename)
++    expected.sub!(/<data>/, $test_net_http_data)
++    start {|http|
++      data.each{|k,v|v.rewind rescue nil}
++      req = Net::HTTP::Post.new('/')
++      req.set_form(data, 'multipart/form-data')
++      res = http.request req
++      body = res.body
++      header, _ = body.split(/\r\n\r\n/, 2)
++      assert_match(/\A--(?<boundary>\S+)/, body)
++      /\A--(?<boundary>\S+)/ =~ body
++      expected = expected.gsub(/<boundary>/, boundary)
++      assert_match(/^--(?<boundary>\S+)\r\n/, header)
++      assert_match(
++        /^Content-Disposition: form-data; name="file"; filename="#{filename}"\r\n/,
++        header)
++      assert_equal(expected, body)
++
++      data.each{|k,v|v.rewind rescue nil}
++      req['Transfer-Encoding'] = 'chunked'
++      res = http.request req
++      #assert_equal(expected, res.body)
++    }
++  end
+ end
+ 
+ class TestNetHTTP_v1_2 < Test::Unit::TestCase
+-- 
+1.7.1
+
