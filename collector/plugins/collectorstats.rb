@@ -1,5 +1,11 @@
 require 'linux/proctable'
 
+# This plugin has no options. It collects these stats about the
+# collector itself:
+#
+# *cpu use
+# *memory use
+
 class Collectorstats
     include YS::Plugin
     include Sys

@@ -1,3 +1,4 @@
+# Network Interface stats
 class Nic
     include YS::Plugin
 

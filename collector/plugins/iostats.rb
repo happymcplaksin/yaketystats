@@ -1,3 +1,4 @@
+# IO stats per filesystem
 class Iostats
     include YS::Plugin
 

@@ -1,3 +1,4 @@
+# Load average stats
 class Loadavg
     include YS::Plugin
 

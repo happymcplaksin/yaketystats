@@ -1,5 +1,3 @@
-Now that we've switched to 1.9
-
 # Controller class needs to
 #
 # * Load puppet-friendly config files config.d style ><
@@ -24,6 +22,14 @@ Now that we've switched to 1.9
 # * You may want to override the interval for an instance of a plugin
 # * Do most gathering in #go and hand off structures to #stats and #monitor
 # * Do monitoring stuff
+
+# * Document the plugins in prep for rdoc/yard/w/e
+# * Make io/fs ignore bcvs more completely
+# * Move sys/dev masher out into library or something
+# * Make io and cpu have LOD knobs
+# * show blocked & running procs like current cpu-vmstat
+# * right now exceptions, when running in daemon mode, go to the ether... figure out how to log them
+# * What to do about snmp-lib-de-jour and nokogiri etc?
 
 # libs
 # * pidfile reader

@@ -1,5 +1,20 @@
 require 'etc'
 
+# Filesystem data for non-BCV filesystems (by name)
+#
+# Stats:
+#
+# * size
+# * used
+#
+# Monitoring (futures)
+#
+# nrpe-encoded files:
+#
+# * fs use data (in %)
+# * fs->owner mapping
+
+
 class Fs
     include YS::Plugin
     include YS::Nrpe

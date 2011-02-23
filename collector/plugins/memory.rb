@@ -1,3 +1,4 @@
+# Memory stats derived from /proc/meminfo
 class Memory
     include YS::Plugin
 

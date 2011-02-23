@@ -1,9 +1,11 @@
 # Why? rubygems adds 40M rss in our experience.
 $:.unshift '/usr/local/ys/ruby/lib/ruby/gems/1.9.1/gems/rufus-scheduler-2.0.8/lib'
+$:.unshift '/usr/local/ys/ruby/lib/ruby/gems/1.9.1/gems/nokogiri-1.4.4/lib'
 # check perms&existance on the YS dirs
 # check for existance of /var/yaketystats/fqdn
 
 require 'rufus/scheduler'
+require 'nokogiri'
 require 'ys'
 require 'collector/http'
 

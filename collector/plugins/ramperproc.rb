@@ -1,5 +1,15 @@
 require 'linux/proctable'
 
+# RAM use per process
+#
+# Right now this plugin looks for the first process that matches
+# :procname and reports stats on it. Obviously that's completely
+# broken. Perhaps a future refactoring will bring a pid-file reader
+# or some other method(s).
+#
+# Options:
+#
+# * :procname => String
 class Ramperproc
     include YS::Plugin
     include Sys
