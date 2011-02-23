@@ -4,8 +4,9 @@ The bad news: you need ruby 1.9.2 and this patch set:
 https://github.com/ruby/ruby/commit/1c9f703a4705b75a31308682828a57330422c706
 The files from that patch set are included in the ext/ directory.
 
-The good news: You can build your own Ruby RPM.  packies/ys-ruby contains
-the patch mentioned above, a tarball of rufus-scheduler, and a spec file.
+The good news: You can build your own Ruby RPM just for YS.
+packies/ys-ruby contains the patch mentioned above, a tarball of
+rufus-scheduler, and a spec file.
 
 If you want to write your own ruby-based plugins, here's what you
 need to know:
