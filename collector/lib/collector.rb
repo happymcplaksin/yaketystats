@@ -104,20 +104,32 @@ class Collector
                 log.debug "#{plugin.class} GO" if $YSDEBUG
                 unless plugin.locked?
                     plugin.lock
-                    plugin.go
+                    begin
+                        plugin.go
+                    rescue
+                        log.error $!
+                    end
                     plugin.unlock
                     log.debug "post-go for #{plugin.class}" if $YSDEBUG
                     if plugin.respond_to? 'stats'
                         log.debug "#{plugin.class} STATS" if $YSDEBUG
                         plugin.lock
-                        stats_write plugin.stats
+                        begin
+                            stats_write plugin.stats
+                        rescue
+                            log.error $!
+                        end
                         plugin.unlock
                     else
                         log.debug "#{plugin.class} has no #stats" if $YSDEBUG
                     end
                     if plugin.respond_to? 'monitor'
                         plugin.lock
-                        puts plugin.monitor
+                        begin
+                            puts plugin.monitor
+                        rescue
+                            log.error $!
+                        end
                         plugin.unlock
                     end
                 else
