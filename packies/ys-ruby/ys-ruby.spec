@@ -31,11 +31,13 @@ files and to do system management tasks (as in Perl).  It is simple,
 straight-forward, and extensible.
 
 %prep
-# Extract Source1 first into buildroot (this includes a cd!)
-%setup -c -n %{buildroot} -D -T -a 1
+# Extract pre-built gems (Source1) into buildroot.  Note to Happy: Pretend / is buildroot.
+# delete -D and/or -T so no stragglers?
+%setup -q -c -n %{buildroot} -D -T -a 1
 
-# Extract source0 last because of cd
-%setup -n ruby-%{rubyver}-%{rubyminorver}
+# Extract Ruby source (Source0) last because the last thing extracting does
+# is cd.
+%setup -q -n ruby-%{rubyver}-%{rubyminorver}
 %patch0 -p1
 
 %build
