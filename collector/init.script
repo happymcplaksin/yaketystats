@@ -1,0 +1,31 @@
+#!/bin/sh
+
+# 5 second init script Sam & Happy 4/19/11
+
+PIDFILE=/var/run/ys/collector.pid
+
+function start (){
+    su stats -c /usr/local/ys/collector/bin/collector
+}
+
+function stop (){
+   kill -TERM $(cat $PIDFILE)
+}
+
+function restart (){
+    stop
+    sleep 2
+    start
+}
+
+case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    restart)
+        restart
+        ;;
+esac

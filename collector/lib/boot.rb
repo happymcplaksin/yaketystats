@@ -53,7 +53,7 @@ module YsDaemon
     module Pidfile
         class << self
             def name
-                File.join(DAEMON_ROOT,"run/collector.pid") # bah, fix this
+                "/var/run/ys/collector.pid"
             end
             def write
                 File.open(Pidfile.name, 'w') {|f| f << "#{Process.pid}\n"}
@@ -76,11 +76,11 @@ module YsDaemon
     module Controller
         class << self
             def check_env
-                rundir = File.join(DAEMON_ROOT,"run")
-                # fix... also test that it's a dir and if it exists and isn't a dir, kill it, etc
-                unless FileTest.exists?(rundir)
-                    Dir.mkdir(rundir)
-                end
+                #rundir = File.join(DAEMON_ROOT,"run")
+                ## fix... also test that it's a dir and if it exists and isn't a dir, kill it, etc
+                #unless FileTest.exists?(rundir)
+                    #Dir.mkdir(rundir)
+                #end
                 if FileTest.exists?(Pidfile.name)
                     x = "/proc/#{Pidfile.read}/cmdline"
                     if FileTest.exists?(x)
@@ -96,7 +96,7 @@ module YsDaemon
                 # or at least complain when root?
             end
             def start
-                #Process.daemon
+                Process.daemon
                 Pidfile.write
                 trap("TERM") {Controller.stop; exit}
                 trap("INT") {Controller.stop; exit}

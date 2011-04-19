@@ -15,7 +15,7 @@ class Nic
         sysread(File.join(dir,'operstate')) == 'up'
     end
     def go
-        no  = %w{. .. sit0 lo0}
+        no  = %w{. .. sit0 lo0 bonding_masters}
         no += @ignore if @ignore
         top = '/sys/class/net/'
         @stats = ''

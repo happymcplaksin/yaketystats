@@ -15,7 +15,7 @@ class Collector
     def initialize
         @plugins     = []
         @config      = YsDaemon::Config.load('collector')
-        @pipefile    = File.join(DAEMON_ROOT,'run/bucket')
+        @pipefile    = '/var/run/ys/bucket'
         @rundir      = File.join(DAEMON_ROOT,'run')
         @pipe        = nil
         @plugconfdirs= [File.join(DAEMON_ROOT,'etc/plugins.d'), File.join(DAEMON_ROOT,'etc/plugouts.d')]
