@@ -1,23 +1,7 @@
-From 1c9f703a4705b75a31308682828a57330422c706 Mon Sep 17 00:00:00 2001
-From: naruse <naruse@b2dd03c8-39d4-4d8f-98ff-823fe69b080e>
-Date: Mon, 13 Dec 2010 01:04:37 +0000
-Subject: [PATCH] * lib/net/http.rb (Net::HTTPRequest#set_form): Added to support
-   both application/x-www-form-urlencoded and multipart/form-data.
-   There is a similar API, Net::HTTPRequest#set_form_data, but
-   to keep its compatibility this is newly added. [ruby-dev:42729]
-
-git-svn-id: svn+ssh://ci.ruby-lang.org/ruby/trunk@30188 b2dd03c8-39d4-4d8f-98ff-823fe69b080e
----
- lib/net/http.rb            |  137 +++++++++++++++++++++++++++++++++++++++++++-
- lib/net/protocol.rb        |    2 +
- test/net/http/test_http.rb |   96 +++++++++++++++++++++++++++++++
- 4 files changed, 241 insertions(+), 1 deletions(-)
-
-diff --git a/lib/net/http.rb b/lib/net/http.rb
-index 3f16ff8..6a86dba 100644
---- a/lib/net/http.rb
-+++ b/lib/net/http.rb
-@@ -22,6 +22,7 @@
+diff -u -ru ruby-1.9.2-p180.pristine/lib/net/http.rb ruby-1.9.2-p180/lib/net/http.rb
+--- ruby-1.9.2-p180.pristine/lib/net/http.rb	2011-01-16 07:35:11.000000000 -0500
++++ ruby-1.9.2-p180/lib/net/http.rb	2011-04-19 10:19:42.457994460 -0400
+@@ -28,6 +28,7 @@
  require 'net/protocol'
  autoload :OpenSSL, 'openssl'
  require 'uri'
@@ -25,7 +9,7 @@ index 3f16ff8..6a86dba 100644
  
  module Net   #:nodoc:
  
-@@ -1708,7 +1709,8 @@ module Net   #:nodoc:
+@@ -1586,7 +1587,8 @@
      alias content_type= set_content_type
  
      # Set header fields and a body from HTML form data.
@@ -34,10 +18,10 @@ index 3f16ff8..6a86dba 100644
 +    # a Hash containing HTML form data.
      # Optional argument +sep+ means data record separator.
      #
-     # Values are URL encoded as necessary and the content-type is set to
-@@ -1728,6 +1730,48 @@ module Net   #:nodoc:
- 
-     alias form_data= set_form_data
+     # This method also set Content-Type: header field to
+@@ -1614,6 +1616,48 @@
+     end
+     private :urlencode
  
 +    # Set a HTML form data set.
 +    # +params+ is the form data set; it is an Array of Arrays or a Hash
@@ -84,7 +68,7 @@ index 3f16ff8..6a86dba 100644
      # Set the Authorization: header for "Basic" authorization.
      def basic_auth(account, password)
        @header['authorization'] = [basic_encode(account, password)]
-@@ -1785,6 +1829,7 @@ module Net   #:nodoc:
+@@ -1672,6 +1716,7 @@
        self['User-Agent'] ||= 'Ruby'
        @body = nil
        @body_stream = nil
@@ -92,7 +76,7 @@ index 3f16ff8..6a86dba 100644
      end
  
      attr_reader :method
-@@ -1812,6 +1857,7 @@ module Net   #:nodoc:
+@@ -1699,6 +1744,7 @@
      def body=(str)
        @body = str
        @body_stream = nil
@@ -100,7 +84,7 @@ index 3f16ff8..6a86dba 100644
        str
      end
  
-@@ -1820,6 +1866,7 @@ module Net   #:nodoc:
+@@ -1707,6 +1753,7 @@
      def body_stream=(input)
        @body = nil
        @body_stream = input
@@ -108,7 +92,7 @@ index 3f16ff8..6a86dba 100644
        input
      end
  
-@@ -1837,6 +1884,8 @@ module Net   #:nodoc:
+@@ -1724,6 +1771,8 @@
          send_request_with_body sock, ver, path, @body
        elsif @body_stream
          send_request_with_body_stream sock, ver, path, @body_stream
@@ -117,7 +101,7 @@ index 3f16ff8..6a86dba 100644
        else
          write_header sock, ver, path
        end
-@@ -1871,6 +1920,92 @@ module Net   #:nodoc:
+@@ -1758,6 +1807,92 @@
        end
      end
  
@@ -210,11 +194,10 @@ index 3f16ff8..6a86dba 100644
      def supply_default_content_type
        return if content_type()
        warn 'net/http: warning: Content-Type did not set; using application/x-www-form-urlencoded' if $VERBOSE
-diff --git a/lib/net/protocol.rb b/lib/net/protocol.rb
-index 2a6cfb4..a3ffa71 100644
---- a/lib/net/protocol.rb
-+++ b/lib/net/protocol.rb
-@@ -168,6 +168,8 @@ module Net # :nodoc:
+diff -u -ru ruby-1.9.2-p180.pristine/lib/net/protocol.rb ruby-1.9.2-p180/lib/net/protocol.rb
+--- ruby-1.9.2-p180.pristine/lib/net/protocol.rb	2009-10-02 08:04:37.000000000 -0400
++++ ruby-1.9.2-p180/lib/net/protocol.rb	2011-04-19 10:19:42.458994671 -0400
+@@ -168,6 +168,8 @@
        }
      end
  
@@ -223,11 +206,10 @@ index 2a6cfb4..a3ffa71 100644
      def writeline(str)
        writing {
          write0 str + "\r\n"
-diff --git a/test/net/http/test_http.rb b/test/net/http/test_http.rb
-index 586cce5..a2ce962 100644
---- a/test/net/http/test_http.rb
-+++ b/test/net/http/test_http.rb
-@@ -293,6 +293,102 @@ module TestNetHTTP_version_1_2_methods
+diff -u -ru ruby-1.9.2-p180.pristine/test/net/http/test_http.rb ruby-1.9.2-p180/test/net/http/test_http.rb
+--- ruby-1.9.2-p180.pristine/test/net/http/test_http.rb	2011-01-16 07:35:11.000000000 -0500
++++ ruby-1.9.2-p180/test/net/http/test_http.rb	2011-04-19 10:19:42.459994481 -0400
+@@ -307,6 +307,102 @@
      assert_equal data.size, res.body.size
      assert_equal data, res.body
    end
@@ -329,7 +311,4 @@ index 586cce5..a2ce962 100644
 +  end
  end
  
- class TestNetHTTP_v1_2 < Test::Unit::TestCase
--- 
-1.7.1
-
+ class TestNetHTTP_version_1_1 < Test::Unit::TestCase
