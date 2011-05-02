@@ -49,7 +49,7 @@ class Collector
     def open_pipe
         unless FileTest.exists?(@pipefile)
             FileUtils.mkdir_p(DAEMON_ROOT) unless FileTest.exists?(DAEMON_ROOT)
-            system "mkfifo #{@pipefile}"
+            system "mkfifo -m 775 #{@pipefile}"
         end
         log.debug "About to open the pipe." if $YSDEBUG
         @pipe = open @pipefile, File::RDONLY|File::NONBLOCK unless @pipe
