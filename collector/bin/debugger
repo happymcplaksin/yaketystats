@@ -41,10 +41,17 @@ puts time
 
 options = {}
 ARGV.each do |pair|
+    if /.y$/.match(pair)
+        require 'yaml'
+        puts "Found your options file #{pair}"
+        options = YAML.load_file(pair)
+        break
+    end
     key,value = pair.split('=')
     next unless key and value
     options[key.to_sym] = value
 end
+pp options
 
 # you can hand it plugin.rb or plugin or /path/to/plugin[.rb]
 cn = File.basename(loadee)
