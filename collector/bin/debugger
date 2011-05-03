@@ -44,7 +44,7 @@ ARGV.each do |pair|
     if /.y$/.match(pair)
         require 'yaml'
         puts "Found your options file #{pair}"
-        options = YAML.load_file(pair)
+        options = YAML.load_file(pair)[:options]
         break
     end
     key,value = pair.split('=')
