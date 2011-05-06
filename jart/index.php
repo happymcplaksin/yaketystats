@@ -2386,9 +2386,18 @@ print "        var myEvents=$myEvents;\n";
         function realSavePlaylist(){
             var plname = $F('playlistname');
             var pldir  = $F('playlistsubs') + '/';
-            G.graphs[0].description = $F('playlistdescription');
+            // Wow, this code is hacked to death.
+            // if you delete the first graph, you might not be able to save your description
+            // unless we re-create the G.graphs array sans nils
+            var ted = [];
+            G.graphs.each(function(graph){
+                if ( graph && graph.paths && graph.paths[0] ){
+                    ted.push(graph);
+                }
+            })
+            ted[0].description = $F('playlistdescription');
             //console.log(pldir+plname);
-            var playlist = Object.toJSON(G.graphs);
+            var playlist = Object.toJSON(ted);
             x_savePlaylist(plname,pldir,G.confirmoverwriteplaylist,playlist,savePlaylistCB);
         }
         function toggleRegexTotals(){
