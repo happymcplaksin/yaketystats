@@ -1,0 +1,706 @@
+#!/usr/bin/env perl
+
+# Copyright (C) 2008 Board of Regents of the University System of Georgia
+
+# This file is part of YaketyStats (see http://yaketystats.org/).
+#
+# YaketyStats is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, version 2.
+#
+# YaketyStats is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with YaketyStats.  If not, see <http://www.gnu.org/licenses/>.
+
+# Assumes you have VMware's Perl SDK installed:
+# http://www.vmware.com/support/developer/viperltoolkit/
+
+$|=1;
+use strict;
+use warnings;
+
+use VMware::VIRuntime;
+use Data::Dumper;
+$Data::Dumper::Purity = 1;
+$Data::Dumper::Deepcopy = 1;
+
+use Cwd 'realpath';
+our $g_dir = __FILE__;
+$g_dir =~ s/\/[^\/]+$//;
+$g_dir = realpath("$g_dir/..");
+require "$g_dir/lib/include";
+
+# These are the defaults.  They could be semi-overridden by specifying a
+# different interval in the client config file, but the RRD file would still have
+# space for updates every $interval as defined below.
+my $rrd_type = "GAUGE";
+my $rrd_interval;
+
+our ($g_exit, $g_default_timeout, $g_host, $g_sep, $g_collector);
+$main::g_host = get_hostname ();
+$g_collector = 'esx';
+default_plugin_opts ();
+
+my (@data, $line, @return);
+
+# PUT YOUR LOCAL VARIABLES HERE!
+our %econfig;
+#------------------------------------------------------------------------------
+# What, you want to understand?!?  Start here:
+# http://www.vmware.com/support/developer/vc-sdk/visdk400pubs/ReferenceGuide/vim.PerformanceManager.html
+
+my %perf;
+my $megabyte = 1024 * 1024;
+my $kilobyte = 1024;
+# These are for ESX itself:
+$perf{1}{'label'} = 'CPU Usage (None)';
+$perf{1}{'path'}  = '/cpu/usage/percent/none';
+$perf{2}{'label'} = 'CPU Usage (Average)';
+$perf{2}{'path'}  = '/cpu/usage/percent/average';
+$perf{3}{'label'} = 'CPU Usage (Minimum)';
+$perf{3}{'path'}  = '/cpu/usage/percent/minimum';
+$perf{4}{'label'} = 'CPU Usage (Maximum)';
+$perf{4}{'path'}  = '/cpu/usage/percent/maximum';
+
+$perf{5}{'label'} = 'CPU Usage in MHz (None)';
+$perf{5}{'path'}  = '/cpu/usage/mhz/none';
+$perf{5}{'mult'}  = $megabyte;
+$perf{6}{'label'} = 'CPU Usage in MHz (Average)';
+$perf{6}{'path'}  = '/cpu/usage/mhz/average';
+$perf{6}{'mult'}  = $megabyte;
+$perf{7}{'label'} = 'CPU Usage in MHz (Minimum)';
+$perf{7}{'path'}  = '/cpu/usage/mhz/minimum';
+$perf{7}{'mult'}  = $megabyte;
+$perf{8}{'label'} = 'CPU Usage in MHz (Maximum)';
+$perf{8}{'path'}  = '/cpu/usage/mhz/maximum';
+$perf{8}{'mult'}  = $megabyte;
+
+$perf{9}{'label'} = 'CPU System';
+$perf{9}{'path'}   = '/cpu/time/ms/system';
+$perf{10}{'label'} = 'CPU Wait';
+$perf{10}{'path'}  = '/cpu/time/ms/wait';
+$perf{11}{'label'} = 'CPU Ready';
+$perf{11}{'path'}  = '/cpu/time/ms/ready';
+$perf{12}{'label'} = 'CPU Extra';
+$perf{12}{'path'}  = '/cpu/time/ms/extra';
+$perf{13}{'label'} = 'CPU Used';
+$perf{13}{'path'}  = '/cpu/time/ms/used';
+$perf{14}{'label'} = 'CPU Guaranteed';
+$perf{14}{'path'}  = '/cpu/time/ms/guaranteed';
+
+
+$perf{15}{'label'} = 'Memory Usage (None)';
+$perf{15}{'path'} = '/memory/pct/none';
+$perf{16}{'label'} = 'Memory Usage (Average)';
+$perf{16}{'path'} = '/memory/pct/average';
+$perf{17}{'label'} = 'Memory Usage (Minimum)';
+$perf{17}{'path'} = '/memory/pct/minimum';
+$perf{18}{'label'} = 'Memory Usage (Maximum)';
+$perf{18}{'path'} = '/memory/pct/maximum';
+
+$perf{19}{'label'} = 'Memory Granted (None)';
+$perf{19}{'path'} = '/memory/granted/none';
+$perf{19}{'mult'} = $kilobyte;
+$perf{20}{'label'} = 'Memory Granted (Average)';
+$perf{20}{'path'} = '/memory/granted/average';
+$perf{20}{'mult'} = $kilobyte;
+$perf{21}{'label'} = 'Memory Granted (Minimum)';
+$perf{21}{'path'} = '/memory/granted/minimum';
+$perf{21}{'mult'} = $kilobyte;
+$perf{22}{'label'} = 'Memory Granted (Maximum)';
+$perf{22}{'path'} = '/memory/granted/maximum';
+$perf{22}{'mult'} = $kilobyte;
+
+$perf{23}{'label'} = 'Memory Active (None)';
+$perf{23}{'path'} = '/memory/active/none';
+$perf{23}{'mult'} = $kilobyte;
+$perf{24}{'label'} = 'Memory Active (Average)';
+$perf{24}{'path'} = '/memory/active/average';
+$perf{24}{'mult'} = $kilobyte;
+$perf{25}{'label'} = 'Memory Active (Minimum)';
+$perf{25}{'path'} = '/memory/active/minimum';
+$perf{25}{'mult'} = $kilobyte;
+$perf{26}{'label'} = 'Memory Active (Maximum)';
+$perf{26}{'path'} = '/memory/active/maximum';
+$perf{26}{'mult'} = $kilobyte;
+
+$perf{27}{'label'} = 'Memory Shared (None)';
+$perf{27}{'path'} = '/memory/shared/none';
+$perf{27}{'mult'} = $kilobyte;
+$perf{28}{'label'} = 'Memory Shared (Average)';
+$perf{28}{'path'} = '/memory/shared/average';
+$perf{28}{'mult'} = $kilobyte;
+$perf{29}{'label'} = 'Memory Shared (Minimum)';
+$perf{29}{'path'} = '/memory/shared/minimum';
+$perf{29}{'mult'} = $kilobyte;
+$perf{30}{'label'} = 'Memory Shared (Maximum)';
+$perf{30}{'path'} = '/memory/shared/maximum';
+$perf{30}{'mult'} = $kilobyte;
+
+$perf{31}{'label'} = 'Memory Zero (None)';
+$perf{31}{'path'} = '/memory/zero/none';
+$perf{31}{'mult'} = $kilobyte;
+$perf{32}{'label'} = 'Memory Zero (Average)';
+$perf{32}{'path'} = '/memory/zero/average';
+$perf{32}{'mult'} = $kilobyte;
+$perf{33}{'label'} = 'Memory Zero (Minimum)';
+$perf{33}{'path'} = '/memory/zero/minimum';
+$perf{33}{'mult'} = $kilobyte;
+$perf{34}{'label'} = 'Memory Zero (Maximum)';
+$perf{34}{'path'} = '/memory/zero/maximum';
+$perf{34}{'mult'} = $kilobyte;
+
+$perf{35}{'label'} = 'Memory Unreserved (None)';
+$perf{35}{'path'} = '/memory/unreserved/none';
+$perf{35}{'mult'} = $kilobyte;
+$perf{36}{'label'} = 'Memory Unreserved (Average)';
+$perf{36}{'path'} = '/memory/unreserved/average';
+$perf{36}{'mult'} = $kilobyte;
+$perf{37}{'label'} = 'Memory Unreserved (Minimum)';
+$perf{37}{'path'} = '/memory/unreserved/minimum';
+$perf{37}{'mult'} = $kilobyte;
+$perf{38}{'label'} = 'Memory Unreserved (Maximum)';
+$perf{38}{'path'} = '/memory/unreserved/maximum';
+$perf{38}{'mult'} = $kilobyte;
+
+$perf{39}{'label'} = 'Memory Swap Used (None)';
+$perf{39}{'path'} = '/memory/swap/used/none';
+$perf{39}{'mult'} = $kilobyte;
+$perf{40}{'label'} = 'Memory Swap Used (Average)';
+$perf{40}{'path'} = '/memory/swap/used/average';
+$perf{40}{'mult'} = $kilobyte;
+$perf{41}{'label'} = 'Memory Swap Used (Minimum)';
+$perf{41}{'path'} = '/memory/swap/used/minimum';
+$perf{41}{'mult'} = $kilobyte;
+$perf{42}{'label'} = 'Memory Swap Used (Maximum)';
+$perf{42}{'path'} = '/memory/swap/used/maximum';
+$perf{42}{'mult'} = $kilobyte;
+
+$perf{43}{'label'} = 'Memory Swap Unreserved (None)';
+$perf{43}{'path'} = '/memory/swap/unreserved/none';
+$perf{43}{'mult'} = $kilobyte;
+$perf{44}{'label'} = 'Memory Swap Unreserved (Average)';
+$perf{44}{'path'} = '/memory/swap/unreserved/average';
+$perf{44}{'mult'} = $kilobyte;
+$perf{45}{'label'} = 'Memory Swap Unreserved (Minimum)';
+$perf{45}{'path'} = '/memory/swap/unreserved/minimum';
+$perf{45}{'mult'} = $kilobyte;
+$perf{46}{'label'} = 'Memory Swap Unreserved (Maximum)';
+$perf{46}{'path'} = '/memory/swap/unreserved/maximum';
+$perf{46}{'mult'} = $kilobyte;
+
+$perf{47}{'label'} = 'Memory Shared Common (None)';
+$perf{47}{'path'} = '/memory/shared/common/none';
+$perf{47}{'mult'} = $kilobyte;
+$perf{48}{'label'} = 'Memory Shared Common (Average)';
+$perf{48}{'path'} = '/memory/shared/common/average';
+$perf{48}{'mult'} = $kilobyte;
+$perf{49}{'label'} = 'Memory Shared Common (Minimum)';
+$perf{49}{'path'} = '/memory/shared/common/minimum';
+$perf{49}{'mult'} = $kilobyte;
+$perf{50}{'label'} = 'Memory Shared Common (Maximum)';
+$perf{50}{'path'} = '/memory/shared/common/maximum';
+$perf{50}{'mult'} = $kilobyte;
+
+$perf{51}{'label'} = 'Memory Heap (None)';
+$perf{51}{'path'} = '/memory/heap/none';
+$perf{51}{'mult'} = $kilobyte;
+$perf{52}{'label'} = 'Memory Heap (Average)';
+$perf{52}{'path'} = '/memory/heap/average';
+$perf{52}{'mult'} = $kilobyte;
+$perf{53}{'label'} = 'Memory Heap (Minimum)';
+$perf{53}{'path'} = '/memory/heap/minimum';
+$perf{53}{'mult'} = $kilobyte;
+$perf{54}{'label'} = 'Memory Heap (Maximum)';
+$perf{54}{'path'} = '/memory/heap/maximum';
+$perf{54}{'mult'} = $kilobyte;
+
+$perf{55}{'label'} = 'Memory Heap Free (None)';
+$perf{55}{'path'} = '/memory/heap/free/none';
+$perf{55}{'mult'} = $kilobyte;
+$perf{56}{'label'} = 'Memory Heap Free (Average)';
+$perf{56}{'path'} = '/memory/heap/free/average';
+$perf{56}{'mult'} = $kilobyte;
+$perf{57}{'label'} = 'Memory Heap Free (Minimum)';
+$perf{57}{'path'} = '/memory/heap/free/minimum';
+$perf{57}{'mult'} = $kilobyte;
+$perf{58}{'label'} = 'Memory Heap Free (Maximum)';
+$perf{58}{'path'} = '/memory/heap/free/maximum';
+$perf{58}{'mult'} = $kilobyte;
+
+$perf{59}{'label'} = 'Memory State';
+$perf{59}{'path'} = '/memory/state/ummmmm';
+
+$perf{60}{'label'} = 'Memory Swapped (None)';
+$perf{60}{'path'} = '/memory/swapped/none';
+$perf{60}{'mult'} = $kilobyte;
+$perf{61}{'label'} = 'Memory Swapped (Average)';
+$perf{61}{'path'} = '/memory/swapped/average';
+$perf{61}{'mult'} = $kilobyte;
+$perf{62}{'label'} = 'Memory Swapped (Minimum)';
+$perf{62}{'path'} = '/memory/swapped/minimum';
+$perf{62}{'mult'} = $kilobyte;
+$perf{63}{'label'} = 'Memory Swapped (Maximum)';
+$perf{63}{'path'} = '/memory/swapped/maximum';
+$perf{63}{'mult'} = $kilobyte;
+
+$perf{64}{'label'} = 'Memory Swap Target (None)';
+$perf{64}{'path'} = '/memory/swap/target/none';
+$perf{64}{'mult'} = $kilobyte;
+$perf{65}{'label'} = 'Memory Swap Target (Average)';
+$perf{65}{'path'} = '/memory/swap/target/average';
+$perf{65}{'mult'} = $kilobyte;
+$perf{66}{'label'} = 'Memory Swap Target (Minimum)';
+$perf{66}{'path'} = '/memory/swap/target/minimum';
+$perf{66}{'mult'} = $kilobyte;
+$perf{67}{'label'} = 'Memory Swap Target (Maximum)';
+$perf{67}{'path'} = '/memory/swap/target/maximum';
+$perf{67}{'mult'} = $kilobyte;
+
+$perf{68}{'label'} = 'Memory Swap In (None)';
+$perf{68}{'path'} = '/memory/swap/in/none';
+$perf{68}{'mult'} = $kilobyte;
+$perf{69}{'label'} = 'Memory Swap In (Average)';
+$perf{69}{'path'} = '/memory/swap/in/average';
+$perf{69}{'mult'} = $kilobyte;
+$perf{70}{'label'} = 'Memory Swap In (Minimum)';
+$perf{70}{'path'} = '/memory/swap/in/minimum';
+$perf{70}{'mult'} = $kilobyte;
+$perf{71}{'label'} = 'Memory Swap In (Maximum)';
+$perf{71}{'path'} = '/memory/swap/in/maximum';
+$perf{71}{'mult'} = $kilobyte;
+
+$perf{72}{'label'} = 'Memory Swap Out (None)';
+$perf{72}{'path'} = '/memory/swap/out/none';
+$perf{72}{'mult'} = $kilobyte;
+$perf{73}{'label'} = 'Memory Swap Out (Average)';
+$perf{73}{'path'} = '/memory/swap/out/average';
+$perf{73}{'mult'} = $kilobyte;
+$perf{74}{'label'} = 'Memory Swap Out (Minimum)';
+$perf{74}{'path'} = '/memory/swap/out/minimum';
+$perf{74}{'mult'} = $kilobyte;
+$perf{75}{'label'} = 'Memory Swap Out (Maximum)';
+$perf{75}{'path'} = '/memory/swap/out/maximum';
+$perf{75}{'mult'} = $kilobyte;
+
+$perf{76}{'label'} = 'Memory Balloon (None)';
+$perf{76}{'path'} = '/memory/balloon/none';
+$perf{76}{'mult'} = $kilobyte;
+$perf{77}{'label'} = 'Memory Balloon (Average)';
+$perf{77}{'path'} = '/memory/balloon/average';
+$perf{77}{'mult'} = $kilobyte;
+$perf{78}{'label'} = 'Memory Balloon (Minimum)';
+$perf{78}{'path'} = '/memory/balloon/minimum';
+$perf{78}{'mult'} = $kilobyte;
+$perf{79}{'label'} = 'Memory Balloon (Maximum)';
+$perf{79}{'path'} = '/memory/balloon/maximum';
+$perf{79}{'mult'} = $kilobyte;
+
+$perf{80}{'label'} = 'Memory Balloon Target (None)';
+$perf{80}{'path'} = '/memory/baloon/target/none';
+$perf{80}{'mult'} = $kilobyte;
+$perf{81}{'label'} = 'Memory Balloon Target (Average)';
+$perf{81}{'path'} = '/memory/baloon/target/average';
+$perf{81}{'mult'} = $kilobyte;
+$perf{82}{'label'} = 'Memory Balloon Target (Minimum)';
+$perf{82}{'path'} = '/memory/baloon/target/minimum';
+$perf{82}{'mult'} = $kilobyte;
+$perf{83}{'label'} = 'Memory Balloon Target (Maximum)';
+$perf{83}{'path'} = '/memory/baloon/target/maximum';
+$perf{83}{'mult'} = $kilobyte;
+
+$perf{84}{'label'} = 'Memory Consumed (None)';
+$perf{84}{'path'} = '/memory/consumed/none';
+$perf{84}{'mult'} = $kilobyte;
+$perf{85}{'label'} = 'Memory Consumed (Average)';
+$perf{85}{'path'} = '/memory/consumed/average';
+$perf{85}{'mult'} = $kilobyte;
+
+#$perf{86}{'label'} = 'reserved';
+#$perf{86}{'path'} = '';
+
+$perf{87}{'label'} = 'Memory Overhead (None)';
+$perf{87}{'path'} = '/memory/overhead/none';
+$perf{87}{'mult'} = $kilobyte;
+$perf{88}{'label'} = 'Memory Overhead (Average)';
+$perf{88}{'path'} = '/memory/overhead/average';
+$perf{88}{'mult'} = $kilobyte;
+$perf{89}{'label'} = 'Memory Overhead (Minimum)';
+$perf{89}{'path'} = '/memory/overhead/minimum';
+$perf{89}{'mult'} = $kilobyte;
+$perf{90}{'label'} = 'Memory Overhead (Maximum)';
+$perf{90}{'path'} = '/memory/overhead/maximum';
+$perf{90}{'mult'} = $kilobyte;
+
+$perf{91}{'label'} = 'Disk Usage (None)';
+$perf{91}{'path'} = '/disk/usage/none';
+$perf{91}{'mult'} = $kilobyte;
+$perf{92}{'label'} = 'Disk Usage (Average)';
+$perf{92}{'path'} = '/disk/usage/average';
+$perf{92}{'mult'} = $kilobyte;
+$perf{93}{'label'} = 'Disk Usage (Minimum)';
+$perf{93}{'path'} = '/disk/usage/minimum';
+$perf{93}{'mult'} = $kilobyte;
+$perf{94}{'label'} = 'Disk Usage (Maximum)';
+$perf{94}{'path'} = '/disk/usage/maximum';
+$perf{94}{'mult'} = $kilobyte;
+
+$perf{95}{'label'} = 'Disk Read Requests';
+$perf{95}{'path'} = '/disk/requests/read';
+$perf{96}{'label'} = 'Disk Write Requests';
+$perf{96}{'path'} = '/disk/requests/write';
+
+$perf{97}{'label'} = 'Disk Read Rate';
+$perf{97}{'path'} = '/disk/bytespersec/read';
+$perf{97}{'mult'} = $kilobyte;
+$perf{98}{'label'} = 'Disk Write Rate';
+$perf{98}{'path'} = '/disk/bytesperesc/write';
+$perf{98}{'mult'} = $kilobyte;
+
+$perf{99}{'label'} = 'Network Usage (None)';
+$perf{99}{'path'} = '/network/bits/none';
+$perf{99}{'mult'} = $kilobyte * 8;
+$perf{100}{'label'} = 'Network Usage (Average)';
+$perf{100}{'path'} = '/network/bits/average';
+$perf{100}{'mult'} = $kilobyte * 8;
+$perf{101}{'label'} = 'Network Usage (Minimum)';
+$perf{101}{'path'} = '/network/bits/minimum';
+$perf{101}{'mult'} = $kilobyte * 8;
+$perf{102}{'label'} = 'Network Usage (Maximum)';
+$perf{102}{'path'} = '/network/bits/maximum';
+$perf{102}{'mult'} = $kilobyte * 8;
+
+$perf{103}{'label'} = 'Network Packets Received';
+$perf{103}{'path'} = '/network/packets/received';
+$perf{104}{'label'} = 'Network Packets Transmitted';
+$perf{104}{'path'} = '/network/pacets/transmitted';
+
+$perf{105}{'label'} = 'Network Data Receive Rate';
+$perf{105}{'path'} = '/network/bits/receive';
+$perf{105}{'mult'} = $kilobyte * 8;
+$perf{106}{'label'} = 'Network Data Transmit Rate';
+$perf{106}{'path'} = '/network/bits/transmit';
+$perf{106}{'mult'} = $kilobyte * 8;
+
+$perf{107}{'label'} = 'Uptime';
+$perf{107}{'path'} = '/system/uptime';
+
+$perf{108}{'label'} = 'Heartbeat';
+$perf{108}{'path'} = '/system/heartbeat';
+
+$perf{109}{'label'} = 'CPU Fairness';
+$perf{109}{'path'} = '/cluster/fairness/cpu';
+
+$perf{110}{'label'} = 'Memory Fairness';
+$perf{110}{'path'} = '/cluster/fairness/memory';
+
+$perf{111}{'label'} = 'Effective CPU Resources';
+$perf{111}{'path'} = '/cluster/cpu/mhz';
+$perf{111}{'mult'}  = $megabyte;
+
+$perf{112}{'label'} = 'Effective Memory Resources';
+$perf{112}{'path'} = '/cluster/memory/bytes';
+$perf{112}{'mult'} = $kilobyte * 1024;
+
+#$perf{113}{'label'} = 'Current failover level';
+#$perf{113}{'path'} = '';
+#
+#$perf{114}{'label'} = 'Available VDI (per VM) virtual machine licenses';
+#$perf{114}{'path'} = '';
+#
+#$perf{115}{'label'} = 'Excess VDI (per VM) virtual machine licenses';
+#$perf{115}{'path'} = '';
+#
+
+$perf{116}{'label'} = 'CPU Reserved Capacity';
+$perf{116}{'path'} = '/cpu/mhz/reserved';
+$perf{116}{'mult'}  = $megabyte;
+
+$perf{117}{'label'} = 'CPU Idle';
+$perf{117}{'path'} = '/cpu/ms/idle';
+
+$perf{118}{'label'} = 'Disk Commands Issued';
+$perf{118}{'path'} = '/disk/commands/issued';
+$perf{119}{'label'} = 'Disk Command Aborts';
+$perf{119}{'path'} = '/disk/commands/aborts';
+$perf{120}{'label'} = 'Disk Bus Resets';
+$perf{120}{'path'} = '/disk/commands/reset';
+
+$perf{121}{'label'} = 'Physical Device Read Latency';
+$perf{121}{'path'} = '/latency/read/ms/physical';
+$perf{122}{'label'} = 'Kernel Disk Read Latency';
+$perf{122}{'path'} = '/latency/read/ms/kernel';
+$perf{123}{'label'} = 'Disk Read Latency';
+$perf{123}{'path'} = '/latency/read/ms/disk';
+$perf{124}{'label'} = 'Queue Read Latency';
+$perf{124}{'path'} = '/latency/read/ms/queue';
+
+$perf{125}{'label'} = 'Physical Device Write Latency';
+$perf{125}{'path'} = '/latency/write/ms/physical';
+$perf{126}{'label'} = 'Kernel Disk Write Latency';
+$perf{126}{'path'} = '/latency/write/ms/kernel';
+$perf{127}{'label'} = 'Disk Write Latency';
+$perf{127}{'path'} = '/latency/write/ms/disk';
+$perf{128}{'label'} = 'Queue Write Latency';
+$perf{128}{'path'} = '/latency/write/ms/queue';
+
+$perf{129}{'label'} = 'Physical Device Command Latency';
+$perf{129}{'path'} = '/latency/command/ms/physical';
+$perf{130}{'label'} = 'Kernel Disk Command Latency';
+$perf{130}{'path'} = '/latency/command/ms/kernel';
+$perf{131}{'label'} = 'Disk Command Latency';
+$perf{131}{'path'} = '/latency/command/ms/disk';
+$perf{132}{'label'} = 'Queue Command Latency';
+$perf{132}{'path'} = '/latency/command/ms/queue';
+
+$perf{133}{'label'} = 'Resource CPU Usage (None)';
+$perf{133}{'path'} = '/cpu/resource/mhz/none';
+$perf{133}{'mult'}  = $megabyte;
+$perf{134}{'label'} = 'Resource CPU Usage (Average)';
+$perf{134}{'path'} = '/cpu/resource/mhz/average';
+$perf{134}{'mult'}  = $megabyte;
+$perf{135}{'label'} = 'Resource CPU Usage (Maximum)';
+$perf{135}{'path'} = '/cpu/resource/mhz/maximum';
+$perf{135}{'mult'}  = $megabyte;
+$perf{136}{'label'} = 'Resource CPU Usage (Minimum)';
+$perf{136}{'path'} = '/cpu/resource/mhz/minimum';
+$perf{136}{'mult'}  = $megabyte;
+
+$perf{137}{'label'} = 'Memory Used (Average)';
+$perf{137}{'path'} = '/agent/memory/used/count';
+$perf{137}{'mult'} = 1024;
+$perf{138}{'label'} = 'Memory Swap Used (Average)';
+$perf{138}{'path'} = '/agent/memory/used/swap_used';
+$perf{138}{'mult'} = 1024;
+$perf{139}{'label'} = 'Memory Swap In (Average)';
+$perf{139}{'path'} = '/agent/memory/used/swap_in';
+$perf{139}{'mult'} = 1024;
+$perf{140}{'label'} = 'Memory Swap Out (Average)';
+$perf{140}{'path'} = '/agent/memory/used/swap_out';
+$perf{140}{'mult'} = 1024;
+
+$perf{141}{'label'} = 'CPU Active (1 min. average)';
+$perf{141}{'path'} = '/resource/cpu/active/1-average';
+$perf{142}{'label'} = 'CPU Active (1 min. peak)';
+$perf{142}{'path'} = '/resource/cpu/active/1-peak';
+$perf{143}{'label'} = 'CPU Running (1 min. average)';
+$perf{143}{'path'} = '/resource/cpu/running/1-average';
+$perf{144}{'label'} = 'CPU Active (5 min. average)';
+$perf{144}{'path'} = '/resource/cpu/active/5-average';
+
+# Whoops!  This sticks out, VMware!
+$perf{145}{'label'} = 'Memory Reserved Capacity';
+$perf{145}{'path'} = '/resource/reserved/percent';
+
+$perf{146}{'label'} = 'CPU Active (5 min. peak)';
+$perf{146}{'path'} = '/resource/cpu/active/5-peak';
+$perf{147}{'label'} = 'CPU Running (5 min. average)';
+$perf{147}{'path'} = '/resource/cpu/running/5-average';
+$perf{148}{'label'} = 'CPU Active (15 min. average)';
+$perf{148}{'path'} = '/resource/cpu/active/15-average';
+$perf{149}{'label'} = 'CPU Active (15 min. peak)';
+$perf{149}{'path'} = '/resource/cpu/active/15-peak';
+$perf{150}{'label'} = 'CPU Running (15 min. average)';
+$perf{150}{'path'} = '/resource/cpu/running/15-average';
+$perf{151}{'label'} = 'CPU Running (1 min. peak)';
+$perf{151}{'path'} = '/resource/cpu/running/1-peak';
+$perf{152}{'label'} = 'CPU Throttled (1 min. average)';
+$perf{152}{'path'} = '/resource/cpu/throttled/1-average';
+$perf{153}{'label'} = 'CPU Running (5 min. peak)';
+$perf{153}{'path'} = '/resource/cpu/running/5-peak';
+$perf{154}{'label'} = 'CPU Throttled (5 min. average)';
+$perf{154}{'path'} = '/resource/cpu/throttled/5-average';
+$perf{155}{'label'} = 'CPU Running (15 min. peak)';
+$perf{155}{'path'} = '/resource/cpu/running/15-peak';
+$perf{156}{'label'} = 'CPU Throttled (15 min. average)';
+$perf{156}{'path'} = '/resource/cpu/throttled/15-average';
+
+# WTF?!?  No really.
+#$perf{157}{'label'} = 'Group CPU Sample Count';
+#$perf{157}{'path'} = '';
+#$perf{158}{'label'} = 'Group CPU Sample Period';
+#$perf{158}{'path'} = '';
+
+$perf{159}{'label'} = 'Memory Consumed (Maximum)';
+$perf{159}{'path'} = '/memory/guest/maximum';
+$perf{159}{'mult'} = 1024;
+$perf{160}{'label'} = 'Memory Consumed (Minimum)';
+$perf{160}{'path'} = '/memory/guest/minimum';
+$perf{160}{'mult'} = 1024;
+$perf{161}{'label'} = 'Memory Used by vmkernel';
+$perf{161}{'path'} = '/memory/vmkernel/none';
+$perf{161}{'mult'} = 1024;
+$perf{162}{'label'} = 'Memory Used by vmkernel';
+$perf{162}{'path'} = '/memory/vmkernel/average';
+$perf{162}{'mult'} = 1024;
+$perf{163}{'label'} = 'Memory Used by vmkernel';
+$perf{163}{'path'} = '/memory/vmkernel/maximum';
+$perf{163}{'mult'} = 1024;
+$perf{164}{'label'} = 'Memory Used by vmkernel';
+$perf{164}{'path'} = '/memory/vmkernel/minimum';
+$perf{164}{'mult'} = 1024;
+
+#------------------------------------------------------------------------------
+
+# If we haven't loaded subs.pl, then we've been run from the command-line.  That
+# means we're in test mode.  So load include, define $g_host, and print results.
+if ( !@ARGV || (! defined ($ARGV[1]) && $ARGV[1] eq "calledfromcollect") ) {
+  # TODO: There must be a better way to get this path!  I think the better
+  # way is called "perl module" :)
+  local $main::g_fileit_mode = "test";
+  # Silence warning
+  $main::g_fileit_mode = $main::g_fileit_mode;
+  get_ignores ();
+  $rrd_interval = 60;
+  fileit ("You ran $g_collector manually; setting interval to $rrd_interval.");
+  @data = doit ();
+  foreach my $line (@data) {
+    print "$line";
+  }
+  print "\n";
+} else {
+  if ( defined ($ARGV[0]) && $ARGV[0] =~ /^\d+$/ ) {
+    $rrd_interval = $ARGV[0];
+  } else {
+    fileit ("Ack!  No interval for $g_collector.  Bailing.", "err");
+    exit ();
+  }
+  get_ignores ();
+  @data = doit ();
+  if ( defined ($data[0]) ) {
+    bivalve (@data);
+  } else {
+    fileit ("Warning:  No data for $g_collector");
+  }
+}
+
+sub doit {
+  my ($status, @data, $time);
+  my (%esx_hosts, $view, $esx_view, $vm_view, $perfmgr_view, %vms, %esx,
+      $host, @metrics, %ds_stats, $ds, $dc_view);
+
+  eval_file ("$ENV{HOME}/etc/esx.config");
+
+  $time = time ();
+
+  Opts::set_option('url',$econfig{'url'});
+  Opts::set_option('username',$econfig{'username'});
+  Opts::set_option('password',$econfig{'password'});
+  Opts::parse();
+  Opts::validate();
+  Util::connect();
+  $esx_view = Vim::find_entity_views(view_type => 'HostSystem');
+  $vm_view = Vim::find_entity_views(view_type => 'VirtualMachine');
+
+  # Disk size and free
+  $dc_view = Vim::find_entity_views(view_type => 'Datacenter');
+  my (@a);
+  foreach my $dc (@$dc_view) {
+    if(defined $dc->datastore) {
+      @a = (@a, @{$dc->datastore});
+    }
+  }
+  my $datastores = Vim::get_views(mo_ref_array => \@a);
+  #print "HAPPY\n\n";
+  #print Data::Dumper->Dump ( [\$datastores], ['*datastores'] );
+  #exit;
+  my ($name, $size, $free);
+  foreach $ds (@$datastores) {
+    $name = $ds->summary->name;
+    $size = $ds->summary->capacity;
+    $free = $ds->summary->freeSpace;
+    # Use a hash in case of dupes
+    $ds_stats{$name}{'size'} = $size;
+    $ds_stats{$name}{'free'} = $free;
+  }
+  foreach $ds (sort (keys (%ds_stats))) {
+    push (@return, "p=/vc.adm.usg.edu/esx/disk/size/$ds${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$ds_stats{$ds}{size}\n");
+    push (@return, "p=/vc.adm.usg.edu/esx/disk/free/$ds${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$ds_stats{$ds}{free}\n");
+  }
+
+  # Perfmgr stats
+  $perfmgr_view = Vim::get_view(mo_ref => Vim::get_service_content()->perfManager);
+
+  ##  # Hi this is helpful (if it worked!) for creating the crazy $perf hash.
+  ##  my @iy = @{ $vm_view };
+  ##  my $iz = $iy[0];
+  ##  my $availmetricid = $perfmgr_view->QueryAvailablePerfMetric(entity => $iz);
+  ##  foreach my $h ( @{ $availmetricid } ) {
+  ##    my $key = $$h{'key'};
+  ##    my $unit = $$h{'unitInfo'}{'key'};
+  ##    my $summary = $$h{'nameInfo'}{'summary'};
+  ##    my $label = $$h{'nameInfo'}{'label'};
+  ##    #print "key     = $key\n";
+  ##    #print "unit    = $unit\n";
+  ##    #print "summary = $summary\n";
+  ##    #print "label   = $label\n";
+  ##    print "\$perf{$key}{'label'} = '$label';\n";
+  ##    print "\$perf{$key}{'path'} = '';\n";
+  ##    print "\n";
+  ##  }
+  ##  exit;
+
+  # Set up metrics to be collected from perfmgr later by perfq
+  foreach my $i (keys (%perf)) {
+    push (@metrics, PerfMetricId->new (counterId => $i, instance => '*'));
+  }
+  @metrics = [@metrics];
+
+  foreach $view (@$esx_view) {
+    $host = $view->summary->config->name;
+    perfq ($perfmgr_view, $view, $host, $time, @metrics);
+    push (@return, "p=/${host}/esx/fairness/cpu${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=" . $view->summary->quickStats->distributedCpuFairness . "\n");
+    push (@return, "p=/${host}/esx/fairness/memory${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=" . $view->summary->quickStats->distributedMemoryFairness . "\n");
+    push (@return, "p=/${host}/esx/cpu/usage${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=" . $view->summary->quickStats->overallCpuUsage . "\n");
+    push (@return, "p=/${host}/esx/memory/usage${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=" . $view->summary->quickStats->overallMemoryUsage * $megabyte. "\n");
+  }
+  foreach $view (@$vm_view) {
+    $host = $view->summary->config->name;
+    perfq ($perfmgr_view, $view, $host, $time, @metrics);
+    push (@return, "p=/${host}/esx/memory/host${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=" . $view->summary->quickStats->hostMemoryUsage * $megabyte . "\n");
+    push (@return, "p=/${host}/esx/memory/guest${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=" . $view->summary->quickStats->guestMemoryUsage * $megabyte . "\n");
+    push (@return, "p=/${host}/esx/memory/size${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=" . $view->summary->config->memorySizeMB * $megabyte . "\n");
+    push (@return, "p=/${host}/esx/cpu/overall/usage${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=" . $view->summary->quickStats->overallCpuUsage . "\n");
+    push (@return, "p=/${host}/esx/cpu/mhz/usage${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=" . $view->summary->quickStats->overallCpuUsage . "\n");
+    push (@return, "p=/${host}/esx/cpu/cpus/count${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=" . $view->summary->config->numCpu . "\n");
+  }
+
+  Util::disconnect();
+  return (@return);
+}
+
+sub perfq {
+  my ($perfmgr_view, $view, $host, $time, @metrics) = @_;
+  my $perf_interval = 20;
+  my $perf_samples = 1;
+
+  my $perf_query_spec =
+    PerfQuerySpec->new(
+                       entity => $view,
+                       metricId => @metrics,
+                       intervalId => $perf_interval,
+                       maxSample => $perf_samples,
+                       'format' => 'csv'
+                      );
+  my $perf_data = $perfmgr_view->QueryPerf(querySpec => $perf_query_spec);
+  foreach my $perf (@$perf_data) {
+    my $values = $perf->value;
+    foreach my $val (@$values) {
+      my $id = $val->id->counterId;
+      my $value = $val->value;
+      $value =~ s/,.*//;
+      if ( $value >= 0 ) {
+        if ( defined ($perf{$id}{'mult'}) ) {
+          $value *= $perf{$id}{'mult'};
+        }
+        my $path = $perf{$id}{'path'};
+        push (@return, "p=/${host}/esx/perfmgr/${path}${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=${value}\n");
+      }
+    }
+  }
+}
+

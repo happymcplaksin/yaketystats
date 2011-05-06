@@ -13,9 +13,10 @@ require "$g_dir/lib/include";
 use Fcntl qw (:flock :mode); # get LOCK_* and S_IF*
 
 my ($host_only, $rrd_only, $all, $delete, $yes, $seconds,
-    $date_format, $help, $oldest, $host4host, %hosts, %files);
+    $date_format, $help, $oldest, $host4host, %hosts, %files, $datapoints);
 our ($g_rrddir, %host4host, $g_host4host_file, $g_server_config);
 my ($dir, $host, $rrd, $last, $now);
+my $total_datapoints = 0;
 $now = time ();
 
 config ();
@@ -40,6 +41,7 @@ sub usage {
   print "\n";
   print "List of arguments:\n";
   print "--all                          Report on both hosts and RRD files\n";
+  print "--datapoints                   Print the number of datapoints in all RRD files\n";
   print "--dateformat=seconds|pretty    Print seconds since epoch or human-readable date\n";
   print "                               Defaults to pretty\n";
   print "--delete                       Delete RRD files older than SECONDS\n";
@@ -63,6 +65,7 @@ sub config {
   get_config("server");
   if ( !GetOptions (
 		    "all" => \$all,
+                    "datapoints", => \$datapoints,
 		    "dateformat=s" => \$date_format,
 		    "delete" => \$delete,
 		    "host-only" => \$host_only,
@@ -101,6 +104,8 @@ sub keeper {
 }
 
 sub gather {
+  my ($info);
+
   LOOP: foreach $dir (list_dir_entries ($g_rrddir, "dir")) {
     if ( $dir eq 'lost+found' ) {
       next LOOP;
@@ -128,6 +133,18 @@ sub gather {
 	if ( $now - $last > $seconds ) {
 	  $files{$rrd} = $last;
 	}
+      }
+
+      if ( $datapoints ) {
+        $info = RRDs::info ($rrd);
+        $ERR=RRDs::error;
+        #print "last = " . showtime($last) . ", rrd = $rrd.\n";
+        if ( $ERR ) {
+          print "Warning: Trouble w/ rrdinfo for $rrd: $ERR\n";
+        } else {
+          #                30 days of highres          + 10 years of one datapoint per hour
+          $total_datapoints += (86400 / $$info{'step'}) * 30 + (24*365*10)
+        }
       }
     }
   }
@@ -160,6 +177,9 @@ sub display {
 	print "implement delete.\n";
       }
     }
+  }
+  if ( $datapoints ) {
+    print "Total datapoints $total_datapoints.\n";
   }
 }
 

@@ -99,7 +99,8 @@ if ( !@ARGV || (! defined ($ARGV[1]) && $ARGV[1] eq "calledfromcollect") ) {
 # Average       21      12       4      63
 sub doit {
   my ($cmd, $status, @data, $line, @return, $time, $user, $sys, $idle,
-      $iowait, $count, $u_col, $s_col, $id_col, $io_col, $ignore_ret);
+      $iowait, $count, $u_col, $s_col, $id_col, $io_col, $ignore_ret,
+      $blocked, $b_col, $running, $r_col);
 
   $ignore_ret = 0;
   $count = 2;
@@ -145,5 +146,31 @@ sub doit {
   if ( ! ignoreit ('cpu', 'idle') ) {
     push (@return, "p=/$main::g_host/cpu/idle${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$idle\n");
   }
+
+  # Get blocked procs from vmstat
+  #
+  # vmstat 3 2
+  #        procs           memory                   page                              faults       cpu
+  #   r     b     w      avm    free   re   at    pi   po    fr   de    sr     in     sy    cs  us sy id
+  #   2     9     0  4615486  6293966  241   20     1    0     0    0     0   6998  23861  2665  25  6 69
+  #   4     6     0  4868224  6284720  607   28     0    0     0    0     0  38287  21906 10740  28 16 56
+  $cmd = "vmstat 3 $count";
+  # second-to-last line
+  $line = -1;
+  $r_col = 1;
+  $b_col = 2;
+
+  ($running, $blocked) =
+    parse_cmd ($cmd, $g_default_timeout, $line, undef, '\s+',
+               '^Average|^$', $ignore_ret, ($r_col, $b_col));
+  check_vars ($g_exit, $blocked, "blocked", $running, "running");
+
+  if ( ! ignoreit ('cpu', 'blocked') ) {
+    push (@return, "p=/$main::g_host/cpu/vmstat/blocked${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$blocked\n");
+  }
+  if ( ! ignoreit ('cpu', 'running') ) {
+    push (@return, "p=/$main::g_host/cpu/vmstat/running${g_sep}t=$rrd_type${g_sep}i=$rrd_interval${g_sep}ts=$time${g_sep}v=$running\n");
+  }
+
   return (@return);
 }
