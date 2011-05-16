@@ -13,19 +13,19 @@ class Collector
     include YS::Base
     include Pusher
     def initialize
-        @plugins     = []
-        @config      = YsDaemon::Config.load('collector')
-        @pipefile    = '/var/run/ys/bucket'
-        @rundir      = File.join(DAEMON_ROOT,'run')
-        @pipe        = nil
-        @plugconfdirs= [File.join(DAEMON_ROOT,'etc/plugins.d'), File.join(DAEMON_ROOT,'etc/plugouts.d')]
-        @stats_dir   = @config["stats_dir"]
-        @stats_server= @config["stats_server"]
-        @store_path  = @config["store_path"]
-        @stats_file  = "#{@stats_dir}/new"
-        @size_limit  = 500000
-        @scheduler   = Rufus::Scheduler.start_new
-        @logger      = YsDaemon::Log.new
+        @plugins      = []
+        @config       = YsDaemon::Config.load('collector')
+        @pipefile     = '/var/run/ys/bucket'
+        @rundir       = File.join(DAEMON_ROOT,'run')
+        @pipe         = nil
+        @plugconfdirs = [File.join(DAEMON_ROOT,'etc/plugins.d'), File.join(DAEMON_ROOT,'etc/plugouts.d')]
+        @stats_dir    = @config["stats_dir"]
+        @stats_server = @config["stats_server"]
+        @store_path   = @config["store_path"]
+        @stats_file   = "#{@stats_dir}/new"
+        @size_limit   = 500000
+        @scheduler    = Rufus::Scheduler.start_new
+        @logger       = YsDaemon::Log.new
         FileUtils.mkdir_p(@stats_dir) unless FileTest.exists?(@stats_dir)
         open_pipe
         load_plugins
@@ -56,12 +56,23 @@ class Collector
     end
 
     def read_pipe
-        begin
-            log.debug "About to read the pipe." if $YSDEBUG
-            stats_write @pipe.read
-        rescue Errno::EAGAIN
-            log.debug "Nothin in the pipe." if $YSDEBUG
+        log.debug "About to read the pipe." if $YSDEBUG
+        if @pipe_locked
+            log.warning "Attempted to read the pipe, but it was locked."
+            return
         end
+        @pipe_locked = true
+        # Pipes aren't UDP packets, you have to be careful when you read them lest you get partial lines.
+        # All of this mess is to avoid partial lines. Nothing is ever easy.
+        until @pipe.eof?
+            l = @pipe.gets("\n")
+            if valid?(l)
+                stats_write l
+            else
+                log.warn "Bad line: #{l}"
+            end
+        end
+        @pipe_locked = false
     end
 
     def log

@@ -6,6 +6,11 @@ module Pusher
     end
     def upload_stats
         return if maintenance?
+        if @uploads_locked
+            log.warning "Attempted to upload, but was locked out."
+            return
+        end
+        @uploads_locked = true
         log.debug "Stepping aside stats file" if $YSDEBUG
         step_aside
         # look for stats files that aren't 'new'
@@ -43,5 +48,6 @@ module Pusher
                 end
             end
         end
+        @uploads_locked = false
     end
 end
