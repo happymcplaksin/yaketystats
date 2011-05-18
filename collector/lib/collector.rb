@@ -72,7 +72,7 @@ class Collector
                 log.warn "Bad line: #{l}"
             end
             # Jay's a lot smarter than we are.
-            sleep 0
+            sleep 1
         end
         @pipe_locked = false
     end
