@@ -43,5 +43,7 @@ plugins.d/PLUGIN-NAME.rb
         #monitor
             Future-use up/down/nagios style monitoring.
 
-External scripts can either send their stats strings into run/bucket,
-or be run via the 'plugout' method.
+External scripts can either send their stats strings into the named
+pipe /var/run/ys/bucket, or be run via the 'plugout' method. Be aware
+that named pipes are terrble and you have to be careful with how you
+send in your data. See the Collector#read_pipe comments for details.
