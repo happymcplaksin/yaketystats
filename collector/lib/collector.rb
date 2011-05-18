@@ -65,8 +65,12 @@ class Collector
         @pipe_locked = true
         # Pipes aren't UDP packets, you have to be careful when you read them lest you get partial lines.
         # All of this mess is to avoid partial lines. Nothing is ever easy.
-        until @pipe.eof?
-            frag = @pipe.gets("\n")
+        # Q: Can multiple processes write to a pipe simultaneous-style >< ?
+        # A: http://www.steve.org.uk/Reference/Unix/faq_3.html#SEC45
+        # Q: Linux PIPE_BUF ?
+        # A: 4096 from http://linux.die.net/man/7/pipe
+        data = @pipe.read
+        data.each_line do |frag|
             frag = "#{@pipefrag}#{frag}"
             @pipefrag = ''
             if frag.include?("\n")
