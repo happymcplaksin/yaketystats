@@ -18,6 +18,7 @@ class Collector
         @pipefile     = '/var/run/ys/bucket'
         @rundir       = File.join(DAEMON_ROOT,'run')
         @pipe         = nil
+        @pipefrag     = ''
         @plugconfdirs = [File.join(DAEMON_ROOT,'etc/plugins.d'), File.join(DAEMON_ROOT,'etc/plugouts.d')]
         @stats_dir    = @config["stats_dir"]
         @stats_server = @config["stats_server"]
@@ -65,14 +66,19 @@ class Collector
         # Pipes aren't UDP packets, you have to be careful when you read them lest you get partial lines.
         # All of this mess is to avoid partial lines. Nothing is ever easy.
         until @pipe.eof?
-            l = @pipe.gets("\n")
-            if valid?(l)
-                stats_write l
+            frag = @pipe.gets("\n")
+            frag = "#{@pipefrag}#{frag}"
+            @pipefrag = ''
+            if frag.include?("\n")
+                if valid?(frag)
+                    stats_write frag
+                else
+                    log.warn "Invalid line: #{frag.strip}"
+                end
             else
-                log.warn "Bad line: #{l}"
+                log.warn "Fragment: #{frag}"
+                @pipefrag = frag
             end
-            # Jay's a lot smarter than we are.
-            sleep 1
         end
         @pipe_locked = false
     end
