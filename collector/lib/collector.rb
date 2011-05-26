@@ -195,11 +195,14 @@ class Plugout
         @name     = hash[:name]
         @interval = hash[:options][:interval]
         raise YS::NoInterval unless @interval
-        @argv     = hash[:options][:argv]
+        @argv     = hash[:options][:argv] || []
         @stats    = ''
     end
-    # fix this to use saferun
+    # fix this to have a configurable timeout
     def go
-        @stats = %x{#{@name} #{@argv.join(' ')}}
+        @stats = srun("#{@name} #{@argv.join(' ')}",@interval-2)
+    end
+    def stats
+        @stats
     end
 end
