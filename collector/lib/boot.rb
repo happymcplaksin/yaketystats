@@ -96,7 +96,7 @@ module YsDaemon
                 # or at least complain when root?
             end
             def start
-                Process.daemon
+                #Process.daemon
                 Pidfile.write
                 trap("TERM") {Controller.stop; exit}
                 trap("INT") {Controller.stop; exit}
