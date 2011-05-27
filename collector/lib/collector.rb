@@ -121,44 +121,57 @@ class Collector
     end
 
     def schedule_plugins
+        puts "Scheduling" if $YSDEBUG
         @plugins.each do |plugin|
-            # interval vs schedule?
-            @scheduler.every("#{plugin.interval}s", :tags => 'user') do
-                log.debug "#{plugin.class} GO" if $YSDEBUG
-                unless plugin.locked?
-                    plugin.lock
-                    begin
-                        plugin.go
-                    rescue
-                        log.error $!
-                    end
-                    plugin.unlock
-                    log.debug "post-go for #{plugin.class}" if $YSDEBUG
-                    if plugin.respond_to? 'stats'
-                        log.debug "#{plugin.class} STATS" if $YSDEBUG
-                        plugin.lock
-                        begin
-                            stats_write plugin.stats
-                        rescue
-                            log.error $!
-                        end
-                        plugin.unlock
-                    else
-                        log.debug "#{plugin.class} has no #stats" if $YSDEBUG
-                    end
-                    if plugin.respond_to? 'monitor'
-                        plugin.lock
-                        begin
-                            puts plugin.monitor
-                        rescue
-                            log.error $!
-                        end
-                        plugin.unlock
-                    end
-                else
-                    log.warn "#{plugin.class} locked during subsequent attempt to run."
+            if plugin.options[:cron]
+                    puts "found a cron!"
+                    pp plugin
+                @scheduler.cron(plugin.options[:cron], :tags => 'user') do
+                    run_plugin plugin
+                end
+            else
+                @scheduler.every("#{plugin.interval}s", :tags => 'user') do
+                    run_plugin plugin
                 end
             end
+        end
+        #pp @scheduler.all_jobs
+    end
+
+    def run_plugin(plugin)
+        log.debug "#{plugin.class} GO" if $YSDEBUG
+        unless plugin.locked?
+            plugin.lock
+            begin
+                plugin.go
+            rescue
+                log.error $!
+            end
+            plugin.unlock
+            log.debug "post-go for #{plugin.class}" if $YSDEBUG
+            if plugin.respond_to? 'stats'
+                log.debug "#{plugin.class} STATS" if $YSDEBUG
+                plugin.lock
+                begin
+                    stats_write plugin.stats
+                rescue
+                    log.error $!
+                end
+                plugin.unlock
+            else
+                log.debug "#{plugin.class} has no #stats" if $YSDEBUG
+            end
+            if plugin.respond_to? 'monitor'
+                plugin.lock
+                begin
+                    puts plugin.monitor
+                rescue
+                    log.error $!
+                end
+                plugin.unlock
+            end
+        else
+            log.warn "#{plugin.class} locked during subsequent attempt to run."
         end
     end
 

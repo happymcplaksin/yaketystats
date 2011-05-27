@@ -33,6 +33,11 @@ module YS
             [@options[:ignore]].flatten.map{|s| Regexp.new(s)}.any?{|r| r.match(name)}
         end
 
+        # remove the attr_reader :options boilerplate
+        def options
+            @options
+        end
+
         # returns the interval at which the plugin should run
         def interval
             @options[:interval]
