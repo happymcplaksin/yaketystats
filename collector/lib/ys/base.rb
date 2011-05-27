@@ -2,6 +2,7 @@ module YS
     BCVRE = Regexp.new('bcv',Regexp::IGNORECASE) # FIX! Add the stuff nagios ignores
     class NoData < StandardError; end
     class NoInterval < StandardError; end
+    class MissingRequiredOption < StandardError; end
     module Base
         extend self
 
