@@ -86,7 +86,7 @@ module YS
             h['i']  = /^\d+$/
             h['ts'] = /^\d+$/
             h['v']  = /^[\d.eE+-]+$/
-            h['p']  = /^\/[\/\w\d._-]+$/
+            h['p']  = /^\/*[\/\w\d._-]+$/
             s.split("\n").each do |line|
                 line.split(SEP).each do |pair|
                     key,value = pair.split('=')
