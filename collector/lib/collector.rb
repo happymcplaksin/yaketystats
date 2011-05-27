@@ -135,7 +135,6 @@ class Collector
                 end
             end
         end
-        #pp @scheduler.all_jobs
     end
 
     def run_plugin(plugin)

@@ -25,7 +25,16 @@ plugins.d/PLUGIN-NAME.rb
             options, please follow the convention.
 
             This function should also call 'self.interval=' and set
-            the interval to something sane.
+            the interval to something sane. You may also want to allow
+            user-defined intervals in the options hash.
+
+            If your options hash has an element called :cron, its value
+            will be used in lieu of the interval for scheduling. Example:
+            ---
+            :name: blah
+            :options:
+                :thing : otherthing
+                :cron : "*/2 * * * *"
 
             Typically only one instance of your plugin is ever
             created. You can create more with additional files in
