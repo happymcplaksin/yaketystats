@@ -124,8 +124,6 @@ class Collector
         puts "Scheduling" if $YSDEBUG
         @plugins.each do |plugin|
             if plugin.options[:cron]
-                    puts "found a cron!"
-                    pp plugin
                 @scheduler.cron(plugin.options[:cron], :tags => 'user') do
                     run_plugin plugin
                 end
@@ -202,8 +200,9 @@ class Collector
 end
 
 class Plugout
-    attr_reader :interval,:stats
+    attr_reader :options,:interval,:stats
     def initialize(hash)
+        @options  = hash[:options]
         @name     = hash[:name]
         @interval = hash[:options][:interval]
         raise YS::NoInterval unless @interval
