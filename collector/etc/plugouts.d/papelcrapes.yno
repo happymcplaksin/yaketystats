@@ -2,5 +2,6 @@
 :name: papelcrapes
 :options:
   :interval: 5
+  :cron: "*/1 * * * *"
   :argv:
   - papelcrapes

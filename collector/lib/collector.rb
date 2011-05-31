@@ -200,6 +200,8 @@ class Collector
 end
 
 class Plugout
+    include YS::Plugin
+
     attr_reader :options,:interval,:stats
     def initialize(hash)
         @options  = hash[:options]
