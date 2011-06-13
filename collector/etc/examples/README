@@ -1,2 +1,6 @@
 In here you'll find example .y files for plugins that we ship but
 that you don't necessarily want enabled on day one.
+
+Note that the .y file's name doesn't have to match the plugin's
+name. Keep in mind that you can have multiple instances of a given
+plugin. These all match just to make it easy on the reader.
