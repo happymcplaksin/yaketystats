@@ -5,14 +5,17 @@ require 'snmp'
 # Basic (aka we don't know anything about SNMP) SNMP interface plugin for YS
 # 
 # options:
-# * :community => The SNMP community string
-# * :fqdn      => The name(s) of the host(s) you're reporting for as a string or an array
+# * :community => The SNMP community string (required)
+# * :fqdn      => The name(s) of the host(s) you're reporting for as a string or an array (required)
 # * :interval  => Optional interval. Default: 300
 
 class Yssnmpif
     include YS::Plugin
     include SNMP
     def initialize(options)
+        unless options[:fqdn] && options[:community]
+            raise YS::MissingRequiredOption
+        end
         @fqdn      = [options[:fqdn]].flatten
         @oids      = {
             ifDescr:         '1.3.6.1.2.1.2.2.1.2',

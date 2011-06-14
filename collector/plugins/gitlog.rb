@@ -1,6 +1,14 @@
+# Count git commits per hour
+#
+# options:
+# * :fqdn => FQDN to report stats for (required)
+# * :repo => path to Git repo (required)
 class Gitlog
     include YS::Plugin
     def initialize(options)
+        unless options[:fqdn] && options[:repo]
+            raise YS::MissingRequiredOption
+        end
         @options = options
         @fqdn    = options[:fqdn]
         @repo    = options[:repo]

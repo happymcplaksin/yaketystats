@@ -1,18 +1,18 @@
 require 'open-uri'
 require 'openssl'
 
+# Apache scoreboard stats.
+#
+# Assumes scoreboard is available at https://127.0.0.1/server-status?auto
+#
+# options:
+#
+# * :self_signed_ok => true|false (defaults to true, whether to accept self-signed certs
+#
+# Note: Does not do SSL stats
 class Apachescore
     include YS::Plugin
 
-    # Apache scoreboard stats.
-    #
-    # Assumes scoreboard is available at https://127.0.0.1/server-status?auto
-    #
-    # options:
-    #
-    # * :self_signed_ok => true|false (defaults to true, whether to accept self-signed certs
-    #
-    # Note: Does not do SSL stats
     def initialize(options)
         @options   = options
         @data      = {}

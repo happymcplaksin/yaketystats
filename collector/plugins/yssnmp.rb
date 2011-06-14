@@ -5,15 +5,19 @@ require 'pp'
 # 
 # options:
 # * :base      => A string to be prepended to all OIDs (optional)
-# * :community => The SNMP community string
-# * :fqdn      => the name of the host you're reporting for
-# * :oids      => A hash: statspath => OID
+# * :community => The SNMP community string (required)
+# * :fqdn      => the name of the host you're reporting for (required)
+# * :oids      => A hash: statspath => OID (required)
 # * :interval  => Optional interval. Default: 300
 
 class Yssnmp
     include YS::Plugin
     include SNMP
     def initialize(options)
+        unless options[:community] && options[:fqdn] && options[:oids]
+            raise YS::MissingRequiredOption
+        end
+
         @fqdn      = options[:fqdn]
         @oids      = options[:oids] || ''
         @base      = options[:base]

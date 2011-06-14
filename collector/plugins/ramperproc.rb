@@ -9,12 +9,17 @@ require 'linux/proctable'
 #
 # Options:
 #
-# * :procname => String
+# * :procname => String -- name of process to find (required)
+# * :statname => String -- optional name of stat to report
+# * :all => true|false  -- If true, count size of all matching processes (defaults to false)
 class Ramperproc
     include YS::Plugin
     include Sys
 
     def initialize(options)
+        unless options[:procname]
+            raise YS::MissingRequiredOption
+        end
         @options = options
         self.interval = 60
         @procname = options[:procname]
