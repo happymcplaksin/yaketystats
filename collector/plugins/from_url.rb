@@ -1,7 +1,7 @@
 require 'open-uri'
 # Get your stats from a URL, pre-packaged-style ><
 #
-# This plugin is for apps that provie a URL with YS-formattted stats
+# This plugin is for apps that provide a URL with YS-formattted stats
 #
 # options:
 # * :cron => cron spec (required)
