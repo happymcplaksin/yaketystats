@@ -10,6 +10,8 @@ require 'linux/proctable'
 # Options:
 #
 # * :procname => String -- name of process to find (required)
+# * :pidfile  => String -- Read pid from pidfile in lieu of searching by name
+#                          You must still supply procname (to derive statname).
 # * :statname => String -- optional name of stat to report
 # * :all => true|false  -- If true, count size of all matching processes (defaults to false)
 class Ramperproc
@@ -24,12 +26,20 @@ class Ramperproc
         self.interval = 60
         @procname = options[:procname]
         @statname = options[:statname] || @procname
+        @pidfile  = options[:pidfile]
+        if @pidfile
+            @pid  = pid_from_pidfile(@pidfile)
+        end
         @all = options[:all]
     end
     def go
-        @data = ProcTable.ps
-        @data = @data.reject{|p| p.cmdline.include?('debugger')} if $YSDEBUGGER
-        @data = [@data.find_all{|p| p.cmdline.include?(@procname)}].flatten
+        if @pid
+            @data = [ProcTable.ps(@pid)]
+        else
+            @data = ProcTable.ps
+            @data = @data.reject{|p| p.cmdline.include?('debugger')} if $YSDEBUGGER
+            @data = [@data.find_all{|p| p.cmdline.include?(@procname)}].flatten
+        end
     end
     def stats
         out = ''

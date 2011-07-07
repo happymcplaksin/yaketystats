@@ -61,6 +61,10 @@ module YS
             @lock = false
         end
 
+        def pid_from_pidfile(file)
+            File.read(file).strip.to_i
+        end
+
         # Call 'out' with a hash like so
         # x={:p => 'machines/count', :t => 'TYPE', :i => 300, :ts => 123456, :v => 566}
         # YS.out x
