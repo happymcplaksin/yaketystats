@@ -1,4 +1,4 @@
 ---
-stats_server: http://stats.bor.usg.edu
+stats_server: http://stats.example.com
 store_path: store.php
 stats_dir: /var/yaketystats/new
