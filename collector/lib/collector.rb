@@ -96,7 +96,12 @@ class Collector
             key = pcdir.sub(/.*g(.+)s.d/,'\1') # in or out
             Dir.glob("#{pcdir}/*.y").each do |f|
                 log.debug "reading #{f}." if $YSDEBUG
-                conf = YAML.load_file(f)
+                begin
+                    conf = YAML.load_file(f)
+                rescue => e
+                    log.error "Can't load #{f}: #{e}.  Skipping."
+                    next
+                end
                 name = conf[:name]
                 file = "#{DAEMON_ROOT}/plug#{key}s/#{conf[:name]}"
                 file += '.rb' if key == 'in'
