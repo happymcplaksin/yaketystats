@@ -31,9 +31,7 @@ class Yssnmp
         @values = {}
         Manager.open(:Host => @fqdn, :Community => @community ) do |manager|
             @oids.each_pair do |label,oid|
-                manager.walk( ObjectId.new("#{@base}.#{oid}") ) do |row|
-                    @values[label] =  row.value
-                end
+                @values[label]=manager.get_value(ObjectId.new("#{@base}.#{oid}")).first
             end
         end
     end
