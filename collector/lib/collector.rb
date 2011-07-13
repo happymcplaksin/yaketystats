@@ -108,7 +108,12 @@ class Collector
                 if FileTest.exists?(file)
                     begin
                         if key == 'in'
-                            load file
+                            begin
+                                load file
+                            rescue => e
+                                log.error "Can't load plugin #{file}: #{e}.  Skipping."
+                                next
+                            end
                             # Horrible.  # a='Array'; b=Object.const_get(a); x=Class.new(b); y=x.new
                             @plugins <<  Object.const_get(name.capitalize).new(conf[:options])
                         elsif key == 'out'
