@@ -1,7 +1,8 @@
 require 'snmp'
-require 'pp'
 
-# Basic (aka we don't know anything about SNMP) SNMP plugin for YS
+# Basic (aka we don't know anything about SNMP) SNMP plugin for YS.  This
+# plugin collects stats from a specified set of OIDs.  The yssnpmif.rb
+# collects normal SNMP interface stats.
 # 
 # options:
 # * :base      => A string to be prepended to all OIDs (optional)
@@ -9,7 +10,8 @@ require 'pp'
 # * :fqdn      => the name of the host you're reporting for (required)
 # * :oids      => A hash: statspath => OID (required)
 # * :interval  => Optional interval. Default: 300
-
+# * :timeout   => Timeout for SNMP connection in seconds (optional, defaults to 10)
+# * :retries   => Number of times to retry a connection (optional, defaults to 2)
 class Yssnmp
     include YS::Plugin
     include SNMP
@@ -22,6 +24,8 @@ class Yssnmp
         @oids      = options[:oids] || ''
         @base      = options[:base]
         @community = options[:community]
+        @timeout   = options[:timeout] || 10
+        @retries   = options[:retries] || 2
         @options   = options
         @values    = {}
         self.interval = 300
@@ -29,7 +33,7 @@ class Yssnmp
     def go
         raise unless @fqdn
         @values = {}
-        Manager.open(:Host => @fqdn, :Community => @community ) do |manager|
+        Manager.open(:Host => @fqdn, :Community => @community, :Timeout => @timeout, :Retries => @retries ) do |manager|
             @oids.each_pair do |label,oid|
                 @values[label]=manager.get_value(ObjectId.new("#{@base}.#{oid}")).first
             end
