@@ -1,0 +1,5 @@
+#!/bin/bash
+
+rel=$(lsb_release -r | awk '{print $2}' | sed 's/[.].*//')
+
+tar zcf ys-gems-el${rel}.tar.gz $(find /usr/local/ys/ruby -wholename \*snmp\* -o -wholename \*nokogiri\* -o -wholename \*rufus\* -o -wholename \*tzinfo\*)

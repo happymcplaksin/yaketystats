@@ -5,13 +5,13 @@
 
 Name:           ys-ruby
 Version:        %{rubyver}%{rubyminorver}
-Release:        4%{?dist}
+Release:        5%{?dist}
 License:        Ruby License/GPL - see COPYING
 URL:            http://www.ruby-lang.org/
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires:  readline readline-devel ncurses ncurses-devel gdbm gdbm-devel glibc-devel tcl-devel gcc unzip openssl-devel db4-devel byacc
 Source0:        ftp://ftp.ruby-lang.org/pub/ruby/ruby-%{rubyver}-%{rubyminorver}.tar.bz2
-Source1:        ys-gems.tar.gz
+Source1:        ys-gems-%{dist}.tar.gz
 Patch0:         0001-lib-net-http.rb-Net-HTTPRequest-set_form-Added-to-su.patch
 Summary:        An interpreter of object-oriented scripting language
 Group:          Development/Languages
