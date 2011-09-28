@@ -178,7 +178,13 @@ class Collector
                 plugin.unlock
             end
         else
-            log.warn "#{plugin.class} locked during subsequent attempt to run."
+            classname = plugin.class.to_s
+            if classname == 'YS::Plugout'
+                name = "#{plugin.name} plugout"
+            else
+                name = "#{classname} plugin"
+            end
+            log.warn "#{name} locked during subsequent attempt to run."
         end
     end
 
